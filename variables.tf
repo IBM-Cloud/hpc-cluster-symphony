@@ -39,13 +39,22 @@ variable "api_key" {
   }
 }
 
+variable "lsf_license_confirmation" {
+  type        = string
+  description = "If you have confirmed the availability of a Spectrum LSF license for a production cluster on IBM Cloud OR if you are deploying a non-production cluster, enter 'true'. NOTE: Failure to comply with licenses for production use of software is a violation of IBM International Program License Agreement. [Learn more](https://www.ibm.com/software/passportadvantage/programlicense.html)"
+  validation {
+    condition = var.lsf_license_confirmation== "true"
+    error_message = "If you have confirmed the availability of a Spectrum LSF license for a production cluster on IBM Cloud OR if you are deploying a non-production cluster, enter 'true'. NOTE: Failure to comply with licenses for production use of software is a violation of IBM International Program License Agreement. [Learn more](https://www.ibm.com/software/passportadvantage/programlicense.html)."
+  }
+}
+
 variable "resource_group" {
   type        = string
   default     = "Default"
   description = "Resource group name from your IBM Cloud account where the VPC resources should be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-rgs)"
 }
 
-variable "ClusterPrefix" {
+variable "cluster_prefix" {
   type        = string
   default     = "symphony-sunil-poc"
   description = "Prefix that would be used to name Spectrum LSF cluster and IBM Cloud resources provisioned to build the Spectrum LSF cluster instance. You cannot create more than one instance of Symphony Cluster with same name, please make sure the name is unique. Enter a prefix name, such as my-hpcc"

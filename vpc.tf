@@ -52,13 +52,13 @@ locals {
   storage_template_file = lookup(local.script_map, "storage")
   master_template_file  = lookup(local.script_map, "master")
   worker_template_file  = lookup(local.script_map, "worker")
-  tags                  = ["hpcc", var.ClusterPrefix]
+  tags                  = ["hpcc", var.cluster_prefix]
   profile_str           = split("-", data.ibm_is_instance_profile.worker.name)
   profile_list          = split("x", local.profile_str[1])
   hf_ncores             = tonumber(local.profile_list[0]) / 2
   memInMB               = tonumber(local.profile_list[1]) * 1024
   hf_maxNum             = var.worker_node_max_count > var.worker_node_min_count ? var.worker_node_max_count - var.worker_node_min_count : 0
-  cluster_name          = var.clusterID
+  cluster_name          = "BigComputeCluster"
 }
 
 
@@ -92,7 +92,7 @@ data "template_file" "master_user_data" {
     worker_ips                    = join(" ", local.worker_ips)
     storage_ips                   = join(" ", local.storage_ips)
     clusterID                     = var.clusterID
-    hostPrefix                    = var.ClusterPrefix
+    hostPrefix                    = var.cluster_prefix
     TotalSymphonyMgmtCount        = var.management_node_count
   }
 }
@@ -109,13 +109,13 @@ data "template_file" "worker_user_data" {
 }
 
 resource "ibm_is_vpc" "vpc" {
-  name           = "${var.ClusterPrefix}-vpc"
+  name           = "${var.cluster_prefix}-vpc"
   resource_group = data.ibm_resource_group.rg.id
   tags           = local.tags
 }
 
 resource "ibm_is_public_gateway" "mygateway" {
-  name           = "${var.ClusterPrefix}-gateway"
+  name           = "${var.cluster_prefix}-gateway"
   vpc            = ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   resource_group = data.ibm_resource_group.rg.id
@@ -127,7 +127,7 @@ resource "ibm_is_public_gateway" "mygateway" {
 }
 
 resource "ibm_is_subnet" "login_subnet" {
-  name                     = "${var.ClusterPrefix}-login-subnet"
+  name                     = "${var.cluster_prefix}-login-subnet"
   vpc                      = ibm_is_vpc.vpc.id
   zone                     = data.ibm_is_zone.zone.name
   total_ipv4_address_count = 16
@@ -136,7 +136,7 @@ resource "ibm_is_subnet" "login_subnet" {
 }
 
 resource "ibm_is_subnet" "subnet" {
-  name                     = "${var.ClusterPrefix}-subnet"
+  name                     = "${var.cluster_prefix}-subnet"
   vpc                      = ibm_is_vpc.vpc.id
   zone                     = data.ibm_is_zone.zone.name
   total_ipv4_address_count = local.total_ipv4_address_count
@@ -146,7 +146,7 @@ resource "ibm_is_subnet" "subnet" {
 }
 
 resource "ibm_is_security_group" "login_sg" {
-  name           = "${var.ClusterPrefix}-login-sg"
+  name           = "${var.cluster_prefix}-login-sg"
   vpc            = ibm_is_vpc.vpc.id
   resource_group = data.ibm_resource_group.rg.id
   tags           = local.tags
@@ -220,7 +220,7 @@ resource "ibm_is_security_group_rule" "login_egress_udp_rhsm" {
 }
 
 resource "ibm_is_security_group" "sg" {
-  name           = "${var.ClusterPrefix}-sg"
+  name           = "${var.cluster_prefix}-sg"
   vpc            = ibm_is_vpc.vpc.id
   resource_group = data.ibm_resource_group.rg.id
   tags           = local.tags
@@ -271,7 +271,7 @@ data "ibm_is_image" "stock_image" {
 }
 
 resource "ibm_is_instance" "login" {
-  name           = "${var.ClusterPrefix}-login"
+  name           = "${var.cluster_prefix}-login"
   image          = data.ibm_is_image.stock_image.id
   profile        = data.ibm_is_instance_profile.login.name
   vpc            = ibm_is_vpc.vpc.id
@@ -359,7 +359,7 @@ locals {
 
 resource "ibm_is_instance" "storage" {
   count          = 1
-  name           = "${var.ClusterPrefix}-storage-${count.index}"
+  name           = "${var.cluster_prefix}-storage-${count.index}"
   image          = data.ibm_is_image.stock_image.id
   profile        = data.ibm_is_instance_profile.storage.name
   vpc            = ibm_is_vpc.vpc.id
@@ -385,7 +385,7 @@ resource "ibm_is_instance" "storage" {
 
 resource "ibm_is_instance" "primary" {
   count          = 1
-  name           = "${var.ClusterPrefix}-primary-${count.index}"
+  name           = "${var.cluster_prefix}-primary-${count.index}"
   image          = data.ibm_is_image.image.id
   profile        = data.ibm_is_instance_profile.master.name
   vpc            = ibm_is_vpc.vpc.id
@@ -412,7 +412,7 @@ resource "ibm_is_instance" "primary" {
 
 resource "ibm_is_instance" "secondary" {
   count          = 1
-  name           = "${var.ClusterPrefix}-secondary-${count.index}"
+  name           = "${var.cluster_prefix}-secondary-${count.index}"
   image          = data.ibm_is_image.image.id
   profile        = data.ibm_is_instance_profile.master.name
   vpc            = ibm_is_vpc.vpc.id
@@ -440,7 +440,7 @@ resource "ibm_is_instance" "secondary" {
 
 resource "ibm_is_instance" "management" {
   count          = var.management_node_count > 1 ? var.management_node_count - 2: null
-  name           = "${var.ClusterPrefix}-management-${count.index}"
+  name           = "${var.cluster_prefix}-management-${count.index}"
   image          = data.ibm_is_image.image.id
   profile        = data.ibm_is_instance_profile.master.name
   vpc            = ibm_is_vpc.vpc.id
@@ -469,7 +469,7 @@ resource "ibm_is_instance" "management" {
 
 resource "ibm_is_instance" "worker" {
   count          = var.worker_node_min_count
-  name           = "${var.ClusterPrefix}-worker-${count.index}"
+  name           = "${var.cluster_prefix}-worker-${count.index}"
   image          = data.ibm_is_image.image.id
   profile        = data.ibm_is_instance_profile.worker.name
   vpc            = ibm_is_vpc.vpc.id
@@ -502,7 +502,7 @@ data "ibm_is_volume_profile" "nfs" {
 }
 
 resource "ibm_is_volume" "nfs" {
-  name           = "${var.ClusterPrefix}-vm-nfs-volume"
+  name           = "${var.cluster_prefix}-vm-nfs-volume"
   profile        = data.ibm_is_volume_profile.nfs.name
   iops           = data.ibm_is_volume_profile.nfs.name == "custom" ? var.volume_iops : null
   capacity       = var.volume_capacity
@@ -512,7 +512,7 @@ resource "ibm_is_volume" "nfs" {
 }
 
 resource "ibm_is_floating_ip" "login_fip" {
-  name           = "${var.ClusterPrefix}-login-fip"
+  name           = "${var.cluster_prefix}-login-fip"
   target         = ibm_is_instance.login.primary_network_interface[0].id
   resource_group = data.ibm_resource_group.rg.id
   tags           = local.tags
