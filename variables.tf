@@ -6,7 +6,6 @@
 ### About Symphony licensing
 variable "sym_entitlement_ego" {
   type        = string
-  default = "ego_base   3.9   31/12/2021   ()   ()   ()   6a6f0b9f738ccae7a7258fb7a7429195d3a224fa"
   description = "EGO Entitlement file content for Symphony license scheduler. You can either download this from Passport Advantage or get it from an existing LSF install. NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Symphony cluster, but cluster would not start to process workload submissions. You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/ibm-spectrum-lsf?topic=ibm-spectrum-lsf-getting-started-tutorial)"
   validation {
     condition     = trimspace(var.sym_entitlement_ego) != ""
@@ -16,7 +15,6 @@ variable "sym_entitlement_ego" {
 
 variable "sym_entitlement_soam" {
   type        = string
-  default = "sym_advanced_edition   7.3.1   31/12/2021   ()   ()   ()   ddc1cbbd0fab0b1e2c1a7eb87e5c350e7382c0ca"
   description = "SOAM Entitlement file content for core Spectrum software. You can either download this from Passport Advantage or get it from an existing LSF install.NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Spectrum LSF cluster, but cluster would not start to process workload submissions.You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/ibm-spectrum-lsf?topic=ibm-spectrum-lsf-getting-started-tutorial)"
   validation {
     condition     = trimspace(var.sym_entitlement_soam) != ""
@@ -56,11 +54,11 @@ variable "resource_group" {
 
 variable "cluster_prefix" {
   type        = string
-  default     = "symphony-sunil-poc"
+  default     = "hpcc-symphony"
   description = "Prefix that would be used to name Spectrum LSF cluster and IBM Cloud resources provisioned to build the Spectrum LSF cluster instance. You cannot create more than one instance of Symphony Cluster with same name, please make sure the name is unique. Enter a prefix name, such as my-hpcc"
 }
 
-variable "clusterID" {
+variable "cluster_id" {
   type        = string
   description = "Name of the cluster (ClusterID) that you would like to use to create virtual machines in your IBM Cloud account to deploy Spectrum LSF Cluster. By default, our automation uses a base image with following HPC related packages documented here [Learn more](https://cloud.ibm.com/docs/ibm-spectrum-lsf). If you would like to include your application specific binaries please follow the instructions [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum LSF cluster through this offering."
 }
@@ -178,9 +176,6 @@ variable "management_node_count" {
 }
 
 variable "ssh_allowed_ips" {
-  #type        = list(string)
-  #default     = ["0.0.0.0/0"]
-  #description = "Allowed a list of IP or CIDR for public SSH. All addresses are allowed with default."
   type        = string
   default     = "0.0.0.0/0"
   description = "Comma separated list of IP addresses that can access the Spectrum LSF instance through SSH interface. The default value allows any IP address to access the cluster."

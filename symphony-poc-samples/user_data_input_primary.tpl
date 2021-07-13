@@ -15,6 +15,23 @@ echo START `date '+%Y-%m-%d %H:%M:%S'`
 %EXPORT_USER_DATA%
 
 #input parameters
+sym_entitlement1="${sym_entitlement_ego}"
+sym_entitlement2="${sym_entitlement_soam}"
+vpcAPIKeyValue="${vpc_apikey_value}"
+imageID="${image_id}"
+subnetID="${subnet_id}"
+vpcID="${vpc_id}"
+securityGroupID="${security_group_id}"
+sshkey_ID="${sshkey_id}"
+regionName="${region_name}"
+zoneName="${zone_name}"
+hostPrefix="${host_prefix}"
+hf_cidr_block="${hf_cidr_block}"
+hf_profile="${hf_profile}"
+hf_ncores=${hf_ncores}
+hf_memInMB=${hf_mem_in_mb}
+hf_maxNum=${hf_max_num}
 storage_ips="${storage_ips}"
 cluster_name="${cluster_id}"
 numExpectedManagementHosts="${mgmt_count}"
+egoHostRole="${ego_host_role}"
