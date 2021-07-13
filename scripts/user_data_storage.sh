@@ -30,6 +30,7 @@ while [ $found -eq 0 ]; do
             echo "UUID=$uuid $SHARED_TOP xfs defaults,noatime 0 0" >> /etc/fstab
             mkdir -p $SHARED_TOP
             mount $SHARED_TOP
+            chmod 775 $SHARED_TOP
             mkdir -p $SHARED_TOP/ssh
             touch $SHARED_TOP/ssh/authorized_keys
             chmod 700 $SHARED_TOP/ssh

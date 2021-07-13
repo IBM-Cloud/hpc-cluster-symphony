@@ -307,7 +307,7 @@ echo "PEERDNS=no" >> /etc/sysconfig/network-scripts/ifcfg-eth0
 #mount NFS
 mkdir $SHARED_TOP
 chmod 1777 $SHARED_TOP
-echo "${nfsHostIP}:${SHARED_TOP}      ${SHARED_TOP}      nfs ro,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,_netdev 0 0" >> /etc/fstab
+echo "${nfsHostIP}:${SHARED_TOP}      ${SHARED_TOP}      nfs rw,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,_netdev 0 0" >> /etc/fstab
 mount $SHARED_TOP
 
 MAX_LOOP=100
@@ -687,7 +687,8 @@ elif [ "${egoHostRole}" == "management" ]; then
     start_ego
     wait_for_management_hosts
 else
-    mount_nfs_readonly
+    #mount_nfs_readonly
+    mount_nfs      # NOTE: we also use NFS as a shared file system for compute
     wait_for_nfs
     mtu9000
     wait_for_candidate_hosts_norestart
