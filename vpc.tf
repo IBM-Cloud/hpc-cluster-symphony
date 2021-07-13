@@ -35,10 +35,10 @@ data "ibm_is_instance_profile" "storage" {
 
 locals {
   script_map = {
-    "storage" = file("${path.module}/symphony-poc-samples/user_data_input_storage.tpl")
-    "primary" = file("${path.module}/symphony-poc-samples/user_data_input_primary.tpl")
-    "master"  = file("${path.module}/symphony-poc-samples/user_data_input_master.tpl")
-    "worker"  = file("${path.module}/symphony-poc-samples/user_data_input_worker.tpl")
+    "storage" = file("${path.module}/scripts/user_data_input_storage.tpl")
+    "primary" = file("${path.module}/scripts/user_data_input_primary.tpl")
+    "master"  = file("${path.module}/scripts/user_data_input_master.tpl")
+    "worker"  = file("${path.module}/scripts/user_data_input_worker.tpl")
   }
   storage_template_file = lookup(local.script_map, "storage")
   primary_template_file = lookup(local.script_map, "primary")
@@ -373,7 +373,7 @@ resource "ibm_is_instance" "storage" {
   zone           = data.ibm_is_zone.zone.name
   keys           = [data.ibm_is_ssh_key.ssh_key.id]
   resource_group = data.ibm_resource_group.rg.id
-  user_data      = "${data.template_file.storage_user_data.rendered} ${file("${path.module}/symphony-poc-samples/user_data_storage.sh")}"
+  user_data      = "${data.template_file.storage_user_data.rendered} ${file("${path.module}/scripts/user_data_storage.sh")}"
   volumes        = [ibm_is_volume.nfs.id]
 
   tags           = local.tags
@@ -399,7 +399,7 @@ resource "ibm_is_instance" "primary" {
   zone           = data.ibm_is_zone.zone.name
   keys           = [data.ibm_is_ssh_key.ssh_key.id]
   resource_group = data.ibm_resource_group.rg.id
-  user_data      = "${data.template_file.primary_user_data.rendered} ${file("${path.module}/symphony-poc-samples/user_data_symphony.sh")}"
+  user_data      = "${data.template_file.primary_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
 
   tags           = local.tags
   primary_network_interface {
@@ -425,7 +425,7 @@ resource "ibm_is_instance" "secondary" {
   zone           = data.ibm_is_zone.zone.name
   keys           = [data.ibm_is_ssh_key.ssh_key.id]
   resource_group = data.ibm_resource_group.rg.id
-  user_data      = "${data.template_file.secondary_user_data.rendered} ${file("${path.module}/symphony-poc-samples/user_data_symphony.sh")}"
+  user_data      = "${data.template_file.secondary_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
 
   tags           = local.tags
   primary_network_interface {
@@ -452,7 +452,7 @@ resource "ibm_is_instance" "management" {
   zone           = data.ibm_is_zone.zone.name
   keys           = [data.ibm_is_ssh_key.ssh_key.id]
   resource_group = data.ibm_resource_group.rg.id
-  user_data      = "${data.template_file.management_user_data.rendered} ${file("${path.module}/symphony-poc-samples/user_data_symphony.sh")}"
+  user_data      = "${data.template_file.management_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
 
   tags           = local.tags
   primary_network_interface {
@@ -480,7 +480,7 @@ resource "ibm_is_instance" "worker" {
   zone           = data.ibm_is_zone.zone.name
   keys           = [data.ibm_is_ssh_key.ssh_key.id]
   resource_group = data.ibm_resource_group.rg.id
-  user_data      = "${data.template_file.worker_user_data.rendered} ${file("${path.module}/symphony-poc-samples/user_data_symphony.sh")}"
+  user_data      = "${data.template_file.worker_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
   
   tags           = local.tags
   primary_network_interface {
