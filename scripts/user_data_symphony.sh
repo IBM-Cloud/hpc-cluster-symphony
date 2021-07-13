@@ -7,14 +7,9 @@ set -x
 #total number of management hosts
 # export numExpectedManagementHosts=3
 #host can be primary, secondary, management or not set for compute
-# export egoHostRole=primary
-#export egoHostRole=secondary
-export egoHostRole=
-
+export egoHostRole=${egoHostRole}
 
 #primary specific ===============
-# export entitlementLine1='ego_base   3.9   31/12/2021   ()   ()   ()   6a6f0b9f738ccae7a7258fb7a7429195d3a224fa'
-# export entitlementLine2='sym_advanced_edition   7.3.1   31/12/2021   ()   ()   ()   ddc1cbbd0fab0b1e2c1a7eb87e5c350e7382c0ca'
 export entitlementLine1=${sym_entitlement1}
 export entitlementLine2=${sym_entitlement2}
 
@@ -23,33 +18,21 @@ export adminPswd=Admin
 export guestPswd=Guest
 
 #Host Factory
-# export VPC_APIKEY_VALUE=K4NFNAkSmzj8Y6XrsXfCv7-YrOYqVbSnxsoHXj8iOUYH
-# export hf_maxNum=3
-# export hf_ncores=2
-# export hf_memInMB=16384
-# export hf_profile=bx2-2x8
+export VPC_APIKEY_VALUE=${vpcAPIKeyValue}
+
+export hf_maxNum=${hf_maxNum}
+export hf_ncores=${hf_ncores}
+export hf_memInMB=${hf_memInMB}
+export hf_profile=${hf_profile}
+
 #Gen2 UIDS
-# note that imageID is the same as management image ID
-# centimageID4: r006-b4600c0e-6fec-403e-bbc3-b166c84a7fa3
-# rhelimageID4: r006-ce9c5da6-e0d5-4865-9a2e-d187ffcd2418
-# export imageIDrhel1=r006-2bd56250-95cf-4855-b3d8-fe933d418fec
-# export imageIDrhel2=r006-ce9c5da6-e0d5-4865-9a2e-d187ffcd2418
-# export imageIDcentos1=r006-f3f8ea0a-f507-4fdb-9b4d-dfb90c32ad05
-# export imageIDcentos2=r006-b4600c0e-6fec-403e-bbc3-b166c84a7fa3
-
+#Only used in primary
 export imageID=${imageID}
-
 export subnetID=${subnetID}
-
 export vpcID=${vpcID}
-
 export securityGroupID=${securityGroupID}
-
 export sshkey_ID=${sshkey_ID}
-
 export regionName=${regionName}
-
-
 export zoneName=${zoneName}
 #prefix should be 10 characters or fewer
 export hostPrefix=${hostPrefix}
@@ -324,7 +307,7 @@ echo "PEERDNS=no" >> /etc/sysconfig/network-scripts/ifcfg-eth0
 #mount NFS
 mkdir $SHARED_TOP
 chmod 1777 $SHARED_TOP
-echo "${nfsHostIP}:${SHARED_TOP}      ${SHARED_TOP}      nfs ro,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,_netdev 0 0" >> /etc/fstab
+echo "${nfsHostIP}:${SHARED_TOP}      ${SHARED_TOP}      nfs rw,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,_netdev 0 0" >> /etc/fstab
 mount $SHARED_TOP
 
 MAX_LOOP=100
@@ -704,7 +687,8 @@ elif [ "${egoHostRole}" == "management" ]; then
     start_ego
     wait_for_management_hosts
 else
-    mount_nfs_readonly
+    #mount_nfs_readonly
+    mount_nfs      # NOTE: we also use NFS as a shared file system for compute
     wait_for_nfs
     mtu9000
     wait_for_candidate_hosts_norestart
