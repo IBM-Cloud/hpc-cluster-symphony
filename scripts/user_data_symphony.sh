@@ -59,7 +59,7 @@ export nfsHostIP=$storage_ips
 #internal
 export CLUSTERADMIN=egoadmin
 export EGO_TOP=/opt/ibm/spectrumcomputing
-export SHARED_TOP=/shared
+export SHARED_TOP=/data
 export SHARED_TOP_CLUSTERID=${SHARED_TOP}/${clusterID}
 export SHARED_TOP_SYM=${SHARED_TOP_CLUSTERID}/sym731
 export HOSTS_FILES=${SHARED_TOP_CLUSTERID}/hosts
@@ -79,6 +79,15 @@ export IBM_CLOUD_PROVIDER_SHARED_PP_SCRIPT=${SHARED_TOP_SYM}/${IBM_CLOUD_PROVIDE
 export IBM_CLOUD_PROVIDER_WORK=work/providers/ibmcloudgen2inst
 
 ##################################################################
+
+function config_hyperthreading
+{
+    if ! $hyperthreading; then
+    for vcpu in `cat /sys/devices/system/cpu/cpu*/topology/thread_siblings_list | cut -s -d- -f2 | cut -d- -f2 | uniq`; do
+        echo 0 > /sys/devices/system/cpu/cpu$vcpu/online
+    done
+    fi
+}
 
 function mount_nfs
 {
@@ -687,6 +696,7 @@ elif [ "${egoHostRole}" == "management" ]; then
     start_ego
     wait_for_management_hosts
 else
+    config_hyperthreading
     #mount_nfs_readonly
     mount_nfs      # NOTE: we also use NFS as a shared file system for compute
     wait_for_nfs

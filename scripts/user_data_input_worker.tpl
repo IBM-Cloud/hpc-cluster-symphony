@@ -18,3 +18,4 @@ echo START `date '+%Y-%m-%d %H:%M:%S'`
 storage_ips="${storage_ips}"
 cluster_name="${cluster_id}"
 numExpectedManagementHosts="${mgmt_count}"
+hyperthreading="${hyperthreading}"

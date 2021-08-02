@@ -37,12 +37,12 @@ variable "api_key" {
   }
 }
 
-variable "lsf_license_confirmation" {
+variable "sym_license_confirmation" {
   type        = string
-  description = "If you have confirmed the availability of a Spectrum LSF license for a production cluster on IBM Cloud OR if you are deploying a non-production cluster, enter 'true'. NOTE: Failure to comply with licenses for production use of software is a violation of IBM International Program License Agreement. [Learn more](https://www.ibm.com/software/passportadvantage/programlicense.html)"
+  description = "If you have confirmed the availability of a Spectrum SYMPHONY license for a production cluster on IBM Cloud OR if you are deploying a non-production cluster, enter 'true'. NOTE: Failure to comply with licenses for production use of software is a violation of IBM International Program License Agreement. [Learn more](https://www.ibm.com/software/passportadvantage/programlicense.html)"
   validation {
-    condition = var.lsf_license_confirmation== "true"
-    error_message = "If you have confirmed the availability of a Spectrum LSF license for a production cluster on IBM Cloud OR if you are deploying a non-production cluster, enter 'true'. NOTE: Failure to comply with licenses for production use of software is a violation of IBM International Program License Agreement. [Learn more](https://www.ibm.com/software/passportadvantage/programlicense.html)."
+    condition = var.sym_license_confirmation== "true"
+    error_message = "If you have confirmed the availability of a Spectrum SYMPHONY license for a production cluster on IBM Cloud OR if you are deploying a non-production cluster, enter 'true'. NOTE: Failure to comply with licenses for production use of software is a violation of IBM International Program License Agreement. [Learn more](https://www.ibm.com/software/passportadvantage/programlicense.html)."
   }
 }
 
@@ -56,11 +56,6 @@ variable "cluster_prefix" {
   type        = string
   default     = "hpcc-symphony"
   description = "Prefix that would be used to name Spectrum LSF cluster and IBM Cloud resources provisioned to build the Spectrum LSF cluster instance. You cannot create more than one instance of Symphony Cluster with same name, please make sure the name is unique. Enter a prefix name, such as my-hpcc"
-}
-
-variable "cluster_id" {
-  type        = string
-  description = "Name of the cluster (ClusterID) that you would like to use to create virtual machines in your IBM Cloud account to deploy Spectrum LSF Cluster. By default, our automation uses a base image with following HPC related packages documented here [Learn more](https://cloud.ibm.com/docs/ibm-spectrum-lsf). If you would like to include your application specific binaries please follow the instructions [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum LSF cluster through this offering."
 }
 
 variable "region" {
@@ -175,6 +170,12 @@ variable "management_node_count" {
   }
 }
 
+variable "hyperthreading_enabled" {
+  type = bool
+  default = true
+  description = "True to enable hyper-threading in the cluster (default). Otherwise, hyper-threading will be disabled"
+}
+
 variable "ssh_allowed_ips" {
   type        = string
   default     = "0.0.0.0/0"
@@ -189,6 +190,16 @@ variable "volume_profile" {
 
 variable "TF_VERSION" {
   type        = string
-  default     = "0.13"
+  default     = "0.14"
   description = "The version of the Terraform engine that's used in the Schematics workspace."
+}
+
+variable "TF_PARALLELISM" {
+  type        = string
+  default     = "250"
+  description = "Parallelism/ concurrent operations limit. Valid values are between 1 and 256, both inclusive. [Learn more](https://www.terraform.io/docs/internals/graph.html#walking-the-graph)."
+  validation {
+    condition     = 1 <= var.TF_PARALLELISM && var.TF_PARALLELISM <= 256
+    error_message = "Input \"TF_PARALLELISM\" must be >= 1 and <= 256."
+  }
 }

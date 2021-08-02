@@ -63,29 +63,29 @@ $ ibmcloud schematics destroy --id us-east.workspace.hpcc-symphony-test.7cbc3f6b
 8. Also use this jump host public ip and change the IP address of the node you want to access via the jump host to access specific hosts.
 
 # Storage Node and NFS Setup
-The storage node is configured as an NFS server and the data volume is mounted to the /shared directory which is exported to share with Symphony cluster nodes.
+The storage node is configured as an NFS server and the data volume is mounted to the /data directory which is exported to share with Symphony cluster nodes.
 
 ### Steps to validate Cluster setups
 ###### 1. To validate the NFS storage is setup and exported correctly
 * Login to the storage node using SSH (ssh -J root@52.116.122.64 root@10.240.128.36)
-* The below command shows that the data volume, /dev/vdd, is mounted to /shared on the storage node.
+* The below command shows that the data volume, /dev/vdd, is mounted to /data on the storage node.
 ```
 # df -k | grep data
-/dev/vdd       104806400 1828916 102977484   2% /shared`
+/dev/vdd       104806400 1828916 102977484   2% /data`
 ```
-* The command below shows that /shared is exported as a NFS shared directory.
+* The command below shows that /data is exported as a NFS shared directory.
 
 ```
 # exportfs -v
-/shared         	10.242.66.0/23(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,no_root_squash,no_all_squash)
+/data         	10.242.66.0/23(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,no_root_squash,no_all_squash)
 ```
 
-* At the NFS client end, the Symphony cluster nodes in this case, we mount the /shared directory in NFS server to the local directory, /shared.
+* At the NFS client end, the Symphony cluster nodes in this case, we mount the /data directory in NFS server to the local directory, /data.
 ```
-# df -k | grep shared
-10.242.66.4:/shared 104806400  1828864 102977536   2% /mnt/shared
+# df -k | grep data
+10.242.66.4:/data 104806400  1828864 102977536   2% /data
 ```
-The command above shows that the local directory, /mnt/shared, is mounted to the remote /shared directory on the NFS server, 10.242.66.4.
+The command above shows that the local directory, /data, is mounted to the remote /data directory on the NFS server, 10.242.66.4.
 
 ###### 2. Steps to validate whether the clients are able to write to the NFS storage
 
@@ -98,18 +98,15 @@ $ ssh -J root@52.116.122.64 root@10.241.0.20
 $ soamlogon -u Admin -x Admin
 $ soamcontrol app enable symexec7.3.1
 ```
-* Submit a job to write the host name to the /shared directory on the NFS server
+* Submit a job to write the host name to the /data directory on the NFS server
 ```
-$ cat > /shared/test.sh << EOF
-#!/bin/bash
-echo \$HOSTNAME > /shared/hello.log
-EOF
-$ chmod 755 /shared/test.sh
-$ symexec run -u Admin -x Admin /shared/test.sh
+$ echo 'echo $HOSTNAME > /data/hello.log' > /data/test.sh
+$ chmod 755 /data/test.sh
+$ symexec run -u Admin -x Admin /data/test.sh
 ```
 * Wait until the job is finished and then run the command to confirm the hostname is written to the file on the NFS share
 ```
-$ cat /shared/hello.log
+$ cat /data/hello.log
 hpcc-symphony-test-worker-0
 ```
 # Terraform Documentation

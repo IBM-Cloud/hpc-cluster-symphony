@@ -47,10 +47,10 @@ locals {
   tags                  = ["hpcc", var.cluster_prefix]
   profile_str           = split("-", data.ibm_is_instance_profile.worker.name)
   profile_list          = split("x", local.profile_str[1])
-  hf_ncores             = tonumber(local.profile_list[0]) / 2
+  hf_ncores             = var.hyperthreading_enabled ? tonumber(local.profile_list[0]) : tonumber(local.profile_list[0]) / 2
   mem_in_mb             = tonumber(local.profile_list[1]) * 1024
   hf_max_num            = var.worker_node_max_count > var.worker_node_min_count ? var.worker_node_max_count - var.worker_node_min_count : 0
-  cluster_name          = var.cluster_id
+  cluster_name          = "HPCCluster"
 }
 
 
@@ -80,10 +80,11 @@ data "template_file" "primary_user_data" {
     hf_mem_in_mb         = local.mem_in_mb
     hf_max_num           = local.hf_max_num
     storage_ips          = join(" ", local.storage_ips)
-    cluster_id           = var.cluster_id
+    cluster_id           = local.cluster_name
     host_prefix          = var.cluster_prefix
     mgmt_count           = var.management_node_count
     ego_host_role        = "primary"
+    hyperthreading       = var.hyperthreading_enabled
   }
 }
 
@@ -95,7 +96,7 @@ data "template_file" "secondary_user_data" {
     vpc_apikey_value     = var.api_key
     hf_cidr_block        = ibm_is_subnet.subnet.ipv4_cidr_block
     storage_ips          = join(" ", local.storage_ips)
-    cluster_id           = var.cluster_id
+    cluster_id           = local.cluster_name
     host_prefix          = var.cluster_prefix
     mgmt_count           = var.management_node_count
     ego_host_role        = "secondary"
@@ -110,7 +111,7 @@ data "template_file" "management_user_data" {
     vpc_apikey_value     = var.api_key
     hf_cidr_block        = ibm_is_subnet.subnet.ipv4_cidr_block
     storage_ips          = join(" ", local.storage_ips)
-    cluster_id           = var.cluster_id
+    cluster_id           = local.cluster_name
     host_prefix          = var.cluster_prefix
     mgmt_count           = var.management_node_count
     ego_host_role        = "management"
@@ -122,7 +123,8 @@ data "template_file" "worker_user_data" {
   vars = {
     storage_ips = join(" ", local.storage_ips)
     cluster_id  = local.cluster_name
-    mgmt_count  = var.management_node_count  
+    mgmt_count  = var.management_node_count
+    hyperthreading = var.hyperthreading_enabled
   }
 }
 
@@ -304,9 +306,12 @@ resource "ibm_is_instance" "login" {
     security_groups = [ibm_is_security_group.login_sg.id]
   }
   depends_on = [
-    ibm_is_security_group_rule.ingress_tcp,
-    ibm_is_security_group_rule.ingress_all_local,
-    ibm_is_security_group_rule.egress_all,
+    ibm_is_security_group_rule.login_ingress_tcp,
+    ibm_is_security_group_rule.login_ingress_tcp_rhsm,
+    ibm_is_security_group_rule.login_ingress_udp_rhsm,
+    ibm_is_security_group_rule.login_egress_tcp,
+    ibm_is_security_group_rule.login_egress_tcp_rhsm,
+    ibm_is_security_group_rule.login_egress_udp_rhsm,
   ]
 }
 
@@ -464,6 +469,7 @@ resource "ibm_is_instance" "management" {
   depends_on = [
     ibm_is_instance.storage,
     ibm_is_instance.primary,
+    ibm_is_instance.secondary,
     ibm_is_security_group_rule.ingress_tcp,
     ibm_is_security_group_rule.ingress_all_local,
     ibm_is_security_group_rule.egress_all,
@@ -487,7 +493,7 @@ resource "ibm_is_instance" "worker" {
     name                 = "eth0"
     subnet               = ibm_is_subnet.subnet.id
     security_groups      = [ibm_is_security_group.sg.id]
-    primary_ipv4_address = local.worker_ips[count.index]
+    #primary_ipv4_address = local.worker_ips[count.index]
   }
   depends_on = [
     ibm_is_instance.storage,
