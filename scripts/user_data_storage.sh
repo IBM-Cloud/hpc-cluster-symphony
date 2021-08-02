@@ -4,7 +4,7 @@
 ###################################################
 
 LSF_CONF=/opt/ibm/lsf/conf
-SHARED_TOP=/shared
+SHARED_TOP=/data
 
 env
 

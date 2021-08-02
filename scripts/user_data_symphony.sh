@@ -59,7 +59,7 @@ export nfsHostIP=$storage_ips
 #internal
 export CLUSTERADMIN=egoadmin
 export EGO_TOP=/opt/ibm/spectrumcomputing
-export SHARED_TOP=/shared
+export SHARED_TOP=/data
 export SHARED_TOP_CLUSTERID=${SHARED_TOP}/${clusterID}
 export SHARED_TOP_SYM=${SHARED_TOP_CLUSTERID}/sym731
 export HOSTS_FILES=${SHARED_TOP_CLUSTERID}/hosts
