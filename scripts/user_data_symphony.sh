@@ -80,6 +80,15 @@ export IBM_CLOUD_PROVIDER_WORK=work/providers/ibmcloudgen2inst
 
 ##################################################################
 
+function config_hyperthreading
+{
+    if ! $hyperthreading; then
+    for vcpu in `cat /sys/devices/system/cpu/cpu*/topology/thread_siblings_list | cut -s -d- -f2 | cut -d- -f2 | uniq`; do
+        echo 0 > /sys/devices/system/cpu/cpu$vcpu/online
+    done
+    fi
+}
+
 function mount_nfs
 {
     mkdir $SHARED_TOP
@@ -687,6 +696,7 @@ elif [ "${egoHostRole}" == "management" ]; then
     start_ego
     wait_for_management_hosts
 else
+    config_hyperthreading
     #mount_nfs_readonly
     mount_nfs      # NOTE: we also use NFS as a shared file system for compute
     wait_for_nfs
