@@ -304,9 +304,12 @@ resource "ibm_is_instance" "login" {
     security_groups = [ibm_is_security_group.login_sg.id]
   }
   depends_on = [
-    ibm_is_security_group_rule.ingress_tcp,
-    ibm_is_security_group_rule.ingress_all_local,
-    ibm_is_security_group_rule.egress_all,
+    ibm_is_security_group_rule.login_ingress_tcp,
+    ibm_is_security_group_rule.login_ingress_tcp_rhsm,
+    ibm_is_security_group_rule.login_ingress_udp_rhsm,
+    ibm_is_security_group_rule.login_egress_tcp,
+    ibm_is_security_group_rule.login_egress_tcp_rhsm,
+    ibm_is_security_group_rule.login_egress_udp_rhsm,
   ]
 }
 
@@ -464,6 +467,7 @@ resource "ibm_is_instance" "management" {
   depends_on = [
     ibm_is_instance.storage,
     ibm_is_instance.primary,
+    ibm_is_instance.secondary,
     ibm_is_security_group_rule.ingress_tcp,
     ibm_is_security_group_rule.ingress_all_local,
     ibm_is_security_group_rule.egress_all,
@@ -487,7 +491,7 @@ resource "ibm_is_instance" "worker" {
     name                 = "eth0"
     subnet               = ibm_is_subnet.subnet.id
     security_groups      = [ibm_is_security_group.sg.id]
-    primary_ipv4_address = local.worker_ips[count.index]
+    #primary_ipv4_address = local.worker_ips[count.index]
   }
   depends_on = [
     ibm_is_instance.storage,
