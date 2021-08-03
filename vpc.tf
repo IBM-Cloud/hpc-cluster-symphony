@@ -50,7 +50,7 @@ locals {
   hf_ncores             = var.hyperthreading_enabled ? tonumber(local.profile_list[0]) : tonumber(local.profile_list[0]) / 2
   mem_in_mb             = tonumber(local.profile_list[1]) * 1024
   hf_max_num            = var.worker_node_max_count > var.worker_node_min_count ? var.worker_node_max_count - var.worker_node_min_count : 0
-  cluster_name          = "HPCCluster"
+  cluster_name          = var.cluster_id
 }
 
 

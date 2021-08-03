@@ -58,6 +58,11 @@ variable "cluster_prefix" {
   description = "Prefix that is used to name the Spectrum Symphony cluster and IBM Cloud resources that are provisioned to build the Spectrum Symphony cluster instance. You cannot create more than one instance of the Symphony cluster with the same name. Make sure that the name is unique. Enter a prefix name, such as my-hpcc."
 }
 
+variable "cluster_id" {
+  type        = string
+  description = "Name of the cluster (ClusterID) that you would like to use to create virtual machines in your IBM Cloud account to deploy Spectrum LSF Cluster. By default, our automation uses a base image wit
+}
+
 variable "region" {
   type        = string
   default     = "us-south"
