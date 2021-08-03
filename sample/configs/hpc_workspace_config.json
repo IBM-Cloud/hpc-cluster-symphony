@@ -161,20 +161,6 @@
           "type": "string",
           "secure": false,
           "description": ""
-        },
-        {
-          "name": "admin_password",
-          "value": "Admin",
-          "type": "string",
-          "secure": true,
-          "description": ""
-        },
-        {
-          "name": "guest_password",
-          "value": "Guest",
-          "type": "string",
-          "secure": true,
-          "description": ""
         }
       ]
     }
