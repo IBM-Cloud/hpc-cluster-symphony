@@ -87,9 +87,24 @@ The storage node is configured as an NFS server and the data volume is mounted t
 ```
 The command above shows that the local directory, /data, is mounted to the remote /data directory on the NFS server, 10.242.66.4.
 
-###### 2. Steps to validate whether the clients are able to write to the NFS storage
+###### 2. Steps to validate the cluster status
 
-* Login to the master as shown in the ssh_command output
+* Login to the primary as shown in the ssh_command output
+```
+# ssh -J root@52.116.122.64 root@10.241.0.20
+```
+* Logon as Admin
+```
+# soamlogon -u Admin -x Admin
+```
+* Check if the resource list contains all the hosts with `ok` status
+```
+# egosh resource list -ll
+```
+
+###### 3. Steps to validate whether the clients are able to write to the NFS storage
+
+* Login to the primary as shown in the ssh_command output
 ```
 $ ssh -J root@52.116.122.64 root@10.241.0.20
 ```
@@ -109,6 +124,42 @@ $ symexec run -u Admin -x Admin /data/test.sh
 $ cat /data/hello.log
 hpcc-symphony-test-worker-0
 ```
+
+###### 4. Steps to validate failover
+
+* Login to the primary as shown in the ssh_command output
+```
+$ ssh -J root@52.116.122.64 root@10.241.0.20
+```
+* Check master host at the primary host
+```
+# egosh resource list -m
+```
+* Stop EGO at primary
+```
+# systemctl stop ego
+```
+* Login to the secondary and wait for a while
+```
+# ssh -J root@52.116.122.64 root@10.241.0.21
+```
+* Check master host again and see if the master is changed
+```
+# egosh resource list -m
+```
+* Try symexec at Step 3
+```
+# symexec run /data/test.sh
+```
+* Restart EGO at primary
+```
+# systemctl start ego
+```
+* Check master host again and see if the master is changed
+```
+# egosh resource list -m
+```
+
 # Terraform Documentation
 
 ## Requirements
