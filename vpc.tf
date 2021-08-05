@@ -422,7 +422,7 @@ resource "ibm_is_instance" "primary" {
 }
 
 resource "ibm_is_instance" "secondary" {
-  count          = 1
+  count          = var.management_node_count > 1 ? 1: 0
   name           = "${var.cluster_prefix}-secondary-${count.index}"
   image          = data.ibm_is_image.image.id
   profile        = data.ibm_is_instance_profile.master.name
@@ -449,7 +449,7 @@ resource "ibm_is_instance" "secondary" {
 }
 
 resource "ibm_is_instance" "management" {
-  count          = var.management_node_count > 1 ? var.management_node_count - 2: null
+  count          = var.management_node_count > 2 ? var.management_node_count - 2: 0
   name           = "${var.cluster_prefix}-management-${count.index}"
   image          = data.ibm_is_image.image.id
   profile        = data.ibm_is_instance_profile.master.name
