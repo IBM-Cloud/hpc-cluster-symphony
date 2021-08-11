@@ -35,30 +35,22 @@ data "ibm_is_instance_profile" "storage" {
 
 locals {
   script_map = {
-    # "storage" = file("${path.module}/templates/user_data_input_storage.tpl")
-    # "master"  = file("${path.module}/templates/user_data_input_master.tpl")
-    # "worker"  = file("${path.module}/templates/user_data_input_worker.tpl")
-    # "storage" = file("${path.module}/scripts/symphony-poc/user_data_input_storage.tpl")
-    "storage" = file("${path.module}/symphony-poc-samples/user_data_input_storage.tpl")
-
-    # "master"  = file("${path.module}/scripts/symphony-poc/user_data_input_master.tpl")
-
-    "master"  = file("${path.module}/symphony-poc-samples/user_data_input_master.tpl")
-
-    # "worker"  = file("${path.module}/scripts/symphony-poc/user_data_input_worker.tpl")
-
-    "worker"  = file("${path.module}/symphony-poc-samples/user_data_input_worker.tpl")
+    "storage" = file("${path.module}/scripts/user_data_input_storage.tpl")
+    "primary" = file("${path.module}/scripts/user_data_input_primary.tpl")
+    "master"  = file("${path.module}/scripts/user_data_input_master.tpl")
+    "worker"  = file("${path.module}/scripts/user_data_input_worker.tpl")
   }
   storage_template_file = lookup(local.script_map, "storage")
+  primary_template_file = lookup(local.script_map, "primary")
   master_template_file  = lookup(local.script_map, "master")
   worker_template_file  = lookup(local.script_map, "worker")
-  tags                  = ["hpcc", var.ClusterPrefix]
+  tags                  = ["hpcc", var.cluster_prefix]
   profile_str           = split("-", data.ibm_is_instance_profile.worker.name)
   profile_list          = split("x", local.profile_str[1])
-  hf_ncores             = tonumber(local.profile_list[0]) / 2
-  memInMB               = tonumber(local.profile_list[1]) * 1024
-  hf_maxNum             = var.worker_node_max_count > var.worker_node_min_count ? var.worker_node_max_count - var.worker_node_min_count : 0
-  cluster_name          = var.clusterID
+  hf_ncores             = var.hyperthreading_enabled ? tonumber(local.profile_list[0]) : tonumber(local.profile_list[0]) / 2
+  mem_in_mb             = tonumber(local.profile_list[1]) * 1024
+  hf_max_num            = var.worker_node_max_count > var.worker_node_min_count ? var.worker_node_max_count - var.worker_node_min_count : 0
+  cluster_name          = var.cluster_id
 }
 
 
@@ -69,53 +61,81 @@ data "template_file" "storage_user_data" {
   }
 }
 
-data "template_file" "master_user_data" {
+data "template_file" "primary_user_data" {
+  template = local.primary_template_file
+  vars = {
+    sym_entitlement_ego  = var.sym_entitlement_ego
+    sym_entitlement_soam = var.sym_entitlement_soam
+    vpc_apikey_value     = var.api_key
+    image_id             = data.ibm_is_image.image.id
+    subnet_id            = ibm_is_subnet.subnet.id
+    security_group_id    = ibm_is_security_group.sg.id
+    sshkey_id            = data.ibm_is_ssh_key.ssh_key.id
+    region_name          = data.ibm_is_region.region.name
+    zone_name            = data.ibm_is_zone.zone.name
+    vpc_id               = ibm_is_vpc.vpc.id
+    hf_cidr_block        = ibm_is_subnet.subnet.ipv4_cidr_block
+    hf_profile           = data.ibm_is_instance_profile.worker.name
+    hf_ncores            = local.hf_ncores
+    hf_mem_in_mb         = local.mem_in_mb
+    hf_max_num           = local.hf_max_num
+    storage_ips          = join(" ", local.storage_ips)
+    cluster_id           = local.cluster_name
+    host_prefix          = var.cluster_prefix
+    mgmt_count           = var.management_node_count
+    ego_host_role        = "primary"
+    hyperthreading       = var.hyperthreading_enabled
+  }
+}
+
+data "template_file" "secondary_user_data" {
   template = local.master_template_file
   vars = {
-    sym_entitlement_ego           = var.sym_entitlement_ego
-    sym_entitlement_soam          = var.sym_entitlement_soam
-    vpc_apikey_value              = var.api_key
-    # resource_records_apikey_value = var.api_key
-    image_id                      = data.ibm_is_image.image.id
-    subnet_id                     = ibm_is_subnet.subnet.id
-    security_group_id             = ibm_is_security_group.sg.id
-    sshkey_id                     = data.ibm_is_ssh_key.ssh_key.id
-    region_name                   = data.ibm_is_region.region.name
-    zone_name                     = data.ibm_is_zone.zone.name
-    vpc_id                        = ibm_is_vpc.vpc.id
-    hf_cidr_block                 = ibm_is_subnet.subnet.ipv4_cidr_block
-    hf_profile                    = data.ibm_is_instance_profile.worker.name
-    hf_ncores                     = local.hf_ncores
-    hf_memInMB                    = local.memInMB
-    hf_maxNum                     = local.hf_maxNum
-    master_ips                    = join(" ", local.master_ips)
-    worker_ips                    = join(" ", local.worker_ips)
-    storage_ips                   = join(" ", local.storage_ips)
-    clusterID                     = var.clusterID
-    hostPrefix                    = var.ClusterPrefix
-    TotalSymphonyMgmtCount        = var.management_node_count
+    sym_entitlement_ego  = var.sym_entitlement_ego
+    sym_entitlement_soam = var.sym_entitlement_soam
+    vpc_apikey_value     = var.api_key
+    hf_cidr_block        = ibm_is_subnet.subnet.ipv4_cidr_block
+    storage_ips          = join(" ", local.storage_ips)
+    cluster_id           = local.cluster_name
+    host_prefix          = var.cluster_prefix
+    mgmt_count           = var.management_node_count
+    ego_host_role        = "secondary"
+  }
+}
+
+data "template_file" "management_user_data" {
+  template = local.master_template_file
+  vars = {
+    sym_entitlement_ego  = var.sym_entitlement_ego
+    sym_entitlement_soam = var.sym_entitlement_soam
+    vpc_apikey_value     = var.api_key
+    hf_cidr_block        = ibm_is_subnet.subnet.ipv4_cidr_block
+    storage_ips          = join(" ", local.storage_ips)
+    cluster_id           = local.cluster_name
+    host_prefix          = var.cluster_prefix
+    mgmt_count           = var.management_node_count
+    ego_host_role        = "management"
   }
 }
 
 data "template_file" "worker_user_data" {
   template = local.worker_template_file
   vars = {
-    hf_cidr_block = ibm_is_subnet.subnet.ipv4_cidr_block
-    master_ips    = join(" ", local.master_ips)
-    storage_ips   = join(" ", local.storage_ips)
-    clusterID     = local.cluster_name  
-    TotalSymphonyMgmtCount = var.management_node_count  
+    storage_ips = join(" ", local.storage_ips)
+    cluster_id  = local.cluster_name
+    mgmt_count  = var.management_node_count
+    hyperthreading = var.hyperthreading_enabled
   }
 }
 
 resource "ibm_is_vpc" "vpc" {
-  name           = "${var.ClusterPrefix}-vpc"
+  name           = "${var.cluster_prefix}-vpc"
   resource_group = data.ibm_resource_group.rg.id
   tags           = local.tags
 }
 
 resource "ibm_is_public_gateway" "mygateway" {
-  name           = "${var.ClusterPrefix}-gateway"
+  name           = "${var.cluster_prefix}-gateway"
   vpc            = ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   resource_group = data.ibm_resource_group.rg.id
@@ -127,7 +147,7 @@ resource "ibm_is_public_gateway" "mygateway" {
 }
 
 resource "ibm_is_subnet" "login_subnet" {
-  name                     = "${var.ClusterPrefix}-login-subnet"
+  name                     = "${var.cluster_prefix}-login-subnet"
   vpc                      = ibm_is_vpc.vpc.id
   zone                     = data.ibm_is_zone.zone.name
   total_ipv4_address_count = 16
@@ -136,7 +156,7 @@ resource "ibm_is_subnet" "login_subnet" {
 }
 
 resource "ibm_is_subnet" "subnet" {
-  name                     = "${var.ClusterPrefix}-subnet"
+  name                     = "${var.cluster_prefix}-subnet"
   vpc                      = ibm_is_vpc.vpc.id
   zone                     = data.ibm_is_zone.zone.name
   total_ipv4_address_count = local.total_ipv4_address_count
@@ -146,14 +166,13 @@ resource "ibm_is_subnet" "subnet" {
 }
 
 resource "ibm_is_security_group" "login_sg" {
-  name           = "${var.ClusterPrefix}-login-sg"
+  name           = "${var.cluster_prefix}-login-sg"
   vpc            = ibm_is_vpc.vpc.id
   resource_group = data.ibm_resource_group.rg.id
   tags           = local.tags
 }
 
 resource "ibm_is_security_group_rule" "login_ingress_tcp" {
-  #for_each  = toset(var.ssh_allowed_ips)
   for_each  = toset(split(",", var.ssh_allowed_ips))
   group     = ibm_is_security_group.login_sg.id
   direction = "inbound"
@@ -220,7 +239,7 @@ resource "ibm_is_security_group_rule" "login_egress_udp_rhsm" {
 }
 
 resource "ibm_is_security_group" "sg" {
-  name           = "${var.ClusterPrefix}-sg"
+  name           = "${var.cluster_prefix}-sg"
   vpc            = ibm_is_vpc.vpc.id
   resource_group = data.ibm_resource_group.rg.id
   tags           = local.tags
@@ -271,7 +290,7 @@ data "ibm_is_image" "stock_image" {
 }
 
 resource "ibm_is_instance" "login" {
-  name           = "${var.ClusterPrefix}-login"
+  name           = "${var.cluster_prefix}-login"
   image          = data.ibm_is_image.stock_image.id
   profile        = data.ibm_is_instance_profile.login.name
   vpc            = ibm_is_vpc.vpc.id
@@ -287,9 +306,12 @@ resource "ibm_is_instance" "login" {
     security_groups = [ibm_is_security_group.login_sg.id]
   }
   depends_on = [
-    ibm_is_security_group_rule.ingress_tcp,
-    ibm_is_security_group_rule.ingress_all_local,
-    ibm_is_security_group_rule.egress_all,
+    ibm_is_security_group_rule.login_ingress_tcp,
+    ibm_is_security_group_rule.login_ingress_tcp_rhsm,
+    ibm_is_security_group_rule.login_ingress_udp_rhsm,
+    ibm_is_security_group_rule.login_egress_tcp,
+    ibm_is_security_group_rule.login_egress_tcp_rhsm,
+    ibm_is_security_group_rule.login_egress_udp_rhsm,
   ]
 }
 
@@ -323,16 +345,6 @@ resource "ibm_is_instance" "login" {
 locals {
   total_ipv4_address_count = pow(2, ceil(log(var.worker_node_max_count + var.management_node_count + 5 + 1 + 4, 2)))
 
-  # master_reboot_tmp = file("${path.module}/scripts/LSF_server_reboot.sh")
-  # master_reboot_tmp = file("${path.module}/scripts/LSF_server_reboot.sh")
-
-  # worker_reboot_tmp = file("${path.module}/scripts/symphony-poc/user_data_base_compute.sh")
-  # worker_reboot_tmp = file("${path.module}/symphony-poc-samples/user_data_base_compute.sh")
-
-
-  # master_reboot_str = replace(local.master_reboot_tmp, "<LSF_MASTER_OR_WORKER>", "symphony")
-  # worker_reboot_str = replace(local.worker_reboot_tmp, "<LSF_MASTER_OR_WORKER>", "symphony-worker")
-
   storage_ips = [
     for idx in range(1) :
     cidrhost(ibm_is_subnet.subnet.ipv4_cidr_block, idx + 4)
@@ -359,14 +371,14 @@ locals {
 
 resource "ibm_is_instance" "storage" {
   count          = 1
-  name           = "${var.ClusterPrefix}-storage-${count.index}"
+  name           = "${var.cluster_prefix}-storage-${count.index}"
   image          = data.ibm_is_image.stock_image.id
   profile        = data.ibm_is_instance_profile.storage.name
   vpc            = ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = [data.ibm_is_ssh_key.ssh_key.id]
   resource_group = data.ibm_resource_group.rg.id
-  user_data      = "${data.template_file.storage_user_data.rendered} ${file("${path.module}/symphony-poc-samples/user_data_storage.sh")}"
+  user_data      = "${data.template_file.storage_user_data.rendered} ${file("${path.module}/scripts/user_data_storage.sh")}"
   volumes        = [ibm_is_volume.nfs.id]
 
   tags           = local.tags
@@ -385,15 +397,14 @@ resource "ibm_is_instance" "storage" {
 
 resource "ibm_is_instance" "primary" {
   count          = 1
-  name           = "${var.ClusterPrefix}-primary-${count.index}"
+  name           = "${var.cluster_prefix}-primary-${count.index}"
   image          = data.ibm_is_image.image.id
   profile        = data.ibm_is_instance_profile.master.name
   vpc            = ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = [data.ibm_is_ssh_key.ssh_key.id]
   resource_group = data.ibm_resource_group.rg.id
-  # user_data      = "${data.template_file.master_user_data.rendered} ${file("${path.module}/scripts/LSF_management_static_server.sh")} ${local.master_reboot_str}"
-  user_data      = "${data.template_file.master_user_data.rendered} ${file("${path.module}/symphony-poc-samples/user_data_base_primary.sh")}"
+  user_data      = "${data.template_file.primary_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
 
   tags           = local.tags
   primary_network_interface {
@@ -411,16 +422,15 @@ resource "ibm_is_instance" "primary" {
 }
 
 resource "ibm_is_instance" "secondary" {
-  count          = 1
-  name           = "${var.ClusterPrefix}-secondary-${count.index}"
+  count          = var.management_node_count > 1 ? 1: 0
+  name           = "${var.cluster_prefix}-secondary-${count.index}"
   image          = data.ibm_is_image.image.id
   profile        = data.ibm_is_instance_profile.master.name
   vpc            = ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = [data.ibm_is_ssh_key.ssh_key.id]
   resource_group = data.ibm_resource_group.rg.id
-  # user_data      = "${data.template_file.master_user_data.rendered} ${file("${path.module}/scripts/LSF_management_static_candidate_server.sh")} ${local.master_reboot_str}"
-  user_data      = "${data.template_file.master_user_data.rendered} ${file("${path.module}/symphony-poc-samples/user_data_base_secondary.sh")}"
+  user_data      = "${data.template_file.secondary_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
 
   tags           = local.tags
   primary_network_interface {
@@ -439,16 +449,15 @@ resource "ibm_is_instance" "secondary" {
 }
 
 resource "ibm_is_instance" "management" {
-  count          = var.management_node_count > 1 ? var.management_node_count - 2: null
-  name           = "${var.ClusterPrefix}-management-${count.index}"
+  count          = var.management_node_count > 2 ? var.management_node_count - 2: 0
+  name           = "${var.cluster_prefix}-management-${count.index}"
   image          = data.ibm_is_image.image.id
   profile        = data.ibm_is_instance_profile.master.name
   vpc            = ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = [data.ibm_is_ssh_key.ssh_key.id]
   resource_group = data.ibm_resource_group.rg.id
-  # user_data      = "${data.template_file.master_user_data.rendered} ${file("${path.module}/scripts/LSF_management_static_candidate_server.sh")} ${local.master_reboot_str}"
-  user_data      = "${data.template_file.master_user_data.rendered} ${file("${path.module}/symphony-poc-samples/user_data_base_mgmt.sh")}"
+  user_data      = "${data.template_file.management_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
 
   tags           = local.tags
   primary_network_interface {
@@ -460,6 +469,7 @@ resource "ibm_is_instance" "management" {
   depends_on = [
     ibm_is_instance.storage,
     ibm_is_instance.primary,
+    ibm_is_instance.secondary,
     ibm_is_security_group_rule.ingress_tcp,
     ibm_is_security_group_rule.ingress_all_local,
     ibm_is_security_group_rule.egress_all,
@@ -469,22 +479,21 @@ resource "ibm_is_instance" "management" {
 
 resource "ibm_is_instance" "worker" {
   count          = var.worker_node_min_count
-  name           = "${var.ClusterPrefix}-worker-${count.index}"
+  name           = "${var.cluster_prefix}-worker-${count.index}"
   image          = data.ibm_is_image.image.id
   profile        = data.ibm_is_instance_profile.worker.name
   vpc            = ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = [data.ibm_is_ssh_key.ssh_key.id]
   resource_group = data.ibm_resource_group.rg.id
-  # user_data      = "${data.template_file.worker_user_data.rendered} ${file("${path.module}/scripts/LSF_dynamic_workers.sh")} ${local.worker_reboot_str}"
-  user_data      = "${data.template_file.worker_user_data.rendered} ${file("${path.module}/symphony-poc-samples/user_data_base_compute.sh")}"
+  user_data      = "${data.template_file.worker_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
   
   tags           = local.tags
   primary_network_interface {
     name                 = "eth0"
     subnet               = ibm_is_subnet.subnet.id
     security_groups      = [ibm_is_security_group.sg.id]
-    primary_ipv4_address = local.worker_ips[count.index]
+    #primary_ipv4_address = local.worker_ips[count.index]
   }
   depends_on = [
     ibm_is_instance.storage,
@@ -502,7 +511,7 @@ data "ibm_is_volume_profile" "nfs" {
 }
 
 resource "ibm_is_volume" "nfs" {
-  name           = "${var.ClusterPrefix}-vm-nfs-volume"
+  name           = "${var.cluster_prefix}-vm-nfs-volume"
   profile        = data.ibm_is_volume_profile.nfs.name
   iops           = data.ibm_is_volume_profile.nfs.name == "custom" ? var.volume_iops : null
   capacity       = var.volume_capacity
@@ -512,7 +521,7 @@ resource "ibm_is_volume" "nfs" {
 }
 
 resource "ibm_is_floating_ip" "login_fip" {
-  name           = "${var.ClusterPrefix}-login-fip"
+  name           = "${var.cluster_prefix}-login-fip"
   target         = ibm_is_instance.login.primary_network_interface[0].id
   resource_group = data.ibm_resource_group.rg.id
   tags           = local.tags

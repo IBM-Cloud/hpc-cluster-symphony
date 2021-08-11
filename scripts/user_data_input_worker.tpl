@@ -15,8 +15,7 @@ echo START `date '+%Y-%m-%d %H:%M:%S'`
 %EXPORT_USER_DATA%
 
 #input parameters
-# hf_cidr_block="${hf_cidr_block}"
-# master_ips="${master_ips}"
 storage_ips="${storage_ips}"
-cluster_name="${clusterID}"
-numExpectedManagementHosts="${TotalSymphonyMgmtCount}"
+cluster_name="${cluster_id}"
+numExpectedManagementHosts="${mgmt_count}"
+hyperthreading="${hyperthreading}"

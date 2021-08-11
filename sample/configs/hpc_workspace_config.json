@@ -1,0 +1,169 @@
+{
+  "name": "hpcc-symphony-test",
+  "type": [
+    "terraform_v0.14.0"
+  ],
+  "location": "us-east",
+  "resource_group": "Default",
+  "description": "",
+  "tags": ["hpcc", "symphony"],
+  "template_repo": {
+    "url": "https://github.ibm.com/workload-eng-services/hpc-cluster-symphony/tree/master"
+  },
+  "template_data": [
+    {
+      "folder": ".",
+      "type": "terraform_v0.14.0",
+      "variablestore": [
+        {
+          "name": "cluster_prefix",
+          "value": "hpcc-symphony-test",
+          "type": "string",
+          "secure": false,
+          "description": ""
+        },
+        {
+          "name": "cluster_id",
+          "value": "HpccTest",
+          "type": "string",
+          "secure": false,
+          "description": ""
+        },
+        {
+          "name": "resource_group",
+          "value": "Default",
+          "type": "string",
+          "secure": false,
+          "description":""
+        },
+        {
+          "name": "region",
+          "value": "us-east",
+          "type": "string",
+          "secure": false,
+          "description": ""
+        },
+        {
+          "name": "zone",
+          "value": "us-east-1",
+          "type": "string",
+          "secure": false,
+          "description": ""
+        },
+        {
+          "name": "image_name",
+          "value": "sym731rhel77image2-ajith",
+          "type": "string",
+          "secure": false,
+          "description":""
+        },
+        {
+          "name": "storage_node_instance_type",
+          "value": "bx2-2x8",
+          "type": "string",
+          "secure": false,
+          "description": ""
+        },
+        {
+          "name": "worker_node_instance_type",
+          "value": "bx2-2x8",
+          "type": "string",
+          "secure": false,
+          "description": ""
+        },
+        {
+          "name": "management_node_instance_type",
+          "value": "bx2-2x8",
+          "type": "string",
+          "secure": false,
+          "description": ""
+        },
+        {
+          "name": "login_node_instance_type",
+          "value": "bx2-2x8",
+          "type": "string",
+          "secure": false,
+          "description": ""
+        },
+        {
+          "name": "management_node_count",
+          "value": "3",
+          "type": "number",
+          "secure": false,
+          "description": ""
+        },
+        {
+          "name": "worker_node_max_count",
+          "value": "10",
+          "type": "number",
+          "secure": false,
+          "description": ""
+        },
+        {
+          "name": "worker_node_min_count",
+          "value": "0",
+          "type": "number",
+          "secure": false,
+          "description": ""
+        },
+        {
+          "name": "ssh_key_name",
+          "value": "Please fill here",
+          "type": "string",
+          "secure": true,
+          "description":""
+        },
+        {
+          "name": "volume_capacity",
+          "value": "100",
+          "type": "number",
+          "secure": false,
+          "description": ""
+        },
+        {
+          "name": "volume_profile",
+          "value": "general-purpose",
+          "type": "string",
+          "secure": false,
+          "description": ""
+        },
+        {
+          "name": "volume_iops",
+          "value": "3000",
+          "type": "number",
+          "secure": false,
+          "description": ""
+        },
+        {
+          "name": "sym_entitlement_ego",
+          "value": "Please fill here",
+          "type": "string",
+          "secure": true,
+          "description": ""
+        },
+        {
+          "name": "sym_entitlement_soam",
+          "value": "Please fill here",
+          "type": "string",
+          "secure": true,
+          "description": ""
+        },
+        {
+          "name": "api_key",
+          "value": "Please fill here",
+          "type": "string",
+          "secure": true,
+          "description": ""
+        },
+        {
+          "name": "ssh_allowed_ips",
+          "value": "",
+          "type": "string",
+          "secure": false,
+          "description": ""
+        }
+      ]
+    }
+  ]
+}
+
