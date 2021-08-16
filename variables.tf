@@ -63,7 +63,7 @@ variable "cluster_prefix" {
 variable "cluster_id" {
   type        = string
   default     = "HPCCluster"
-  description = "ID of the cluster that EGO uses. You can check `egosh ego info`"
+  description = "ID of the cluster used by Symphony for configuration of resources. Post deployment the value can be verified using command `egosh ego info`."
 }
 
 variable "region" {
