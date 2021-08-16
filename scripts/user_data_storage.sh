@@ -3,7 +3,6 @@
 # Licensed under the Apache License v2.0
 ###################################################
 
-LSF_CONF=/opt/ibm/lsf/conf
 SHARED_TOP=/data
 
 env
@@ -14,12 +13,11 @@ hostName=ibm-gen2host-${privateIP//./-}
 hostnamectl set-hostname ${hostName}
 
 # NOTE: On ibm gen2, the default DNS server do not have reverse hostname/IP resolution.
-# 1) put the master server hostname and ip into lsf hosts.
-# 2) put all possible VMs' hostname and ip into lsf hosts.
+# 1) put the master server hostname and ip into hosts.
+# 2) put all possible VMs' hostname and ip into hosts.
 python -c "import ipaddress; print('\n'.join([str(ip) + ' ibm-gen2host-' + str(ip).replace('.', '-') for ip in ipaddress.IPv4Network(bytearray('${hf_cidr_block}'))]))" >> /etc/hosts
 
 yum install -y nfs-utils
-lsfadmin=1000
 found=0
 while [ $found -eq 0 ]; do
     for vdx in `lsblk -d -n --output NAME`; do
@@ -35,7 +33,6 @@ while [ $found -eq 0 ]; do
             touch $SHARED_TOP/ssh/authorized_keys
             chmod 700 $SHARED_TOP/ssh
             chmod 600 $SHARED_TOP/ssh/authorized_keys
-            chown -R $egoadmin:$egoadmin $SHARED_TOP
             found=1
             break
         fi
