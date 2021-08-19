@@ -27,7 +27,7 @@ variable "sym_entitlement_soam" {
 ### About VPC resources
 variable "ssh_key_name" {
   type        = string
-  description = "Comma-separated list of names of the SSH key configured in your IBM Cloud account that is used to establish a connection to the LSF master node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given [here](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
+  description = "Comma-separated list of names of the SSH keys configured in your IBM Cloud account that will be used to establish a connection to the Symphony master node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given [here](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
 }
 
 variable "api_key" {
