@@ -51,6 +51,11 @@ locals {
   mem_in_mb             = tonumber(local.profile_list[1]) * 1024
   hf_max_num            = var.worker_node_max_count > var.worker_node_min_count ? var.worker_node_max_count - var.worker_node_min_count : 0
   cluster_name          = var.cluster_id
+  ssh_key_list          = split(",", var.ssh_key_name)
+  ssh_key_id_list       = [
+    for name in local.ssh_key_list:
+    data.ibm_is_ssh_key.ssh_key[name].id
+  ]
 }
 
 
@@ -70,7 +75,7 @@ data "template_file" "primary_user_data" {
     image_id             = data.ibm_is_image.image.id
     subnet_id            = ibm_is_subnet.subnet.id
     security_group_id    = ibm_is_security_group.sg.id
-    sshkey_id            = data.ibm_is_ssh_key.ssh_key.id
+    sshkey_id            = data.ibm_is_ssh_key.ssh_key[local.ssh_key_list[0]].id
     region_name          = data.ibm_is_region.region.name
     zone_name            = data.ibm_is_zone.zone.name
     vpc_id               = ibm_is_vpc.vpc.id
@@ -274,7 +279,8 @@ data "ibm_is_image" "image" {
 }
 
 data "ibm_is_ssh_key" "ssh_key" {
-  name = var.ssh_key_name
+  for_each = toset(split(",", var.ssh_key_name))
+  name     = each.value
 }
 
 data "ibm_is_instance_profile" "login" {
@@ -295,7 +301,7 @@ resource "ibm_is_instance" "login" {
   profile        = data.ibm_is_instance_profile.login.name
   vpc            = ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
-  keys           = [data.ibm_is_ssh_key.ssh_key.id]
+  keys           = local.ssh_key_id_list
   resource_group = data.ibm_resource_group.rg.id
   tags           = local.tags
 
@@ -376,7 +382,7 @@ resource "ibm_is_instance" "storage" {
   profile        = data.ibm_is_instance_profile.storage.name
   vpc            = ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
-  keys           = [data.ibm_is_ssh_key.ssh_key.id]
+  keys           = local.ssh_key_id_list
   resource_group = data.ibm_resource_group.rg.id
   user_data      = "${data.template_file.storage_user_data.rendered} ${file("${path.module}/scripts/user_data_storage.sh")}"
   volumes        = [ibm_is_volume.nfs.id]
@@ -402,7 +408,7 @@ resource "ibm_is_instance" "primary" {
   profile        = data.ibm_is_instance_profile.master.name
   vpc            = ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
-  keys           = [data.ibm_is_ssh_key.ssh_key.id]
+  keys           = local.ssh_key_id_list
   resource_group = data.ibm_resource_group.rg.id
   user_data      = "${data.template_file.primary_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
 
@@ -428,7 +434,7 @@ resource "ibm_is_instance" "secondary" {
   profile        = data.ibm_is_instance_profile.master.name
   vpc            = ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
-  keys           = [data.ibm_is_ssh_key.ssh_key.id]
+  keys           = local.ssh_key_id_list
   resource_group = data.ibm_resource_group.rg.id
   user_data      = "${data.template_file.secondary_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
 
@@ -455,7 +461,7 @@ resource "ibm_is_instance" "management" {
   profile        = data.ibm_is_instance_profile.master.name
   vpc            = ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
-  keys           = [data.ibm_is_ssh_key.ssh_key.id]
+  keys           = local.ssh_key_id_list
   resource_group = data.ibm_resource_group.rg.id
   user_data      = "${data.template_file.management_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
 
@@ -484,7 +490,7 @@ resource "ibm_is_instance" "worker" {
   profile        = data.ibm_is_instance_profile.worker.name
   vpc            = ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
-  keys           = [data.ibm_is_ssh_key.ssh_key.id]
+  keys           = local.ssh_key_id_list
   resource_group = data.ibm_resource_group.rg.id
   user_data      = "${data.template_file.worker_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
   

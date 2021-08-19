@@ -27,7 +27,7 @@ variable "sym_entitlement_soam" {
 ### About VPC resources
 variable "ssh_key_name" {
   type        = string
-  description = "Name of ssh key configured in your IBM Cloud account, that will be used to establish a connection to Symphony master node. If you do not have a ssh key in your IBM Cloud please create one using instructions given here. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)"
+  description = "Comma-separated list of names of the SSH keys configured in your IBM Cloud account that will be used to establish a connection to the Symphony master node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given [here](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
 }
 
 variable "api_key" {
@@ -62,7 +62,8 @@ variable "cluster_prefix" {
 
 variable "cluster_id" {
   type        = string
-  description = "Name of the cluster (ClusterID) that you would like to use to create virtual machines in your IBM Cloud account to deploy Spectrum Symphony Cluster. By default, our automation uses a base image with following HPC related packages documented here [Learn more](https://cloud.ibm.com/docs/ibm-spectrum-lsf). If you would like to include your application specific binaries please follow the instructions [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Symphony cluster through this offering."
+  default     = "HPCCluster"
+  description = "ID of the cluster used by Symphony for configuration of resources. Post deployment the value can be verified using command `egosh ego info`."
 }
 
 variable "region" {
