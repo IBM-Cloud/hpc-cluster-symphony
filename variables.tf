@@ -7,7 +7,7 @@
 variable "sym_entitlement_ego" {
   type        = string
   default     = "ego_base   3.9   31/12/2021   ()   ()   ()   6a6f0b9f738ccae7a7258fb7a7429195d3a224fa"
-  description = "EGO Entitlement file content for Symphony license scheduler. You can either download this from Passport Advantage or get it from an existing Symphony install. NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Symphony cluster, but cluster would not start to process workload submissions. You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/ibm-spectrum-lsf?topic=ibm-spectrum-lsf-getting-started-tutorial)"
+  description = "EGO Entitlement file content for Symphony license scheduler. You can either download this from Passport Advantage or get it from an existing Symphony install. NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Symphony cluster, but cluster would not start to process workload submissions. You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/ibm-spectrum-symphony?topic=ibm-spectrum-symphony-getting-started-tutorial)."
   validation {
     condition     = trimspace(var.sym_entitlement_ego) != ""
     error_message = "EGO Entitlement for Symphony must be set."
@@ -17,7 +17,7 @@ variable "sym_entitlement_ego" {
 variable "sym_entitlement_soam" {
   type        = string
   default     = "sym_advanced_edition   7.3.1   31/12/2021   ()   ()   ()   ddc1cbbd0fab0b1e2c1a7eb87e5c350e7382c0ca"
-  description = "SOAM Entitlement file content for core Spectrum software. You can either download this from Passport Advantage or get it from an existing Symphony install.NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Spectrum Symphony cluster, but cluster would not start to process workload submissions.You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/ibm-spectrum-lsf?topic=ibm-spectrum-lsf-getting-started-tutorial)"
+  description = "SOAM Entitlement file content for core Spectrum software. You can either download this from Passport Advantage or get it from an existing Symphony install.NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Spectrum Symphony cluster, but cluster would not start to process workload submissions.You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/ibm-spectrum-symphony?topic=ibm-spectrum-symphony-getting-started-tutorial)."
   validation {
     condition     = trimspace(var.sym_entitlement_soam) != ""
     error_message = "SOAM Entitlement for Symphony must be set."
@@ -27,12 +27,12 @@ variable "sym_entitlement_soam" {
 ### About VPC resources
 variable "ssh_key_name" {
   type        = string
-  description = "Comma-separated list of names of the SSH keys configured in your IBM Cloud account that will be used to establish a connection to the Symphony master node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given [here](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
+  description = "Comma-separated list of names of the SSH key configured in your IBM Cloud account that is used to establish a connection to the Symphony master node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given here. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
 }
 
 variable "api_key" {
   type        = string
-  description = "This is the API key for IBM Cloud account in which the Spectrum Symphony cluster needs to be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-userapikey)"
+  description = "This is the API key for IBM Cloud account in which the Spectrum Symphony cluster needs to be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-userapikey)."
   validation {
     condition     = var.api_key != ""
     error_message = "API key for IBM Cloud must be set."
@@ -81,7 +81,7 @@ variable "zone" {
 variable "image_name" {
   type        = string
   default     = "sym731centos77image2-ajith"
-  description = "Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy Spectrum Symphony Cluster. By default, our automation uses a base image with following HPC related packages documented here [Learn more](https://cloud.ibm.com/docs/ibm-spectrum-lsf). If you would like to include your application specific binaries please follow the instructions [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Symphony cluster through this offering."
+  description = "Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy Spectrum Symphony Cluster. By default, our automation uses a base image with following HPC related packages documented here [Learn more](https://cloud.ibm.com/docs/ibm-spectrum-symphony). If you would like to include your application specific binaries please follow the instructions [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Symphony cluster through this offering."
 }
 
 variable "management_node_instance_type" {
@@ -161,7 +161,7 @@ variable "volume_capacity" {
 variable "volume_iops" {
   type        = number
   default     = 300
-  description = "Number to represent the IOPS(Input Output Per Second) configuration for block storage to be used for NFS instance (valid only for volume_profile=custom, dependent on volume_capacity). Enter a value in the range 100 - 48000. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles#custom)"
+  description = "Number to represent the IOPS(Input Output Per Second) configuration for block storage to be used for NFS instance (valid only for volume_profile=custom, dependent on volume_capacity). Enter a value in the range 100 - 48000. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles#custom)."
   validation {
     condition     = 100 <= var.volume_iops && var.volume_iops <= 48000
     error_message = "Input \"volume_iops\" must be >= 100 and <= 48000."
@@ -181,7 +181,7 @@ variable "management_node_count" {
 variable "hyperthreading_enabled" {
   type = bool
   default = true
-  description = "True to enable hyper-threading in the cluster (default). Otherwise, hyper-threading will be disabled"
+  description = "True to enable hyper-threading in the cluster nodes (default). Otherwise, hyper-threading will be disabled."
 }
 
 variable "ssh_allowed_ips" {
@@ -193,7 +193,7 @@ variable "ssh_allowed_ips" {
 variable "volume_profile" {
   type        = string
   default     = "general-purpose"
-  description = "Name of the block storage volume type to be used for NFS instance. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles)"
+  description = "Name of the block storage volume type to be used for NFS instance. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles)."
 }
 
 variable "TF_VERSION" {
