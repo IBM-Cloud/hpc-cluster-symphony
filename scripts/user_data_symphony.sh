@@ -51,7 +51,6 @@ export clusterID=${cluster_name}
 export domainName='.ibm.com'
 
 #nfs
-# export nfsHostIP=10.240.64.27
 export nfsHostIP=$storage_ips
 ##################################################################
 
@@ -280,6 +279,8 @@ function HF_provider_config
     IBM_CLOUD_PROVIDERS_CONF_FILE=${IBM_CLOUD_PROVIDERS_CONF}/hostProviders.json
     IBM_CLOUD_PROVIDER_CONF=${IBM_CLOUD_PROVIDERS_CONF}/ibmcloudgen2inst
     IBM_CLOUD_CREDENTIALS_FILE=${IBM_CLOUD_PROVIDER_CONF}/credentials
+    IBM_CLOUD_SHARED_CREDENTIALS_FILE=${SHARED_TOP_SYM}/hostfactory/conf/providers/ibmcloudgen2inst/credentials
+    IBM_CLOUD_CONFIG_FILE=${IBM_CLOUD_PROVIDER_CONF}/ibmcloudgen2instprov_config.json
     IBM_CLOUD_TEMPLATE_FILE=${IBM_CLOUD_PROVIDER_CONF}/ibmcloudgen2instprov_templates.json
     IBM_CLOUD_REQUESTOR_CONF=${EGO_TOP}/hostfactory/conf/requestors
     IBM_CLOUD_REQUESTOR_CONF_FILE=${IBM_CLOUD_REQUESTOR_CONF}/hostRequestors.json
@@ -298,6 +299,7 @@ function HF_provider_config
     #update IBM gen2 Credentials API keys
     sed -i -e "s|VPC_APIKEY=.*|VPC_APIKEY=${VPC_APIKEY_VALUE}|g" $IBM_CLOUD_CREDENTIALS_FILE
     sed -i -e "s|RESOURCE_RECORDS_APIKEY=.*|RESOURCE_RECORDS_APIKEY=${VPC_APIKEY_VALUE}|g" $IBM_CLOUD_CREDENTIALS_FILE
+    sed -i -e "s|\"IBMCLOUDGEN2_CREDENTIAL_FILE\":.*|\"IBMCLOUDGEN2_CREDENTIAL_FILE\": \"${IBM_CLOUD_SHARED_CREDENTIALS_FILE}\",|g" $IBM_CLOUD_CONFIG_FILE
 
 cat <<- EOF > $IBM_CLOUD_PROVIDER_PP_SCRIPT
 #!/bin/bash
@@ -316,7 +318,7 @@ echo "PEERDNS=no" >> /etc/sysconfig/network-scripts/ifcfg-eth0
 #mount NFS
 mkdir $SHARED_TOP
 chmod 1777 $SHARED_TOP
-echo "${nfsHostIP}:${SHARED_TOP}      ${SHARED_TOP}      nfs rw,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,_netdev 0 0" >> /etc/fstab
+echo "${nfsHostIP}:${SHARED_TOP}      ${SHARED_TOP}      nfs ro,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,_netdev 0 0" >> /etc/fstab
 mount $SHARED_TOP
 
 MAX_LOOP=100
@@ -697,8 +699,7 @@ elif [ "${egoHostRole}" == "management" ]; then
     wait_for_management_hosts
 else
     config_hyperthreading
-    #mount_nfs_readonly
-    mount_nfs      # NOTE: we also use NFS as a shared file system for compute
+    mount_nfs_readonly
     wait_for_nfs
     mtu9000
     wait_for_candidate_hosts_norestart
