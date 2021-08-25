@@ -8,7 +8,7 @@
   "description": "",
   "tags": ["hpcc", "symphony"],
   "template_repo": {
-    "url": "https://github.ibm.com/workload-eng-services/hpc-cluster-symphony/tree/master"
+    "url": "https://github.ibm.com/workload-eng-services/hpc-cluster-symphony/tree/develop"
   },
   "template_data": [
     {
@@ -156,6 +156,20 @@
           "description": ""
         },
         {
+          "name": "sym_license_confirmation",
+          "value": "true",
+          "type": "string",
+          "secure": false,
+          "description": ""
+        },
+        {
+          "name": "hyperthreading_enabled",
+          "value": "false",
+          "type": "bool",
+          "secure": false,
+          "description": ""
+        },
+        {
           "name": "ssh_allowed_ips",
           "value": "",
           "type": "string",
@@ -166,4 +180,3 @@
     }
   ]
 }
-
