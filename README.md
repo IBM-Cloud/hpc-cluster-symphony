@@ -114,11 +114,11 @@ $ watch -n 1 egosh resource list -ll
 ```
 $ ssh -J root@52.116.122.64 root@10.241.0.20
 ```
-* Check the primary host
-```
 * Logon as Admin
 ```
 # egosh user logon -u Admin -x Admin
+```
+* Check the primary host
 ```
 # egosh resource list -m
 ```
