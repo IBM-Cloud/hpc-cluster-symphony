@@ -6,3 +6,7 @@
 output "ssh_command" {
   value = "ssh -J root@${ibm_is_floating_ip.login_fip.address} root@${ibm_is_instance.primary[0].primary_network_interface[0].primary_ipv4_address}"
 }
+
+output "vpc_name" {
+  value = "${data.ibm_is_vpc.vpc.name} --  - ${data.ibm_is_vpc.vpc.id}"
+}
