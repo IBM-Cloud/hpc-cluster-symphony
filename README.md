@@ -202,6 +202,8 @@ No modules.
 | [ibm_is_region.region](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_region) | data source |
 | [ibm_is_ssh_key.ssh_key](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_ssh_key) | data source |
 | [ibm_is_volume_profile.nfs](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_volume_profile) | data source |
+| [ibm_is_vpc.existing_vpc](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_vpc) | data source |
+| [ibm_is_vpc.vpc](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_vpc) | data source |
 | [ibm_is_zone.zone](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_zone) | data source |
 | [ibm_resource_group.rg](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/resource_group) | data source |
 | [template_file.management_user_data](https://registry.terraform.io/providers/hashicorp/template/latest/docs/data-sources/file) | data source |
@@ -235,6 +237,7 @@ No modules.
 | <a name="input_volume_capacity"></a> [volume\_capacity](#input\_volume\_capacity) | Size in GB for the block storage that would be used to build the NFS instance and would be available as a mount on Spectrum Symphony primary node. Enter a value in the range 10 - 16000. | `number` | `100` | no |
 | <a name="input_volume_iops"></a> [volume\_iops](#input\_volume\_iops) | Number to represent the IOPS(Input Output Per Second) configuration for block storage to be used for NFS instance (valid only for volume\_profile=custom, dependent on volume\_capacity). Enter a value in the range 100 - 48000. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles#custom). | `number` | `300` | no |
 | <a name="input_volume_profile"></a> [volume\_profile](#input\_volume\_profile) | Name of the block storage volume type to be used for NFS instance. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles). | `string` | `"general-purpose"` | no |
+| <a name="input_vpc_name"></a> [vpc\_name](#input\_vpc\_name) | Name of the existing VPC which can be part of the cluster. If no value given then, a new VPC will be provisioned as part of the cluster. [Learn more](https://cloud.ibm.com/docs/vpc). | `string` | n/a | yes |
 | <a name="input_worker_node_instance_type"></a> [worker\_node\_instance\_type](#input\_worker\_node\_instance\_type) | Specify the virtual server instance profile type name to be used to create the worker nodes for the Spectrum Symphony cluster. The worker nodes are the ones where the workload execution takes place and the choice should be made according to the characteristic of workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles). | `string` | `"bx2-4x16"` | no |
 | <a name="input_worker_node_max_count"></a> [worker\_node\_max\_count](#input\_worker\_node\_max\_count) | The maximum number of worker nodes that should be added to Spectrum Symphony cluster. This is to limit the number of machines that can be added to Spectrum Symphony cluster when auto-scaling configuration is used. This property can be used to manage the cost associated with Spectrum Symphony cluster instance. Enter a value in the range 1 - 500. | `number` | `10` | no |
 | <a name="input_worker_node_min_count"></a> [worker\_node\_min\_count](#input\_worker\_node\_min\_count) | The minimum number of worker nodes. This is the number of worker nodes that will be provisioned at the time the cluster is created. Enter a value in the range 0 - 500. | `number` | `0` | no |
@@ -245,3 +248,4 @@ No modules.
 | Name | Description |
 |------|-------------|
 | <a name="output_ssh_command"></a> [ssh\_command](#output\_ssh\_command) | n/a |
+| <a name="output_vpc_name"></a> [vpc\_name](#output\_vpc\_name) | n/a |

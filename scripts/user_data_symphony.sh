@@ -315,6 +315,12 @@ ip link set mtu 9000 dev eth0
 echo "MTU=9000" >> /etc/sysconfig/network-scripts/ifcfg-eth0
 echo "PEERDNS=no" >> /etc/sysconfig/network-scripts/ifcfg-eth0
 
+if ! $hyperthreading; then
+    for vcpu in \$(cat /sys/devices/system/cpu/cpu*/topology/thread_siblings_list | cut -s -d- -f2 | cut -d- -f2 | uniq); do
+        echo 0 > /sys/devices/system/cpu/cpu\${vcpu}/online
+    done
+fi
+
 #mount NFS
 mkdir $SHARED_TOP
 chmod 1777 $SHARED_TOP

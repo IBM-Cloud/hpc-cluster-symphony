@@ -21,6 +21,17 @@ data "ibm_is_zone" "zone" {
   region = data.ibm_is_region.region.name
 }
 
+data "ibm_is_vpc" "existing_vpc" {
+  // Lookup for this VPC resource only if var.vpc_name is not empty
+  count = var.vpc_name != "" ? 1:0
+  name = var.vpc_name
+}
+
+data "ibm_is_vpc" "vpc" {
+  name = local.vpc_name
+  // Depends on creation of new VPC or look up of existing VPC based on value of var.vpc_name,
+  depends_on = [ibm_is_vpc.vpc, data.ibm_is_vpc.existing_vpc]
+}
 data "ibm_is_instance_profile" "master" {
   name = var.management_node_instance_type
 }
@@ -56,6 +67,10 @@ locals {
     for name in local.ssh_key_list:
     data.ibm_is_ssh_key.ssh_key[name].id
   ]
+
+  new_image_id = contains(keys(local.image_region_map), var.image_name) ? lookup(lookup(local.image_region_map, var.image_name), var.region) : data.ibm_is_image.image.id
+  // Use existing VPC if var.vpc_name is not empty
+  vpc_name = var.vpc_name == "" ? ibm_is_vpc.vpc.*.name[0] : data.ibm_is_vpc.existing_vpc.*.name[0]
 }
 
 
@@ -72,13 +87,13 @@ data "template_file" "primary_user_data" {
     sym_entitlement_ego  = var.sym_entitlement_ego
     sym_entitlement_soam = var.sym_entitlement_soam
     vpc_apikey_value     = var.api_key
-    image_id             = data.ibm_is_image.image.id
+    image_id             = local.new_image_id
     subnet_id            = ibm_is_subnet.subnet.id
     security_group_id    = ibm_is_security_group.sg.id
     sshkey_id            = data.ibm_is_ssh_key.ssh_key[local.ssh_key_list[0]].id
     region_name          = data.ibm_is_region.region.name
     zone_name            = data.ibm_is_zone.zone.name
-    vpc_id               = ibm_is_vpc.vpc.id
+    vpc_id               = data.ibm_is_vpc.vpc.id
     hf_cidr_block        = ibm_is_subnet.subnet.ipv4_cidr_block
     hf_profile           = data.ibm_is_instance_profile.worker.name
     hf_ncores            = local.hf_ncores
@@ -137,11 +152,13 @@ resource "ibm_is_vpc" "vpc" {
   name           = "${var.cluster_prefix}-vpc"
   resource_group = data.ibm_resource_group.rg.id
   tags           = local.tags
+  // create new VPC resource only if var.vpc_name is empty
+  count = var.vpc_name == "" ? 1:0
 }
 
 resource "ibm_is_public_gateway" "mygateway" {
   name           = "${var.cluster_prefix}-gateway"
-  vpc            = ibm_is_vpc.vpc.id
+  vpc            = data.ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   resource_group = data.ibm_resource_group.rg.id
   tags           = local.tags
@@ -153,7 +170,7 @@ resource "ibm_is_public_gateway" "mygateway" {
 
 resource "ibm_is_subnet" "login_subnet" {
   name                     = "${var.cluster_prefix}-login-subnet"
-  vpc                      = ibm_is_vpc.vpc.id
+  vpc                      = data.ibm_is_vpc.vpc.id
   zone                     = data.ibm_is_zone.zone.name
   total_ipv4_address_count = 16
   resource_group           = data.ibm_resource_group.rg.id
@@ -162,7 +179,7 @@ resource "ibm_is_subnet" "login_subnet" {
 
 resource "ibm_is_subnet" "subnet" {
   name                     = "${var.cluster_prefix}-subnet"
-  vpc                      = ibm_is_vpc.vpc.id
+  vpc                      = data.ibm_is_vpc.vpc.id
   zone                     = data.ibm_is_zone.zone.name
   total_ipv4_address_count = local.total_ipv4_address_count
   public_gateway           = ibm_is_public_gateway.mygateway.id
@@ -172,7 +189,7 @@ resource "ibm_is_subnet" "subnet" {
 
 resource "ibm_is_security_group" "login_sg" {
   name           = "${var.cluster_prefix}-login-sg"
-  vpc            = ibm_is_vpc.vpc.id
+  vpc            = data.ibm_is_vpc.vpc.id
   resource_group = data.ibm_resource_group.rg.id
   tags           = local.tags
 }
@@ -245,7 +262,7 @@ resource "ibm_is_security_group_rule" "login_egress_udp_rhsm" {
 
 resource "ibm_is_security_group" "sg" {
   name           = "${var.cluster_prefix}-sg"
-  vpc            = ibm_is_vpc.vpc.id
+  vpc            = data.ibm_is_vpc.vpc.id
   resource_group = data.ibm_resource_group.rg.id
   tags           = local.tags
 }
@@ -299,7 +316,7 @@ resource "ibm_is_instance" "login" {
   name           = "${var.cluster_prefix}-login"
   image          = data.ibm_is_image.stock_image.id
   profile        = data.ibm_is_instance_profile.login.name
-  vpc            = ibm_is_vpc.vpc.id
+  vpc            = data.ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = local.ssh_key_id_list
   resource_group = data.ibm_resource_group.rg.id
@@ -380,7 +397,7 @@ resource "ibm_is_instance" "storage" {
   name           = "${var.cluster_prefix}-storage-${count.index}"
   image          = data.ibm_is_image.stock_image.id
   profile        = data.ibm_is_instance_profile.storage.name
-  vpc            = ibm_is_vpc.vpc.id
+  vpc            = data.ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = local.ssh_key_id_list
   resource_group = data.ibm_resource_group.rg.id
@@ -404,9 +421,9 @@ resource "ibm_is_instance" "storage" {
 resource "ibm_is_instance" "primary" {
   count          = 1
   name           = "${var.cluster_prefix}-primary-${count.index}"
-  image          = data.ibm_is_image.image.id
+  image          = local.new_image_id
   profile        = data.ibm_is_instance_profile.master.name
-  vpc            = ibm_is_vpc.vpc.id
+  vpc            = data.ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = local.ssh_key_id_list
   resource_group = data.ibm_resource_group.rg.id
@@ -430,9 +447,9 @@ resource "ibm_is_instance" "primary" {
 resource "ibm_is_instance" "secondary" {
   count          = var.management_node_count > 1 ? 1: 0
   name           = "${var.cluster_prefix}-secondary-${count.index}"
-  image          = data.ibm_is_image.image.id
+  image          = local.new_image_id
   profile        = data.ibm_is_instance_profile.master.name
-  vpc            = ibm_is_vpc.vpc.id
+  vpc            = data.ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = local.ssh_key_id_list
   resource_group = data.ibm_resource_group.rg.id
@@ -457,9 +474,9 @@ resource "ibm_is_instance" "secondary" {
 resource "ibm_is_instance" "management" {
   count          = var.management_node_count > 2 ? var.management_node_count - 2: 0
   name           = "${var.cluster_prefix}-management-${count.index}"
-  image          = data.ibm_is_image.image.id
+  image          = local.new_image_id
   profile        = data.ibm_is_instance_profile.master.name
-  vpc            = ibm_is_vpc.vpc.id
+  vpc            = data.ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = local.ssh_key_id_list
   resource_group = data.ibm_resource_group.rg.id
@@ -486,9 +503,9 @@ resource "ibm_is_instance" "management" {
 resource "ibm_is_instance" "worker" {
   count          = var.worker_node_min_count
   name           = "${var.cluster_prefix}-worker-${count.index}"
-  image          = data.ibm_is_image.image.id
+  image          = local.new_image_id
   profile        = data.ibm_is_instance_profile.worker.name
-  vpc            = ibm_is_vpc.vpc.id
+  vpc            = data.ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = local.ssh_key_id_list
   resource_group = data.ibm_resource_group.rg.id
