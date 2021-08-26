@@ -25,6 +25,11 @@ variable "sym_entitlement_soam" {
 }
 
 ### About VPC resources
+variable "vpc_name" {
+  type        = string
+  description = "Name of the existing VPC which can be part of the cluster. If no value given then, a new VPC will be provisioned as part of the cluster. [Learn more](https://cloud.ibm.com/docs/vpc)."
+}
+
 variable "ssh_key_name" {
   type        = string
   description = "Comma-separated list of names of the SSH key configured in your IBM Cloud account that is used to establish a connection to the Symphony primary node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given here. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
