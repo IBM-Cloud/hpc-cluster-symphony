@@ -59,11 +59,11 @@ $ ibmcloud schematics destroy --id us-east.workspace.hpcc-symphony-test.7cbc3f6b
 4. Click on "Generate Plan" and ensure there are no errors and fix the errors if there are any
 5. After "Generate Plan" gives no errors, click on "Apply Plan" to create resources.
 6. Check the "Activity" section on the left hand side to view the resource creation progress.
-7. Click on "View log" if the "Apply Plan" activity is successful and copy the output SSH command to your laptop terminal to SSH to master/primary node via a jump host public ip to SSH one of the nodes.
+7. Click on "View log" if the "Apply Plan" activity is successful and copy the output SSH command to your laptop terminal to SSH to primary node via a jump host public ip to SSH one of the nodes.
 8. Also use this jump host public ip and change the IP address of the node you want to access via the jump host to access specific hosts.
 
 # Storage Node and NFS Setup
-The storage node is configured as an NFS server and the data volume is mounted to the /data directory which is exported to share with Symphony cluster nodes.
+The storage node is configured as an NFS server and the data volume is mounted to the /data directory which is exported to share with Symphony management nodes.
 
 ### Steps to validate Cluster setups
 ###### 1. To validate the NFS storage is setup and exported correctly
@@ -80,7 +80,7 @@ The storage node is configured as an NFS server and the data volume is mounted t
 /data         	10.242.66.0/23(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,no_root_squash,no_all_squash)
 ```
 
-* At the NFS client end, the Symphony cluster nodes in this case, we mount the /data directory in NFS server to the local directory, /data.
+* At the NFS client end, the Symphony management nodes in this case, we mount the /data directory in NFS server to the local directory, /data.
 ```
 # df -k | grep data
 10.242.66.4:/data 104806400  1828864 102977536   2% /data
@@ -88,14 +88,13 @@ The storage node is configured as an NFS server and the data volume is mounted t
 The command above shows that the local directory, /data, is mounted to the remote /data directory on the NFS server, 10.242.66.4.
 
 ###### 2. Steps to validate the cluster status
-
 * Login to the primary as shown in the ssh_command output
 ```
 # ssh -J root@52.116.122.64 root@10.241.0.20
 ```
 * Logon as Admin
 ```
-# soamlogon -u Admin -x Admin
+# egosh user logon -u Admin -x Admin
 ```
 * Check if the resource list contains all the hosts with `ok` status
 ```
@@ -103,42 +102,23 @@ The command above shows that the local directory, /data, is mounted to the remot
 # egosh resource list -ll
 ```
 
-###### 3. Steps to validate whether the clients are able to write to the NFS storage
-
-* Login to the primary as shown in the ssh_command output
+###### 3. Steps to validate host factory
 ```
-$ ssh -J root@52.116.122.64 root@10.241.0.20
-```
-* Enable symexec7.3.1
-```
-$ soamlogon -u Admin -x Admin
-$ soamcontrol app enable symexec7.3.1
-```
-* Submit a job to write the host name to the /data directory on the NFS server
-```
-$ echo 'echo $HOSTNAME > /data/hello.log' > /data/test.sh
-$ chmod 755 /data/test.sh
-$ symexec run -u Admin -x Admin /data/test.sh
-```
-* Wait until the job is finished and then run the command to confirm the hostname is written to the file on the NFS share
-```
-$ cat /data/hello.log
-hpcc-symphony-test-worker-0
-```
-
-###### 4. Steps to validate host factory
-```
-$ symping -u Admin -x Admin -r 10000 -m 100 -n 1 > stdout.log 2> stderr.log < /dev/null &
+$ symping -r 10000 -m 100 > stdout.log 2> stderr.log < /dev/null &
 $ watch -n 1 egosh resource list -ll
 ```
 
-###### 5. Steps to validate failover
+###### 4. Steps to validate failover
 
 * Login to the primary as shown in the ssh_command output
 ```
 $ ssh -J root@52.116.122.64 root@10.241.0.20
 ```
-* Check master host at the primary host
+* Check the primary host
+```
+* Logon as Admin
+```
+# egosh user logon -u Admin -x Admin
 ```
 # egosh resource list -m
 ```
@@ -150,21 +130,19 @@ $ ssh -J root@52.116.122.64 root@10.241.0.20
 ```
 # ssh -J root@52.116.122.64 root@10.241.0.21
 ```
-* Check master host again and see if the master is changed
+* Check primary host again and see if the primary is changed
 ```
 # egosh resource list -m
 ```
-* Try symexec
+* Try symping
 ```
-# echo 'echo $HOSTNAME > /data/hello.log' > /data/test.sh
-# chmod 755 /data/test.sh
-# symexec run -u Admin -x Admin /data/test.sh
+# symping
 ```
 * Restart EGO at primary
 ```
 # systemctl start ego
 ```
-* Check master host again and see if the master is changed
+* Check primary host again and see if the primary is changed
 ```
 # egosh resource list -m
 ```
@@ -249,12 +227,12 @@ No modules.
 | <a name="input_region"></a> [region](#input\_region) | IBM Cloud region name where the Spectrum Symphony cluster should be deployed. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-creating-a-vpc-in-a-different-region). | `string` | `"us-south"` | no |
 | <a name="input_resource_group"></a> [resource\_group](#input\_resource\_group) | Resource group name from your IBM Cloud account where the VPC resources should be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-rgs). | `string` | `"Default"` | no |
 | <a name="input_ssh_allowed_ips"></a> [ssh\_allowed\_ips](#input\_ssh\_allowed\_ips) | Comma separated list of IP addresses that can access the Spectrum Symphony instance through SSH interface. The default value allows any IP address to access the cluster. | `string` | `"0.0.0.0/0"` | no |
-| <a name="input_ssh_key_name"></a> [ssh\_key\_name](#input\_ssh\_key\_name) | Comma-separated list of names of the SSH key configured in your IBM Cloud account that is used to establish a connection to the Symphony master node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given here. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys). | `string` | n/a | yes |
+| <a name="input_ssh_key_name"></a> [ssh\_key\_name](#input\_ssh\_key\_name) | Comma-separated list of names of the SSH key configured in your IBM Cloud account that is used to establish a connection to the Symphony primary node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given here. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys). | `string` | n/a | yes |
 | <a name="input_storage_node_instance_type"></a> [storage\_node\_instance\_type](#input\_storage\_node\_instance\_type) | Specify the virtual server instance profile type to be used to create the storage nodes for the Spectrum Symphony cluster. The storage nodes are the ones that are used to create an NFS instance to manage the data for HPC workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles). | `string` | `"bx2-2x8"` | no |
 | <a name="input_sym_entitlement_ego"></a> [sym\_entitlement\_ego](#input\_sym\_entitlement\_ego) | EGO Entitlement file content for Symphony license scheduler. You can either download this from Passport Advantage or get it from an existing Symphony install. NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Symphony cluster, but cluster would not start to process workload submissions. You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/ibm-spectrum-symphony?topic=ibm-spectrum-symphony-getting-started-tutorial). | `string` | `"ego_base   3.9   31/12/2021   ()   ()   ()   6a6f0b9f738ccae7a7258fb7a7429195d3a224fa"` | no |
 | <a name="input_sym_entitlement_soam"></a> [sym\_entitlement\_soam](#input\_sym\_entitlement\_soam) | SOAM Entitlement file content for core Spectrum software. You can either download this from Passport Advantage or get it from an existing Symphony install.NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Spectrum Symphony cluster, but cluster would not start to process workload submissions.You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/ibm-spectrum-symphony?topic=ibm-spectrum-symphony-getting-started-tutorial). | `string` | `"sym_advanced_edition   7.3.1   31/12/2021   ()   ()   ()   ddc1cbbd0fab0b1e2c1a7eb87e5c350e7382c0ca"` | no |
 | <a name="input_sym_license_confirmation"></a> [sym\_license\_confirmation](#input\_sym\_license\_confirmation) | Confirm your use of IBM Spectrum Symphony licenses. By entering 'true' for the property you have agreed to one of the two conditions. 1. You are using the software in production and confirm you have sufficient licenses to cover your use under the International Program License Agreement (IPLA). 2. You are evaluating the software and agree to abide by the International License Agreement for Evaluation of Programs (ILAE). NOTE: Failure to comply with licenses for production use of software is a violation of IBM International Program License Agreement. [Learn more](https://www.ibm.com/software/passportadvantage/programlicense.html). | `string` | n/a | yes |
-| <a name="input_volume_capacity"></a> [volume\_capacity](#input\_volume\_capacity) | Size in GB for the block storage that would be used to build the NFS instance and would be available as a mount on Spectrum Symphony master node. Enter a value in the range 10 - 16000. | `number` | `100` | no |
+| <a name="input_volume_capacity"></a> [volume\_capacity](#input\_volume\_capacity) | Size in GB for the block storage that would be used to build the NFS instance and would be available as a mount on Spectrum Symphony primary node. Enter a value in the range 10 - 16000. | `number` | `100` | no |
 | <a name="input_volume_iops"></a> [volume\_iops](#input\_volume\_iops) | Number to represent the IOPS(Input Output Per Second) configuration for block storage to be used for NFS instance (valid only for volume\_profile=custom, dependent on volume\_capacity). Enter a value in the range 100 - 48000. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles#custom). | `number` | `300` | no |
 | <a name="input_volume_profile"></a> [volume\_profile](#input\_volume\_profile) | Name of the block storage volume type to be used for NFS instance. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles). | `string` | `"general-purpose"` | no |
 | <a name="input_worker_node_instance_type"></a> [worker\_node\_instance\_type](#input\_worker\_node\_instance\_type) | Specify the virtual server instance profile type name to be used to create the worker nodes for the Spectrum Symphony cluster. The worker nodes are the ones where the workload execution takes place and the choice should be made according to the characteristic of workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles). | `string` | `"bx2-4x16"` | no |
