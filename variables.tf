@@ -27,7 +27,7 @@ variable "sym_entitlement_soam" {
 ### About VPC resources
 variable "ssh_key_name" {
   type        = string
-  description = "Comma-separated list of names of the SSH key configured in your IBM Cloud account that is used to establish a connection to the Symphony master node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given here. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
+  description = "Comma-separated list of names of the SSH key configured in your IBM Cloud account that is used to establish a connection to the Symphony primary node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given here. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
 }
 
 variable "api_key" {
@@ -151,7 +151,7 @@ variable "worker_node_max_count" {
 variable "volume_capacity" {
   type        = number
   default     = 100
-  description = "Size in GB for the block storage that would be used to build the NFS instance and would be available as a mount on Spectrum Symphony master node. Enter a value in the range 10 - 16000."
+  description = "Size in GB for the block storage that would be used to build the NFS instance and would be available as a mount on Spectrum Symphony primary node. Enter a value in the range 10 - 16000."
   validation {
     condition     = 10 <= var.volume_capacity && var.volume_capacity <= 16000
     error_message = "Input \"volume_capacity\" must be >= 10 and <= 16000."
