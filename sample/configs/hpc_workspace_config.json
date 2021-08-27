@@ -20,168 +20,168 @@
           "value": "hpcc-symphony-test",
           "type": "string",
           "secure": false,
-          "description": ""
+          "description": "Prefix that is used to name the Spectrum Symphony cluster and IBM Cloud resources that are provisioned to build the Spectrum Symphony cluster instance. You cannot create more than one instance of the Symphony cluster with the same name. Make sure that the name is unique. Enter a prefix name, such as my-hpcc."
         },
         {
           "name": "cluster_id",
           "value": "HpccTest",
           "type": "string",
           "secure": false,
-          "description": ""
+          "description": "ID of the cluster used by Symphony for configuration of resources. Post deployment the value can be verified using command `egosh ego info`."
         },
         {
           "name": "vpc_name",
           "value": "",
           "type": "string",
           "secure": false,
-          "description": ""
+          "description": "Name of an existing VPC in which the cluster resources will be deployed. If no value is given, then a new VPC will be provisioned for the cluster. [Learn more](https://cloud.ibm.com/docs/vpc)"
         },
         {
           "name": "resource_group",
           "value": "Default",
           "type": "string",
           "secure": false,
-          "description":""
+          "description":"Resource group name from your IBM Cloud account where the VPC resources should be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-rgs)."
         },
         {
           "name": "region",
           "value": "us-east",
           "type": "string",
           "secure": false,
-          "description": ""
+          "description": "IBM Cloud region name where the Spectrum Symphony cluster should be deployed. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-creating-a-vpc-in-a-different-region)."
         },
         {
           "name": "zone",
           "value": "us-east-1",
           "type": "string",
           "secure": false,
-          "description": ""
+          "description": "IBM Cloud zone name within the selected region where the Spectrum Symphony cluster should be deployed. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-creating-a-vpc-in-a-different-region#get-zones-using-the-cli)."
         },
         {
           "name": "image_name",
           "value": "sym731rhel77image2-ajith",
           "type": "string",
           "secure": false,
-          "description":""
+          "description":"Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy Spectrum Symphony Cluster. By default, our automation uses a base image with following HPC related packages documented here [Learn more](https://cloud.ibm.com/docs/ibm-spectrum-symphony). If you would like to include your application specific binaries please follow the instructions [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Symphony cluster through this offering."
         },
         {
           "name": "storage_node_instance_type",
           "value": "bx2-2x8",
           "type": "string",
           "secure": false,
-          "description": ""
+          "description": "Specify the virtual server instance profile type to be used to create the storage nodes for the Spectrum Symphony cluster. The storage nodes are the ones that are used to create an NFS instance to manage the data for HPC workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
         },
         {
           "name": "worker_node_instance_type",
           "value": "bx2-2x8",
           "type": "string",
           "secure": false,
-          "description": ""
+          "description": "Specify the virtual server instance profile type name to be used to create the worker nodes for the Spectrum Symphony cluster. The worker nodes are the ones where the workload execution takes place and the choice should be made according to the characteristic of workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
         },
         {
           "name": "management_node_instance_type",
           "value": "bx2-2x8",
           "type": "string",
           "secure": false,
-          "description": ""
+          "description": "Specify the virtual server instance profile type name to be used to create the management nodes for the Spectrum Symphony cluster. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
         },
         {
           "name": "login_node_instance_type",
           "value": "bx2-2x8",
           "type": "string",
           "secure": false,
-          "description": ""
+          "description": "Specify the virtual server instance profile type name to be used to create the login node for the Spectrum Symphony cluster. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
         },
         {
           "name": "management_node_count",
           "value": "3",
           "type": "number",
           "secure": false,
-          "description": ""
+          "description": "Number of management nodes. This is the total number of primary, secondary and management nodes. There will be one Primary, one Secondary and the rest of the nodes will be management nodes. Enter a value in the range 1 - 10."
         },
         {
           "name": "worker_node_max_count",
           "value": "10",
           "type": "number",
           "secure": false,
-          "description": ""
+          "description": "The maximum number of worker nodes that should be added to Spectrum Symphony cluster. This is to limit the number of machines that can be added to Spectrum Symphony cluster when auto-scaling configuration is used. This property can be used to manage the cost associated with Spectrum Symphony cluster instance. Enter a value in the range 1 - 500."
         },
         {
           "name": "worker_node_min_count",
           "value": "0",
           "type": "number",
           "secure": false,
-          "description": ""
+          "description": "The minimum number of worker nodes. This is the number of worker nodes that will be provisioned at the time the cluster is created. Enter a value in the range 0 - 500."
         },
         {
           "name": "ssh_key_name",
           "value": "Please fill here",
           "type": "string",
           "secure": true,
-          "description":""
+          "description":"Comma-separated list of names of the SSH key configured in your IBM Cloud account that is used to establish a connection to the Symphony primary node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given here. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
         },
         {
           "name": "volume_capacity",
           "value": "100",
           "type": "number",
           "secure": false,
-          "description": ""
+          "description": "Size in GB for the block storage that would be used to build the NFS instance and would be available as a mount on Spectrum Symphony primary node. Enter a value in the range 10 - 16000."
         },
         {
           "name": "volume_profile",
           "value": "general-purpose",
           "type": "string",
           "secure": false,
-          "description": ""
+          "description": "Name of the block storage volume type to be used for NFS instance. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles)."
         },
         {
           "name": "volume_iops",
           "value": "3000",
           "type": "number",
           "secure": false,
-          "description": ""
+          "description": "Number to represent the IOPS(Input Output Per Second) configuration for block storage to be used for NFS instance (valid only for volume_profile=custom, dependent on volume_capacity). Enter a value in the range 100 - 48000. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles#custom)."
         },
         {
           "name": "sym_entitlement_ego",
           "value": "Please fill here",
           "type": "string",
           "secure": true,
-          "description": ""
+          "description": "EGO Entitlement file content for Symphony license scheduler. You can either download this from Passport Advantage or get it from an existing Symphony install. NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Symphony cluster, but cluster would not start to process workload submissions. You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/ibm-spectrum-symphony?topic=ibm-spectrum-symphony-getting-started-tutorial)."
         },
         {
           "name": "sym_entitlement_soam",
           "value": "Please fill here",
           "type": "string",
           "secure": true,
-          "description": ""
+          "description": "SOAM Entitlement file content for core Spectrum software. You can either download this from Passport Advantage or get it from an existing Symphony install.NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Spectrum Symphony cluster, but cluster would not start to process workload submissions.You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/ibm-spectrum-symphony?topic=ibm-spectrum-symphony-getting-started-tutorial)."
         },
         {
           "name": "api_key",
           "value": "Please fill here",
           "type": "string",
           "secure": true,
-          "description": ""
+          "description": "This is the API key for IBM Cloud account in which the Spectrum Symphony cluster needs to be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-userapikey)."
         },
         {
           "name": "sym_license_confirmation",
           "value": "true",
           "type": "string",
           "secure": false,
-          "description": ""
+          "description": "Confirm your use of IBM Spectrum Symphony licenses. By entering 'true' for the property you have agreed to one of the two conditions. 1. You are using the software in production and confirm you have sufficient licenses to cover your use under the International Program License Agreement (IPLA). 2. You are evaluating the software and agree to abide by the International License Agreement for Evaluation of Programs (ILAE). NOTE: Failure to comply with licenses for production use of software is a violation of IBM International Program License Agreement. [Learn more](https://www.ibm.com/software/passportadvantage/programlicense.html)."
         },
         {
           "name": "hyperthreading_enabled",
           "value": "false",
           "type": "bool",
           "secure": false,
-          "description": ""
+          "description": "True to enable hyper-threading in the cluster nodes (default). Otherwise, hyper-threading will be disabled."
         },
         {
           "name": "ssh_allowed_ips",
           "value": "",
           "type": "string",
           "secure": false,
-          "description": ""
+          "description": "Comma separated list of IP addresses that can access the Spectrum Symphony instance through SSH interface. The default value allows any IP address to access the cluster."
         }
       ]
     }
