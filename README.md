@@ -1,7 +1,7 @@
 # hpc-cluster-symphony
 Repository for the HPC Cluster Symphony implementation files.
 
-# Deployment with Schematics on IBM Cloud
+# Deployment with Schematics CLI on IBM Cloud
 
 Initial configuration:
 
@@ -47,12 +47,12 @@ $ ssh -J root@52.116.124.67 root@10.241.0.6
 $ ibmcloud schematics destroy --id us-east.workspace.hpcc-symphony-test.7cbc3f6b
 ```
 
-# symphony-poc-test
+# Deployment with Schematics UI on IBM Cloud
 
 1. Go to <https://cloud.ibm.com/schematics/workspaces> and create a workspace using Schematics
 2. After creating the Schematics workspace, at the bottom of the page enter this github repo URL and provide the SSH token to access Github repo, and also select Terraform version as 0.13 and click Save.
 3. Go to Schematic Workspace Settings, under variable section, click on "burger icons" to update the following parameters:
-    - ssh_key_name with your ibm cloud SSH key name such as "sunil-ssh-key" created in a specific region in IBM Cloud
+    - ssh_key_name with your ibm cloud SSH key name such as "symphony-ssh-key" created in a specific region in IBM Cloud
     - api_key with the api key value and mark it as sensitive to hide the API key in the IBM Cloud Console.
     - Update the hostPrefix value to the specific hostPrefix for your Symphony cluster
     - Update the management_node_count, worker_node_min_count and worker_node_max_count as per your requirement
