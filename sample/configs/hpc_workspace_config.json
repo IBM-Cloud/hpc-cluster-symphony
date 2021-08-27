@@ -30,6 +30,13 @@
           "description": ""
         },
         {
+          "name": "vpc_name",
+          "value": "",
+          "type": "string",
+          "secure": false,
+          "description": ""
+        },
+        {
           "name": "resource_group",
           "value": "Default",
           "type": "string",
