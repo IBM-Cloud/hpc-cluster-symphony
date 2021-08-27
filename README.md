@@ -1,7 +1,7 @@
 # hpc-cluster-symphony
 Repository for the HPC Cluster Symphony implementation files.
 
-# Deployment with Schematics on IBM Cloud
+# Deployment with Schematics CLI on IBM Cloud
 
 Initial configuration:
 
@@ -47,12 +47,12 @@ $ ssh -J root@52.116.124.67 root@10.241.0.6
 $ ibmcloud schematics destroy --id us-east.workspace.hpcc-symphony-test.7cbc3f6b
 ```
 
-# symphony-poc-test
+# Deployment with Schematics UI on IBM Cloud
 
 1. Go to <https://cloud.ibm.com/schematics/workspaces> and create a workspace using Schematics
 2. After creating the Schematics workspace, at the bottom of the page enter this github repo URL and provide the SSH token to access Github repo, and also select Terraform version as 0.13 and click Save.
 3. Go to Schematic Workspace Settings, under variable section, click on "burger icons" to update the following parameters:
-    - ssh_key_name with your ibm cloud SSH key name such as "sunil-ssh-key" created in a specific region in IBM Cloud
+    - ssh_key_name with your ibm cloud SSH key name such as "symphony-ssh-key" created in a specific region in IBM Cloud
     - api_key with the api key value and mark it as sensitive to hide the API key in the IBM Cloud Console.
     - Update the hostPrefix value to the specific hostPrefix for your Symphony cluster
     - Update the management_node_count, worker_node_min_count and worker_node_max_count as per your requirement
@@ -237,7 +237,7 @@ No modules.
 | <a name="input_volume_capacity"></a> [volume\_capacity](#input\_volume\_capacity) | Size in GB for the block storage that would be used to build the NFS instance and would be available as a mount on Spectrum Symphony primary node. Enter a value in the range 10 - 16000. | `number` | `100` | no |
 | <a name="input_volume_iops"></a> [volume\_iops](#input\_volume\_iops) | Number to represent the IOPS(Input Output Per Second) configuration for block storage to be used for NFS instance (valid only for volume\_profile=custom, dependent on volume\_capacity). Enter a value in the range 100 - 48000. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles#custom). | `number` | `300` | no |
 | <a name="input_volume_profile"></a> [volume\_profile](#input\_volume\_profile) | Name of the block storage volume type to be used for NFS instance. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles). | `string` | `"general-purpose"` | no |
-| <a name="input_vpc_name"></a> [vpc\_name](#input\_vpc\_name) | Name of the existing VPC which can be part of the cluster. If no value given then, a new VPC will be provisioned as part of the cluster. [Learn more](https://cloud.ibm.com/docs/vpc). | `string` | n/a | yes |
+| <a name="input_vpc_name"></a> [vpc\_name](#input\_vpc\_name) | Name of an existing VPC in which the cluster resources will be deployed. If no value is given, then a new VPC will be provisioned for the cluster. [Learn more](https://cloud.ibm.com/docs/vpc) | `string` | `""` | no |
 | <a name="input_worker_node_instance_type"></a> [worker\_node\_instance\_type](#input\_worker\_node\_instance\_type) | Specify the virtual server instance profile type name to be used to create the worker nodes for the Spectrum Symphony cluster. The worker nodes are the ones where the workload execution takes place and the choice should be made according to the characteristic of workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles). | `string` | `"bx2-4x16"` | no |
 | <a name="input_worker_node_max_count"></a> [worker\_node\_max\_count](#input\_worker\_node\_max\_count) | The maximum number of worker nodes that should be added to Spectrum Symphony cluster. This is to limit the number of machines that can be added to Spectrum Symphony cluster when auto-scaling configuration is used. This property can be used to manage the cost associated with Spectrum Symphony cluster instance. Enter a value in the range 1 - 500. | `number` | `10` | no |
 | <a name="input_worker_node_min_count"></a> [worker\_node\_min\_count](#input\_worker\_node\_min\_count) | The minimum number of worker nodes. This is the number of worker nodes that will be provisioned at the time the cluster is created. Enter a value in the range 0 - 500. | `number` | `0` | no |
