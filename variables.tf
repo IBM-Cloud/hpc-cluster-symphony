@@ -69,7 +69,11 @@ variable "cluster_prefix" {
 variable "cluster_id" {
   type        = string
   default     = "HPCCluster"
-  description = "ID of the cluster used by Symphony for configuration of resources. Post deployment the value can be verified using command `egosh ego info`."
+  description = "ID of the cluster used by Symphony for configuration of resources. This must be up to 39 alphanumeric characters including the underscore (_), the hyphen (-), and the period (.). Other special characters and spaces are not allowed. Do not use the name of any host or user as the name of your cluster. You cannot change it after installation."
+  validation {
+    condition = 0 < length(var.cluster_id) && length(var.cluster_id) < 40 && can(regex("^[a-zA-Z0-9_.-]+$", var.cluster_id))
+    error_message = "The ID must be up to 39 alphanumeric characters including the underscore (_), the hyphen (-), and the period (.). Other special characters and spaces are not allowed."
+  }
 }
 
 variable "region" {
