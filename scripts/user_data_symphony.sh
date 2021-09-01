@@ -52,8 +52,10 @@ export domainName='.ibm.com'
 
 #nfs
 export nfsHostIP=$storage_ips
-##################################################################
 
+#vpn
+export CLUSTER_CIDR=$cluster_cidr
+##################################################################
 
 #internal
 export CLUSTERADMIN=egoadmin
@@ -152,9 +154,8 @@ function clean_shared
 function mtu9000
 {
     #Change the MTU setting
-    ip link set mtu 9000 dev eth0
-    echo "MTU=9000" >> /etc/sysconfig/network-scripts/ifcfg-eth0
-    echo "PEERDNS=no" >> /etc/sysconfig/network-scripts/ifcfg-eth0
+    ip route add $CLUSTER_CIDR dev eth0 mtu 9000
+    echo 'ip route add '$CLUSTER_CIDR' dev eth0 mtu 9000' >> /etc/sysconfig/network-scripts/route-eth0
 }
 
 function update_hosts
