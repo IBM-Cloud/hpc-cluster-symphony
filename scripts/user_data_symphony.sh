@@ -154,8 +154,8 @@ function clean_shared
 function mtu9000
 {
     #Change the MTU setting
-    ip route add $CLUSTER_CIDR dev eth0 mtu 9000
-    echo 'ip route add '$CLUSTER_CIDR' dev eth0 mtu 9000' >> /etc/sysconfig/network-scripts/route-eth0
+    ip route replace $CLUSTER_CIDR dev eth0 proto kernel scope link src $HOST_IP mtu 9000
+    echo 'ip route replace '$CLUSTER_CIDR' dev eth0 proto kernel scope link src '$HOST_IP' mtu 9000' >> /etc/sysconfig/network-scripts/route-eth0
 }
 
 function update_hosts
