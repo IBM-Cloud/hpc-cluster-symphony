@@ -69,7 +69,11 @@ variable "cluster_prefix" {
 variable "cluster_id" {
   type        = string
   default     = "HPCCluster"
-  description = "ID of the cluster used by Symphony for configuration of resources. Post deployment the value can be verified using command `egosh ego info`."
+  description = "ID of the cluster used by Symphony for configuration of resources. This must be up to 39 alphanumeric characters including the underscore (_), the hyphen (-), and the period (.). Other special characters and spaces are not allowed. Do not use the name of any host or user as the name of your cluster. You cannot change it after installation."
+  validation {
+    condition = 0 < length(var.cluster_id) && length(var.cluster_id) < 40 && can(regex("^[a-zA-Z0-9_.-]+$", var.cluster_id))
+    error_message = "The ID must be up to 39 alphanumeric characters including the underscore (_), the hyphen (-), and the period (.). Other special characters and spaces are not allowed."
+  }
 }
 
 variable "region" {
@@ -188,6 +192,30 @@ variable "hyperthreading_enabled" {
   type = bool
   default = true
   description = "True to enable hyper-threading in the cluster nodes (default). Otherwise, hyper-threading will be disabled."
+}
+
+variable "vpn_enabled" {
+  type = bool
+  default = false
+  description = "Set to true to deploy a VPN gateway for VPC in the cluster (default: false)."
+}
+
+variable "vpn_peer_cidrs" {
+  type = string
+  default = ""
+  description = "Comma separated list of peer CIDRs (e.g., 192.168.0.0/24) to which the VPN will be connected."
+}
+
+variable "vpn_peer_address" {
+  type = string
+  default = ""
+  description = "The peer public IP address to which the VPN will be connected."
+}
+
+variable "vpn_preshared_key" {
+  type = string
+  default = ""
+  description = "The pre-shared key for the VPN."
 }
 
 variable "ssh_allowed_ips" {

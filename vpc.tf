@@ -58,7 +58,7 @@ locals {
   tags                  = ["hpcc", var.cluster_prefix]
   profile_str           = split("-", data.ibm_is_instance_profile.worker.name)
   profile_list          = split("x", local.profile_str[1])
-  hf_ncores             = var.hyperthreading_enabled ? tonumber(local.profile_list[0]) : tonumber(local.profile_list[0]) / 2
+  hf_ncores             = tonumber(local.profile_list[0]) / 2
   mem_in_mb             = tonumber(local.profile_list[1]) * 1024
   hf_max_num            = var.worker_node_max_count > var.worker_node_min_count ? var.worker_node_max_count - var.worker_node_min_count : 0
   cluster_name          = var.cluster_id
@@ -105,6 +105,7 @@ data "template_file" "primary_user_data" {
     mgmt_count           = var.management_node_count
     ego_host_role        = "primary"
     hyperthreading       = var.hyperthreading_enabled
+    cluster_cidr         = ibm_is_subnet.subnet.ipv4_cidr_block
   }
 }
 
@@ -120,6 +121,7 @@ data "template_file" "secondary_user_data" {
     host_prefix          = var.cluster_prefix
     mgmt_count           = var.management_node_count
     ego_host_role        = "secondary"
+    cluster_cidr         = ibm_is_subnet.subnet.ipv4_cidr_block
   }
 }
 
@@ -135,6 +137,7 @@ data "template_file" "management_user_data" {
     host_prefix          = var.cluster_prefix
     mgmt_count           = var.management_node_count
     ego_host_role        = "management"
+    cluster_cidr         = ibm_is_subnet.subnet.ipv4_cidr_block
   }
 }
 
@@ -145,6 +148,7 @@ data "template_file" "worker_user_data" {
     cluster_id  = local.cluster_name
     mgmt_count  = var.management_node_count
     hyperthreading = var.hyperthreading_enabled
+    cluster_cidr   = ibm_is_subnet.subnet.ipv4_cidr_block
   }
 }
 
@@ -552,4 +556,35 @@ resource "ibm_is_floating_ip" "login_fip" {
   lifecycle {
     ignore_changes = [resource_group]
   }
+}
+
+resource "ibm_is_vpn_gateway" "vpn" {
+  count          = var.vpn_enabled ? 1: 0
+  name           = "${var.cluster_prefix}-vpn"
+  resource_group = data.ibm_resource_group.rg.id
+  subnet         = ibm_is_subnet.login_subnet.id
+  mode           = "policy"
+  tags           = local.tags
+}
+
+locals {
+  peer_cidr_list = var.vpn_enabled ? split(",", var.vpn_peer_cidrs): []
+}
+
+resource "ibm_is_vpn_gateway_connection" "conn" {
+  count          = var.vpn_enabled ? 1: 0
+  name           = "${var.cluster_prefix}-vpn-conn"
+  vpn_gateway    = ibm_is_vpn_gateway.vpn[count.index].id
+  peer_address   = var.vpn_peer_address
+  preshared_key  = var.vpn_preshared_key
+  admin_state_up = true
+  local_cidrs    = [ibm_is_subnet.subnet.ipv4_cidr_block]
+  peer_cidrs     = local.peer_cidr_list
+}
+
+resource "ibm_is_security_group_rule" "ingress_vpn" {
+  count     = length(local.peer_cidr_list)
+  group     = ibm_is_security_group.sg.id
+  direction = "inbound"
+  remote    = local.peer_cidr_list[count.index]
 }
