@@ -194,6 +194,30 @@ variable "hyperthreading_enabled" {
   description = "True to enable hyper-threading in the cluster nodes (default). Otherwise, hyper-threading will be disabled."
 }
 
+variable "vpn_enabled" {
+  type = bool
+  default = false
+  description = "Set to true to deploy a VPN gateway for VPC in the cluster (default: false)."
+}
+
+variable "vpn_peer_cidrs" {
+  type = string
+  default = ""
+  description = "Comma separated list of peer CIDRs (e.g., 192.168.0.0/24) to which the VPN will be connected."
+}
+
+variable "vpn_peer_address" {
+  type = string
+  default = ""
+  description = "The peer public IP address to which the VPN will be connected."
+}
+
+variable "vpn_preshared_key" {
+  type = string
+  default = ""
+  description = "The pre-shared key for the VPN."
+}
+
 variable "ssh_allowed_ips" {
   type        = string
   default     = "0.0.0.0/0"
