@@ -182,6 +182,34 @@
           "type": "string",
           "secure": false,
           "description": "Comma separated list of IP addresses that can access the Spectrum Symphony instance through SSH interface. The default value allows any IP address to access the cluster."
+        },
+        {
+          "name": "vpn_enabled",
+          "value": "false",
+          "type": "bool",
+          "secure": false,
+          "description": "Set to true to deploy a VPN gateway for VPC in the cluster (default: false)."
+        },
+        {
+          "name": "vpn_preshared_key",
+          "value": "",
+          "type": "string",
+          "secure": true,
+          "description": "The pre-shared key for the VPN."
+        },
+        {
+          "name": "vpn_peer_cidrs",
+          "value": "",
+          "type": "string",
+          "secure": false,
+          "description": "Comma separated list of peer CIDRs (e.g., 192.168.0.0/24) to which the VPN will be connected."
+        },
+        {
+          "name": "vpn_peer_address",
+          "value": "",
+          "type": "string",
+          "secure": false,
+          "description": "The peer public IP address to which the VPN will be connected."
         }
       ]
     }
