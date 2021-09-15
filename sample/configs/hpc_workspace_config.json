@@ -14,6 +14,20 @@
     {
       "folder": ".",
       "type": "terraform_v0.14.0",
+      "env_values":[
+        { 
+          "TF_CLI_ARGS_apply": "-parallelism=250"
+        },
+        { 
+          "TF_CLI_ARGS_plan": "-parallelism=250"
+        },
+        { 
+          "VAR1":"<val1>"
+        },
+        {
+          "VAR2":"<val2>"
+        } 
+      ],
       "variablestore": [
         {
           "name": "cluster_prefix",
