@@ -8,7 +8,7 @@
   "description": "",
   "tags": ["hpcc", "symphony"],
   "template_repo": {
-    "url": "https://github.ibm.com/workload-eng-services/hpc-cluster-symphony/tree/develop"
+    "url": "https://github.com/IBM-Cloud/hpc-cluster-symphony"
   },
   "template_data": [
     {
