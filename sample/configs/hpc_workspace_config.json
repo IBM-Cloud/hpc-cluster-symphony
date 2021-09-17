@@ -1,7 +1,7 @@
 {
   "name": "hpcc-symphony-test",
   "type": [
-    "terraform_v0.14.0"
+    "terraform_v0.14"
   ],
   "location": "us-east",
   "resource_group": "Default",
@@ -13,7 +13,7 @@
   "template_data": [
     {
       "folder": ".",
-      "type": "terraform_v0.14.0",
+      "type": "terraform_v0.14",
       "env_values":[
         { 
           "TF_CLI_ARGS_apply": "-parallelism=250"
