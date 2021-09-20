@@ -4,7 +4,7 @@ locals {
       "us-south" = "r006-51749a19-89c8-4019-b1d5-6dc3b993f4fb"
       "us-east" = "r014-6478cdb9-6ae8-4f64-b2f3-922897566f03"
       "au-syd" =  "r026-734656a5-d5aa-424b-9de6-d95e5b24ccd9"
-      "jp-osa" = "r026-734656a5-d5aa-424b-9de6-d95e5b24ccd9"
+      "jp-osa" = "r034-f2745044-76bc-4f9e-baea-e66680acfb11"
       "jp-tok" = "r022-051fa502-9463-48f7-8f2c-6af4ed656250"
       "eu-de" = "r010-3f2a5e71-2f6d-4047-95f9-64b345064b83"
       "eu-gb" = "r018-e5126e17-bae8-4758-bee9-2a18edb76038"
