@@ -38,6 +38,7 @@ variable "ssh_key_name" {
 
 variable "api_key" {
   type        = string
+  sensitive   = true
   description = "This is the API key for IBM Cloud account in which the Spectrum Symphony cluster needs to be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-userapikey)."
   validation {
     condition     = var.api_key != ""

@@ -131,7 +131,7 @@
           "name": "ssh_key_name",
           "value": "Please fill here",
           "type": "string",
-          "secure": true,
+          "secure": false,
           "description":"Comma-separated list of names of the SSH key configured in your IBM Cloud account that is used to establish a connection to the Symphony primary node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given here. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
         },
         {
@@ -157,16 +157,16 @@
         },
         {
           "name": "sym_entitlement_ego",
-          "value": "Please fill here",
+          "value": "ego_base   3.9   31/12/2021   ()   ()   ()   6a6f0b9f738ccae7a7258fb7a7429195d3a224fa",
           "type": "string",
-          "secure": true,
+          "secure": false,
           "description": "EGO Entitlement file content for Symphony license scheduler. You can either download this from Passport Advantage or get it from an existing Symphony install. NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Symphony cluster, but cluster would not start to process workload submissions. You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony?topic=hpc-spectrum-symphony-getting-started-tutorial)."
         },
         {
           "name": "sym_entitlement_soam",
-          "value": "Please fill here",
+          "value": "sym_advanced_edition   7.3.1   31/12/2021   ()   ()   ()   ddc1cbbd0fab0b1e2c1a7eb87e5c350e7382c0ca",
           "type": "string",
-          "secure": true,
+          "secure": false,
           "description": "SOAM Entitlement file content for core Spectrum software. You can either download this from Passport Advantage or get it from an existing Symphony install.NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Spectrum Symphony cluster, but cluster would not start to process workload submissions.You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony?topic=hpc-spectrum-symphony-getting-started-tutorial)."
         },
         {
