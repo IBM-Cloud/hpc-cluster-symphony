@@ -7,7 +7,7 @@ Initial configuration:
 
 ```
 $ cp sample/configs/hpc_workspace_config.json config.json
-$ ibmcloud iam api-key-create trl-tyos-api-key --file ~/.ibm-api-key.json -d "my api key"
+$ ibmcloud iam api-key-create my-api-key --file ~/.ibm-api-key.json -d "my api key"
 $ cat ~/.ibm-api-key.json | jq -r ."apikey"
 # copy your apikey
 $ vim config.json
