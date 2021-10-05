@@ -40,6 +40,46 @@ data "ibm_is_instance_profile" "worker" {
   name = var.worker_node_instance_type
 }
 
+data "ibm_is_dedicated_host_profiles" "worker" {
+  count = var.dedicated_host_enabled ? 1: 0
+}
+
+# if dedicated_host_enabled == true, determine the profile name of dedicated hosts and the number of them from worker_node_min_count and dedicated_host_type_name
+locals {
+# 1. calculate required amount of compute resources using the same instance size as dynamic workers
+  cpu_per_node = tonumber(data.ibm_is_instance_profile.worker.vcpu_count[0].value)
+  mem_per_node = tonumber(data.ibm_is_instance_profile.worker.memory[0].value)
+  required_cpu = var.worker_node_min_count * local.cpu_per_node
+  required_mem = var.worker_node_min_count * local.mem_per_node
+
+# 2. get profiles with a class name passed as a variable
+  dh_profiles = var.dedicated_host_enabled ? {
+    for p in data.ibm_is_dedicated_host_profiles.worker[0].profiles:
+      p.name => p
+      if p.class == var.dedicated_host_type_name
+  }: {}
+
+# 3. calculate the minimum number of dedicated hosts
+  dh_profile_count = var.dedicated_host_enabled ? {
+    for n, p in local.dh_profiles:
+      n => ceil(max(local.required_cpu / tonumber(p.vcpu_count[0].value),
+                    local.required_mem / tonumber(p.memory[0].value)))
+  }: {"unused" = 0}
+  dh_count = length(local.dh_profile_count) == 1 ? values(local.dh_profile_count)[0]: min(values(local.dh_profile_count))
+
+# 4. select a profile with the minimum number of dedicated hosts and the maximum resource utilization
+  dh_profile_src = {
+    for n, c in local.dh_profile_count:
+      n => min(c * tonumber(local.dh_profiles[n].vcpu_count[0].value) / local.required_cpu,
+               c * tonumber(local.dh_profiles[n].memory[0].value) / local.required_mem)
+      if c == local.dh_count
+  }
+  dh_min_src      = length(local.dh_profile_src) == 1 ? values(local.dh_profile_src)[0]: min(values(local.dh_profile_src))
+  dh_profile_name = [ for n, s in local.dh_profile_src: n if s == local.dh_min_src ][0]
+  dh_profile      = var.dedicated_host_enabled ? local.dh_profiles[local.dh_profile_name]: null
+  dh_worker_count = var.dedicated_host_enabled ? floor(min(tonumber(local.dh_profile.vcpu_count[0].value) / local.cpu_per_node, tonumber(local.dh_profile.memory[0].value) / local.mem_per_node)): 0
+}
+
 data "ibm_is_instance_profile" "storage" {
   name = var.storage_node_instance_type
 }
@@ -514,8 +554,8 @@ resource "ibm_is_instance" "worker" {
   keys           = local.ssh_key_id_list
   resource_group = data.ibm_resource_group.rg.id
   user_data      = "${data.template_file.worker_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
-  
   tags           = local.tags
+  dedicated_host = var.dedicated_host_enabled ? ibm_is_dedicated_host.worker[var.dedicated_host_placement == "spread" ? count.index % local.dh_count: floor(count.index / local.dh_worker_count)].id: null
   primary_network_interface {
     name                 = "eth0"
     subnet               = ibm_is_subnet.subnet.id
@@ -588,3 +628,20 @@ resource "ibm_is_security_group_rule" "ingress_vpn" {
   direction = "inbound"
   remote    = local.peer_cidr_list[count.index]
 }
+
+resource "ibm_is_dedicated_host_group" "worker" {
+  count          = local.dh_count > 0 ? 1: 0
+  name           = "${var.cluster_prefix}-dh"
+  class          = local.dh_profile.class
+  family         = local.dh_profile.family
+  zone           = data.ibm_is_zone.zone.name
+  resource_group = data.ibm_resource_group.rg.id
+}
+
+resource "ibm_is_dedicated_host" "worker" {
+  count      = local.dh_count
+  name       = "${var.cluster_prefix}-dh-${count.index}"
+  profile    = local.dh_profile.name
+  host_group = ibm_is_dedicated_host_group.worker[0].id
+}
+

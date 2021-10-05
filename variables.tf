@@ -231,6 +231,32 @@ variable "volume_profile" {
   description = "Name of the block storage volume type to be used for NFS instance. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles)."
 }
 
+variable "dedicated_host_enabled" {
+  type        = bool
+  default     = false
+  description = "Set to true to use dedicated hosts for compute hosts (default: false). Note that Symphony still dynamically provisions compute hosts at public VSIs and dedicated hosts are used only for static compute hosts provisioned at the time the cluster is created. The number of dedicated hosts and the profile names for dedicated hosts are calculated from worker_node_min_count and dedicated_host_type_name."
+}
+
+variable "dedicated_host_type_name" {
+  type        = string
+  default     = "bx2"
+  description = "Specify the virtual server instance profile class name on dedicated hosts (i.e., bx2, cx2, or mx2) to be used to create compute nodes for the Spectrum Symphony cluster. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-dh-profiles)."
+  validation {
+    condition     = var.dedicated_host_type_name == "bx2" || var.dedicated_host_type_name == "cx2" || var.dedicated_host_type_name == "mx2"
+    error_message = "Supported values for dedicated_host_type_name: bx2, cx2, and mx2."
+  }
+}
+
+variable "dedicated_host_placement" {
+  type        = string
+  default     = "spread"
+  description = "Specify 'pack' or 'spread'. The 'pack' option will deploy VSIson one dedicated host until full before moving on to the next dedicated host. The 'spread' option will deploy VSIs in round-robin fashion across all the dedicated hosts. The second option should result in mostly even distribution of VSIs on the hosts, while the first option could result in one dedicated host being mostly empty."
+  validation {
+    condition     = var.dedicated_host_placement == "spread" || var.dedicated_host_placement == "pack"
+    error_message = "Supported values for dedicated_host_placement: spread or pack."
+  }
+}
+
 variable "TF_VERSION" {
   type        = string
   default     = "0.14"
