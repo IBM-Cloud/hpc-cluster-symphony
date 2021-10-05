@@ -52,32 +52,18 @@ locals {
   required_cpu = var.worker_node_min_count * local.cpu_per_node
   required_mem = var.worker_node_min_count * local.mem_per_node
 
-# 2. get profiles with a class name passed as a variable
-  dh_profiles = var.dedicated_host_enabled ? {
-    for p in data.ibm_is_dedicated_host_profiles.worker[0].profiles:
-      p.name => p
-      if p.class == var.dedicated_host_type_name
-  }: {}
+# 2. get profiles with a class name passed as a variable (NOTE: assuming VPC Gen2 provides a single profile per class)
+  dh_profile = var.dedicated_host_enabled ? [
+    for p in data.ibm_is_dedicated_host_profiles.worker[0].profiles: p if p.class == var.dedicated_host_type_name
+  ][0]: null
+  dh_cpu = var.dedicated_host_enabled ? tonumber(local.dh_profile.vcpu_count[0].value): 0
+  dh_mem = var.dedicated_host_enabled ? tonumber(local.dh_profile.memory[0].value): 0
 
-# 3. calculate the minimum number of dedicated hosts
-  dh_profile_count = var.dedicated_host_enabled ? {
-    for n, p in local.dh_profiles:
-      n => ceil(max(local.required_cpu / tonumber(p.vcpu_count[0].value),
-                    local.required_mem / tonumber(p.memory[0].value)))
-  }: {"unused" = 0}
-  dh_count = length(local.dh_profile_count) == 1 ? values(local.dh_profile_count)[0]: min(values(local.dh_profile_count))
+# 3. calculate the number of dedicated hosts
+  dh_count = ceil(max(local.required_cpu / local.dh_cpu, local.required_mem / local.dh_mem))
 
-# 4. select a profile with the minimum number of dedicated hosts and the maximum resource utilization
-  dh_profile_src = {
-    for n, c in local.dh_profile_count:
-      n => min(c * tonumber(local.dh_profiles[n].vcpu_count[0].value) / local.required_cpu,
-               c * tonumber(local.dh_profiles[n].memory[0].value) / local.required_mem)
-      if c == local.dh_count
-  }
-  dh_min_src      = length(local.dh_profile_src) == 1 ? values(local.dh_profile_src)[0]: min(values(local.dh_profile_src))
-  dh_profile_name = [ for n, s in local.dh_profile_src: n if s == local.dh_min_src ][0]
-  dh_profile      = var.dedicated_host_enabled ? local.dh_profiles[local.dh_profile_name]: null
-  dh_worker_count = var.dedicated_host_enabled ? floor(min(tonumber(local.dh_profile.vcpu_count[0].value) / local.cpu_per_node, tonumber(local.dh_profile.memory[0].value) / local.mem_per_node)): 0
+# 4. calculate the possible number of workers, which is used by the pack placement
+  dh_worker_count = var.dedicated_host_enabled ? floor(min(local.dh_cpu / local.cpu_per_node, local.dh_mem / local.mem_per_node)): 0
 }
 
 data "ibm_is_instance_profile" "storage" {
