@@ -60,7 +60,7 @@ locals {
   dh_mem = var.dedicated_host_enabled ? tonumber(local.dh_profile.memory[0].value): 0
 
 # 3. calculate the number of dedicated hosts
-  dh_count = ceil(max(local.required_cpu / local.dh_cpu, local.required_mem / local.dh_mem))
+  dh_count = var.dedicated_host_enabled ? ceil(max(local.required_cpu / local.dh_cpu, local.required_mem / local.dh_mem)): 0
 
 # 4. calculate the possible number of workers, which is used by the pack placement
   dh_worker_count = var.dedicated_host_enabled ? floor(min(local.dh_cpu / local.cpu_per_node, local.dh_mem / local.mem_per_node)): 0
