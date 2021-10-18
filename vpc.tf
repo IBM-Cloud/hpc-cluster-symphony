@@ -44,7 +44,7 @@ data "ibm_is_dedicated_host_profiles" "worker" {
   count = var.dedicated_host_enabled ? 1: 0
 }
 
-# if dedicated_host_enabled == true, determine the profile name of dedicated hosts and the number of them from worker_node_min_count and dedicated_host_type_name
+# if dedicated_host_enabled == true, determine the profile name of dedicated hosts and the number of them from worker_node_min_count and worker profile class
 locals {
 # 1. calculate required amount of compute resources using the same instance size as dynamic workers
   cpu_per_node = tonumber(data.ibm_is_instance_profile.worker.vcpu_count[0].value)
@@ -54,7 +54,7 @@ locals {
 
 # 2. get profiles with a class name passed as a variable (NOTE: assuming VPC Gen2 provides a single profile per class)
   dh_profile = var.dedicated_host_enabled ? [
-    for p in data.ibm_is_dedicated_host_profiles.worker[0].profiles: p if p.class == var.dedicated_host_type_name
+    for p in data.ibm_is_dedicated_host_profiles.worker[0].profiles: p if p.class == local.profile_str[0]
   ][0]: null
   dh_cpu = var.dedicated_host_enabled ? tonumber(local.dh_profile.vcpu_count[0].value): 0
   dh_mem = var.dedicated_host_enabled ? tonumber(local.dh_profile.memory[0].value): 0

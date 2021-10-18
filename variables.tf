@@ -237,16 +237,6 @@ variable "dedicated_host_enabled" {
   description = "Set to true to use dedicated hosts for compute hosts (default: false). Note that Symphony still dynamically provisions compute hosts at public VSIs and dedicated hosts are used only for static compute hosts provisioned at the time the cluster is created. The number of dedicated hosts and the profile names for dedicated hosts are calculated from worker_node_min_count and dedicated_host_type_name."
 }
 
-variable "dedicated_host_type_name" {
-  type        = string
-  default     = "bx2"
-  description = "Specify the virtual server instance profile class name on dedicated hosts (i.e., bx2, cx2, or mx2) to be used to create compute nodes for the Spectrum Symphony cluster. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-dh-profiles)."
-  validation {
-    condition     = var.dedicated_host_type_name == "bx2" || var.dedicated_host_type_name == "cx2" || var.dedicated_host_type_name == "mx2"
-    error_message = "Supported values for dedicated_host_type_name: bx2, cx2, and mx2."
-  }
-}
-
 variable "dedicated_host_placement" {
   type        = string
   default     = "spread"
