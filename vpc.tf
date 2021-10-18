@@ -40,6 +40,32 @@ data "ibm_is_instance_profile" "worker" {
   name = var.worker_node_instance_type
 }
 
+data "ibm_is_dedicated_host_profiles" "worker" {
+  count = var.dedicated_host_enabled ? 1: 0
+}
+
+# if dedicated_host_enabled == true, determine the profile name of dedicated hosts and the number of them from worker_node_min_count and worker profile class
+locals {
+# 1. calculate required amount of compute resources using the same instance size as dynamic workers
+  cpu_per_node = tonumber(data.ibm_is_instance_profile.worker.vcpu_count[0].value)
+  mem_per_node = tonumber(data.ibm_is_instance_profile.worker.memory[0].value)
+  required_cpu = var.worker_node_min_count * local.cpu_per_node
+  required_mem = var.worker_node_min_count * local.mem_per_node
+
+# 2. get profiles with a class name passed as a variable (NOTE: assuming VPC Gen2 provides a single profile per class)
+  dh_profile = var.dedicated_host_enabled ? [
+    for p in data.ibm_is_dedicated_host_profiles.worker[0].profiles: p if p.class == local.profile_str[0]
+  ][0]: null
+  dh_cpu = var.dedicated_host_enabled ? tonumber(local.dh_profile.vcpu_count[0].value): 0
+  dh_mem = var.dedicated_host_enabled ? tonumber(local.dh_profile.memory[0].value): 0
+
+# 3. calculate the number of dedicated hosts
+  dh_count = var.dedicated_host_enabled ? ceil(max(local.required_cpu / local.dh_cpu, local.required_mem / local.dh_mem)): 0
+
+# 4. calculate the possible number of workers, which is used by the pack placement
+  dh_worker_count = var.dedicated_host_enabled ? floor(min(local.dh_cpu / local.cpu_per_node, local.dh_mem / local.mem_per_node)): 0
+}
+
 data "ibm_is_instance_profile" "storage" {
   name = var.storage_node_instance_type
 }
@@ -510,8 +536,8 @@ resource "ibm_is_instance" "worker" {
   keys           = local.ssh_key_id_list
   resource_group = data.ibm_resource_group.rg.id
   user_data      = "${data.template_file.worker_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
-  
   tags           = local.tags
+  dedicated_host = var.dedicated_host_enabled ? ibm_is_dedicated_host.worker[var.dedicated_host_placement == "spread" ? count.index % local.dh_count: floor(count.index / local.dh_worker_count)].id: null
   primary_network_interface {
     name                 = "eth0"
     subnet               = ibm_is_subnet.subnet.id
@@ -584,3 +610,20 @@ resource "ibm_is_security_group_rule" "ingress_vpn" {
   direction = "inbound"
   remote    = local.peer_cidr_list[count.index]
 }
+
+resource "ibm_is_dedicated_host_group" "worker" {
+  count          = local.dh_count > 0 ? 1: 0
+  name           = "${var.cluster_prefix}-dh"
+  class          = local.dh_profile.class
+  family         = local.dh_profile.family
+  zone           = data.ibm_is_zone.zone.name
+  resource_group = data.ibm_resource_group.rg.id
+}
+
+resource "ibm_is_dedicated_host" "worker" {
+  count      = local.dh_count
+  name       = "${var.cluster_prefix}-dh-${count.index}"
+  profile    = local.dh_profile.name
+  host_group = ibm_is_dedicated_host_group.worker[0].id
+}
+

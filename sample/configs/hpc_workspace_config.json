@@ -224,6 +224,18 @@
           "type": "string",
           "secure": false,
           "description": "The peer public IP address to which the VPN will be connected."
+        },
+        {
+          "name": "dedicated_host_enabled",
+          "value": "false",
+          "type": "bool",
+          "description": "Set to true to use dedicated hosts for compute hosts (default: false). Note that Symphony still dynamically provisions compute hosts at public VSIs and dedicated hosts are used only for static compute hosts provisioned at the time the cluster is created. The number of dedicated hosts are calculated from worker_node_min_count and dedicated_host_profile."
+        },
+        {
+          "name": "dedicated_host_placement",
+          "value": "spread",
+          "type": "string",
+          "description": "Specify 'pack' or 'spread'. The 'pack' option will deploy VSIson one dedicated host until full before moving on to the next dedicated host. The 'spread' option will deploy VSIs in round-robin fashion across all the dedicated hosts. The second option should result in mostly even distribution of VSIs on the hosts, while the first option could result in one dedicated host being mostly empty."
         }
       ]
     }
