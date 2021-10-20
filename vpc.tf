@@ -53,11 +53,13 @@ locals {
   required_mem = var.worker_node_min_count * local.mem_per_node
 
 # 2. get profiles with a class name passed as a variable (NOTE: assuming VPC Gen2 provides a single profile per class)
-  dh_profile = var.dedicated_host_enabled ? [
+  dh_profiles      = var.dedicated_host_enabled ? [
     for p in data.ibm_is_dedicated_host_profiles.worker[0].profiles: p if p.class == local.profile_str[0]
-  ][0]: null
-  dh_cpu = var.dedicated_host_enabled ? tonumber(local.dh_profile.vcpu_count[0].value): 0
-  dh_mem = var.dedicated_host_enabled ? tonumber(local.dh_profile.memory[0].value): 0
+  ]: []
+  dh_profile_index = length(local.dh_profiles) == 0 ? "Profile class ${local.profile_str[0]} for dedicated hosts does not exist in ${var.region}. Retry other worker_node_instance_type": 0
+  dh_profile       = var.dedicated_host_enabled ? local.dh_profiles[local.dh_profile_index]: null
+  dh_cpu           = var.dedicated_host_enabled ? tonumber(local.dh_profile.vcpu_count[0].value): 0
+  dh_mem           = var.dedicated_host_enabled ? tonumber(local.dh_profile.memory[0].value): 0
 
 # 3. calculate the number of dedicated hosts
   dh_count = var.dedicated_host_enabled ? ceil(max(local.required_cpu / local.dh_cpu, local.required_mem / local.dh_mem)): 0
