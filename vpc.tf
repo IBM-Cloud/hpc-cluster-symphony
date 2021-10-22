@@ -46,7 +46,7 @@ data "ibm_is_dedicated_host_profiles" "worker" {
 
 # if dedicated_host_enabled == true, determine the profile name of dedicated hosts and the number of them from worker_node_min_count and worker profile class
 locals {
-  region_name = slice(split("-", var.zone))
+  region_name = join("-", slice(split("-", var.zone), 0, 2))
 # 1. calculate required amount of compute resources using the same instance size as dynamic workers
   cpu_per_node = tonumber(data.ibm_is_instance_profile.worker.vcpu_count[0].value)
   mem_per_node = tonumber(data.ibm_is_instance_profile.worker.memory[0].value)
