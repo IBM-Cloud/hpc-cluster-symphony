@@ -13,7 +13,8 @@ data "ibm_resource_group" "rg" {
 }
 
 data "ibm_is_region" "region" {
-  name = join("-", slice(split("-", var.zone), 0, 2))
+  #name = join("-", slice(split("-", var.zone), 0, 2))
+  name = local.region_name
 }
 
 data "ibm_is_zone" "zone" {
