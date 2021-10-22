@@ -77,15 +77,8 @@ variable "cluster_id" {
   }
 }
 
-variable "region" {
-  type        = string
-  default     = "us-south"
-  description = "IBM Cloud region name where the Spectrum Symphony cluster should be deployed. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-creating-a-vpc-in-a-different-region)."
-}
-
 variable "zone" {
   type        = string
-  default     = "us-south-3"
   description = "IBM Cloud zone name within the selected region where the Spectrum Symphony cluster should be deployed. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-creating-a-vpc-in-a-different-region#get-zones-using-the-cli)."
 }
 
