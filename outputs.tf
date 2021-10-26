@@ -16,5 +16,5 @@ output "vpn_config_info" {
 }
 
 output "region_name" {
-  value = "${data.ibm_is_region.region.name}"
+  value = data.ibm_is_region.region.name
 }
