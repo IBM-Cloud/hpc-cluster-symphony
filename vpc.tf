@@ -13,7 +13,8 @@ data "ibm_resource_group" "rg" {
 }
 
 data "ibm_is_region" "region" {
-  name = var.region
+  #name = join("-", slice(split("-", var.zone), 0, 2))
+  name = local.region_name
 }
 
 data "ibm_is_zone" "zone" {
@@ -46,6 +47,7 @@ data "ibm_is_dedicated_host_profiles" "worker" {
 
 # if dedicated_host_enabled == true, determine the profile name of dedicated hosts and the number of them from worker_node_min_count and worker profile class
 locals {
+  region_name = join("-", slice(split("-", var.zone), 0, 2))
 # 1. calculate required amount of compute resources using the same instance size as dynamic workers
   cpu_per_node = tonumber(data.ibm_is_instance_profile.worker.vcpu_count[0].value)
   mem_per_node = tonumber(data.ibm_is_instance_profile.worker.memory[0].value)
@@ -56,7 +58,7 @@ locals {
   dh_profiles      = var.dedicated_host_enabled ? [
     for p in data.ibm_is_dedicated_host_profiles.worker[0].profiles: p if p.class == local.profile_str[0]
   ]: []
-  dh_profile_index = length(local.dh_profiles) == 0 ? "Profile class ${local.profile_str[0]} for dedicated hosts does not exist in ${var.region}. Check available class with `ibmcloud target -r ${var.region}; ibmcloud is dedicated-host-profiles` and retry other worker_node_instance_type wtih the available class.": 0
+  dh_profile_index = length(local.dh_profiles) == 0 ? "Profile class ${local.profile_str[0]} for dedicated hosts does not exist in ${local.region_name}. Check available class with `ibmcloud target -r ${local.region_name}; ibmcloud is dedicated-host-profiles` and retry other worker_node_instance_type wtih the available class.": 0
   dh_profile       = var.dedicated_host_enabled ? local.dh_profiles[local.dh_profile_index]: null
   dh_cpu           = var.dedicated_host_enabled ? tonumber(local.dh_profile.vcpu_count[0].value): 0
   dh_mem           = var.dedicated_host_enabled ? tonumber(local.dh_profile.memory[0].value): 0
@@ -96,7 +98,7 @@ locals {
     data.ibm_is_ssh_key.ssh_key[name].id
   ]
 
-  new_image_id = contains(keys(local.image_region_map), var.image_name) ? lookup(lookup(local.image_region_map, var.image_name), var.region) : "Image not found with the given name"
+  new_image_id = contains(keys(local.image_region_map), var.image_name) ? lookup(lookup(local.image_region_map, var.image_name), local.region_name) : "Image not found with the given name"
   // Use existing VPC if var.vpc_name is not empty
   vpc_name = var.vpc_name == "" ? ibm_is_vpc.vpc.*.name[0] : data.ibm_is_vpc.existing_vpc.*.name[0]
 }
