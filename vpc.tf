@@ -329,7 +329,7 @@ data "ibm_is_instance_profile" "login" {
 }
 
 locals {
-  stock_image_name = "ibm-centos-7-6-minimal-amd64-2"
+  stock_image_name = "ibm-redhat-8-2-minimal-amd64-2"
 }
 
 data "ibm_is_image" "stock_image" {
