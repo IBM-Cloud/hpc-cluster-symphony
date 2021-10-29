@@ -3,27 +3,6 @@
 # Licensed under the Apache License v2.0
 ###################################################
 
-### About Symphony licensing
-variable "sym_entitlement_ego" {
-  type        = string
-  default     = "ego_base   3.9   31/12/2021   ()   ()   ()   6a6f0b9f738ccae7a7258fb7a7429195d3a224fa"
-  description = "EGO Entitlement file content for Symphony license scheduler. You can either download this from Passport Advantage or get it from an existing Symphony install. NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Symphony cluster, but cluster would not start to process workload submissions. You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony?topic=hpc-spectrum-symphony-getting-started-tutorial)."
-  validation {
-    condition     = trimspace(var.sym_entitlement_ego) != ""
-    error_message = "EGO Entitlement for Symphony must be set."
-  }
-}
-
-variable "sym_entitlement_soam" {
-  type        = string
-  default     = "sym_advanced_edition   7.3.1   31/12/2021   ()   ()   ()   ddc1cbbd0fab0b1e2c1a7eb87e5c350e7382c0ca"
-  description = "SOAM Entitlement file content for core Spectrum software. You can either download this from Passport Advantage or get it from an existing Symphony install.NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Spectrum Symphony cluster, but cluster would not start to process workload submissions.You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony?topic=hpc-spectrum-symphony-getting-started-tutorial)."
-  validation {
-    condition     = trimspace(var.sym_entitlement_soam) != ""
-    error_message = "SOAM Entitlement for Symphony must be set."
-  }
-}
-
 ### About VPC resources
 variable "vpc_name" {
   type        = string
