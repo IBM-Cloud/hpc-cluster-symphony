@@ -114,8 +114,6 @@ data "template_file" "storage_user_data" {
 data "template_file" "primary_user_data" {
   template = local.primary_template_file
   vars = {
-    sym_entitlement_ego  = var.sym_entitlement_ego
-    sym_entitlement_soam = var.sym_entitlement_soam
     vpc_apikey_value     = var.api_key
     image_id             = local.new_image_id
     subnet_id            = ibm_is_subnet.subnet.id
@@ -142,8 +140,6 @@ data "template_file" "primary_user_data" {
 data "template_file" "secondary_user_data" {
   template = local.master_template_file
   vars = {
-    sym_entitlement_ego  = var.sym_entitlement_ego
-    sym_entitlement_soam = var.sym_entitlement_soam
     vpc_apikey_value     = var.api_key
     hf_cidr_block        = ibm_is_subnet.subnet.ipv4_cidr_block
     storage_ips          = join(" ", local.storage_ips)
@@ -158,8 +154,6 @@ data "template_file" "secondary_user_data" {
 data "template_file" "management_user_data" {
   template = local.master_template_file
   vars = {
-    sym_entitlement_ego  = var.sym_entitlement_ego
-    sym_entitlement_soam = var.sym_entitlement_soam
     vpc_apikey_value     = var.api_key
     hf_cidr_block        = ibm_is_subnet.subnet.ipv4_cidr_block
     storage_ips          = join(" ", local.storage_ips)
@@ -335,7 +329,7 @@ data "ibm_is_instance_profile" "login" {
 }
 
 locals {
-  stock_image_name = "ibm-centos-7-6-minimal-amd64-2"
+  stock_image_name = "ibm-redhat-8-2-minimal-amd64-2"
 }
 
 data "ibm_is_image" "stock_image" {
