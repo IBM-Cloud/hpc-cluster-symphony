@@ -14,10 +14,6 @@ set -x
 #host can be primary, secondary, management or not set for compute
 export egoHostRole=${egoHostRole}
 
-#primary specific ===============
-export entitlementLine1="ego_base   3.9   ()   ()   ()   ()   0dd01a5e74fa2cf2851965cf64b1166f242e7843"
-export entitlementLine2="sym_advanced_edition   7.3.1   ()   ()   ()   ()   21402f8aebf693f45c9e5a1c595435134be80845"
-
 #password should be 8 to 15 characters
 export adminPswd=Admin
 export guestPswd=Guest
