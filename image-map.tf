@@ -22,5 +22,9 @@ locals {
       "ca-tor" = "r038-ff21c3b4-2cf0-4379-b493-7dc541b30f5d"
       "br-sao" = "r042-550b53ed-570b-4e8c-a91a-8464321ce9da"
     }
+    "sym731sc512rhel82image6-ajith" = {
+      "eu-gb" = "r018-db4105d3-e916-4e0b-8de3-adedd16673a7"
+      "us-east" = "r014-51c89acd-51ed-4a45-afee-9cdc0144c3b1"
+    }
   }
 }

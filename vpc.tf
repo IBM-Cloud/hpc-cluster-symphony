@@ -13,7 +13,8 @@ data "ibm_resource_group" "rg" {
 }
 
 data "ibm_is_region" "region" {
-  name = var.region
+  #name = join("-", slice(split("-", var.zone), 0, 2))
+  name = local.region_name
 }
 
 data "ibm_is_zone" "zone" {
@@ -38,6 +39,35 @@ data "ibm_is_instance_profile" "master" {
 
 data "ibm_is_instance_profile" "worker" {
   name = var.worker_node_instance_type
+}
+
+data "ibm_is_dedicated_host_profiles" "worker" {
+  count = var.dedicated_host_enabled ? 1: 0
+}
+
+# if dedicated_host_enabled == true, determine the profile name of dedicated hosts and the number of them from worker_node_min_count and worker profile class
+locals {
+  region_name = join("-", slice(split("-", var.zone), 0, 2))
+# 1. calculate required amount of compute resources using the same instance size as dynamic workers
+  cpu_per_node = tonumber(data.ibm_is_instance_profile.worker.vcpu_count[0].value)
+  mem_per_node = tonumber(data.ibm_is_instance_profile.worker.memory[0].value)
+  required_cpu = var.worker_node_min_count * local.cpu_per_node
+  required_mem = var.worker_node_min_count * local.mem_per_node
+
+# 2. get profiles with a class name passed as a variable (NOTE: assuming VPC Gen2 provides a single profile per class)
+  dh_profiles      = var.dedicated_host_enabled ? [
+    for p in data.ibm_is_dedicated_host_profiles.worker[0].profiles: p if p.class == local.profile_str[0]
+  ]: []
+  dh_profile_index = length(local.dh_profiles) == 0 ? "Profile class ${local.profile_str[0]} for dedicated hosts does not exist in ${local.region_name}. Check available class with `ibmcloud target -r ${local.region_name}; ibmcloud is dedicated-host-profiles` and retry other worker_node_instance_type wtih the available class.": 0
+  dh_profile       = var.dedicated_host_enabled ? local.dh_profiles[local.dh_profile_index]: null
+  dh_cpu           = var.dedicated_host_enabled ? tonumber(local.dh_profile.vcpu_count[0].value): 0
+  dh_mem           = var.dedicated_host_enabled ? tonumber(local.dh_profile.memory[0].value): 0
+
+# 3. calculate the number of dedicated hosts
+  dh_count = var.dedicated_host_enabled ? ceil(max(local.required_cpu / local.dh_cpu, local.required_mem / local.dh_mem)): 0
+
+# 4. calculate the possible number of workers, which is used by the pack placement
+  dh_worker_count = var.dedicated_host_enabled ? floor(min(local.dh_cpu / local.cpu_per_node, local.dh_mem / local.mem_per_node)): 0
 }
 
 data "ibm_is_instance_profile" "storage" {
@@ -68,7 +98,7 @@ locals {
     data.ibm_is_ssh_key.ssh_key[name].id
   ]
 
-  new_image_id = contains(keys(local.image_region_map), var.image_name) ? lookup(lookup(local.image_region_map, var.image_name), var.region) : "Image not found with the given name"
+  new_image_id = contains(keys(local.image_region_map), var.image_name) ? lookup(lookup(local.image_region_map, var.image_name), local.region_name) : "Image not found with the given name"
   // Use existing VPC if var.vpc_name is not empty
   vpc_name = var.vpc_name == "" ? ibm_is_vpc.vpc.*.name[0] : data.ibm_is_vpc.existing_vpc.*.name[0]
 }
@@ -84,8 +114,6 @@ data "template_file" "storage_user_data" {
 data "template_file" "primary_user_data" {
   template = local.primary_template_file
   vars = {
-    sym_entitlement_ego  = var.sym_entitlement_ego
-    sym_entitlement_soam = var.sym_entitlement_soam
     vpc_apikey_value     = var.api_key
     image_id             = local.new_image_id
     subnet_id            = ibm_is_subnet.subnet.id
@@ -112,8 +140,6 @@ data "template_file" "primary_user_data" {
 data "template_file" "secondary_user_data" {
   template = local.master_template_file
   vars = {
-    sym_entitlement_ego  = var.sym_entitlement_ego
-    sym_entitlement_soam = var.sym_entitlement_soam
     vpc_apikey_value     = var.api_key
     hf_cidr_block        = ibm_is_subnet.subnet.ipv4_cidr_block
     storage_ips          = join(" ", local.storage_ips)
@@ -128,8 +154,6 @@ data "template_file" "secondary_user_data" {
 data "template_file" "management_user_data" {
   template = local.master_template_file
   vars = {
-    sym_entitlement_ego  = var.sym_entitlement_ego
-    sym_entitlement_soam = var.sym_entitlement_soam
     vpc_apikey_value     = var.api_key
     hf_cidr_block        = ibm_is_subnet.subnet.ipv4_cidr_block
     storage_ips          = join(" ", local.storage_ips)
@@ -305,7 +329,7 @@ data "ibm_is_instance_profile" "login" {
 }
 
 locals {
-  stock_image_name = "ibm-centos-7-6-minimal-amd64-2"
+  stock_image_name = "ibm-redhat-8-2-minimal-amd64-2"
 }
 
 data "ibm_is_image" "stock_image" {
@@ -510,8 +534,8 @@ resource "ibm_is_instance" "worker" {
   keys           = local.ssh_key_id_list
   resource_group = data.ibm_resource_group.rg.id
   user_data      = "${data.template_file.worker_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
-  
   tags           = local.tags
+  dedicated_host = var.dedicated_host_enabled ? ibm_is_dedicated_host.worker[var.dedicated_host_placement == "spread" ? count.index % local.dh_count: floor(count.index / local.dh_worker_count)].id: null
   primary_network_interface {
     name                 = "eth0"
     subnet               = ibm_is_subnet.subnet.id
@@ -584,3 +608,20 @@ resource "ibm_is_security_group_rule" "ingress_vpn" {
   direction = "inbound"
   remote    = local.peer_cidr_list[count.index]
 }
+
+resource "ibm_is_dedicated_host_group" "worker" {
+  count          = local.dh_count > 0 ? 1: 0
+  name           = "${var.cluster_prefix}-dh"
+  class          = local.dh_profile.class
+  family         = local.dh_profile.family
+  zone           = data.ibm_is_zone.zone.name
+  resource_group = data.ibm_resource_group.rg.id
+}
+
+resource "ibm_is_dedicated_host" "worker" {
+  count      = local.dh_count
+  name       = "${var.cluster_prefix}-dh-${count.index}"
+  profile    = local.dh_profile.name
+  host_group = ibm_is_dedicated_host_group.worker[0].id
+}
+

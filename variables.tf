@@ -3,27 +3,6 @@
 # Licensed under the Apache License v2.0
 ###################################################
 
-### About Symphony licensing
-variable "sym_entitlement_ego" {
-  type        = string
-  default     = "ego_base   3.9   31/12/2021   ()   ()   ()   6a6f0b9f738ccae7a7258fb7a7429195d3a224fa"
-  description = "EGO Entitlement file content for Symphony license scheduler. You can either download this from Passport Advantage or get it from an existing Symphony install. NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Symphony cluster, but cluster would not start to process workload submissions. You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony?topic=hpc-spectrum-symphony-getting-started-tutorial)."
-  validation {
-    condition     = trimspace(var.sym_entitlement_ego) != ""
-    error_message = "EGO Entitlement for Symphony must be set."
-  }
-}
-
-variable "sym_entitlement_soam" {
-  type        = string
-  default     = "sym_advanced_edition   7.3.1   31/12/2021   ()   ()   ()   ddc1cbbd0fab0b1e2c1a7eb87e5c350e7382c0ca"
-  description = "SOAM Entitlement file content for core Spectrum software. You can either download this from Passport Advantage or get it from an existing Symphony install.NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Spectrum Symphony cluster, but cluster would not start to process workload submissions.You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony?topic=hpc-spectrum-symphony-getting-started-tutorial)."
-  validation {
-    condition     = trimspace(var.sym_entitlement_soam) != ""
-    error_message = "SOAM Entitlement for Symphony must be set."
-  }
-}
-
 ### About VPC resources
 variable "vpc_name" {
   type        = string
@@ -77,15 +56,8 @@ variable "cluster_id" {
   }
 }
 
-variable "region" {
-  type        = string
-  default     = "us-south"
-  description = "IBM Cloud region name where the Spectrum Symphony cluster should be deployed. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-creating-a-vpc-in-a-different-region)."
-}
-
 variable "zone" {
   type        = string
-  default     = "us-south-3"
   description = "IBM Cloud zone name within the selected region where the Spectrum Symphony cluster should be deployed. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-creating-a-vpc-in-a-different-region#get-zones-using-the-cli)."
 }
 
@@ -109,7 +81,7 @@ variable "management_node_instance_type" {
 variable "worker_node_instance_type" {
   type        = string
   default     = "bx2-4x16"
-  description = "Specify the virtual server instance profile type name to be used to create the worker nodes for the Spectrum Symphony cluster. The worker nodes are the ones where the workload execution takes place and the choice should be made according to the characteristic of workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
+  description = "Specify the virtual server instance profile type name to be used to create the worker nodes for the Spectrum Symphony cluster. The worker nodes are the ones where the workload execution takes place and the choice should be made according to the characteristic of workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles). NOTE: If dedicated_host_enabled == true, available instance prefix (e.g., bx2 and cx2) can be limited depending on your target region. Check `ibmcloud target -r {region_name}; ibmcloud is dedicated-host-profiles`."
   validation {
     # regex(...) fails if it cannot find a match
     condition     = can(regex("^[^\\s]+-[0-9]+x[0-9]+", var.worker_node_instance_type))
@@ -229,6 +201,22 @@ variable "volume_profile" {
   type        = string
   default     = "general-purpose"
   description = "Name of the block storage volume type to be used for NFS instance. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles)."
+}
+
+variable "dedicated_host_enabled" {
+  type        = bool
+  default     = false
+  description = "Set to true to use dedicated hosts for compute hosts (default: false). Note that Symphony still dynamically provisions compute hosts at public VSIs and dedicated hosts are used only for static compute hosts provisioned at the time the cluster is created. The number of dedicated hosts and the profile names for dedicated hosts are calculated from worker_node_min_count and dedicated_host_type_name."
+}
+
+variable "dedicated_host_placement" {
+  type        = string
+  default     = "spread"
+  description = "Specify 'pack' or 'spread'. The 'pack' option will deploy VSIson one dedicated host until full before moving on to the next dedicated host. The 'spread' option will deploy VSIs in round-robin fashion across all the dedicated hosts. The second option should result in mostly even distribution of VSIs on the hosts, while the first option could result in one dedicated host being mostly empty."
+  validation {
+    condition     = var.dedicated_host_placement == "spread" || var.dedicated_host_placement == "pack"
+    error_message = "Supported values for dedicated_host_placement: spread or pack."
+  }
 }
 
 variable "TF_VERSION" {
