@@ -167,7 +167,7 @@
         },
         {
           "name": "hyperthreading_enabled",
-          "value": "false",
+          "value": "true",
           "type": "bool",
           "secure": false,
           "description": "True to enable hyper-threading in the cluster nodes (default). Otherwise, hyper-threading will be disabled."
