@@ -1,5 +1,13 @@
 #!/bin/bash
 
+<<<<<<< HEAD
+=======
+###################################################
+# Copyright (C) IBM Corp. 2021 All Rights Reserved.
+# Licensed under the Apache License v2.0
+###################################################
+
+>>>>>>> 6b88b1398a58f3b9cbc414062f484dd36c3abdc7
 set -x
 export CLUSTERADMIN=egoadmin
 export CLUSTERNAME=IBMCloudSym731Cluster

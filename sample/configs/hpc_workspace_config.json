@@ -21,6 +21,9 @@
         { 
           "TF_CLI_ARGS_plan": "-parallelism=250"
         },
+        {
+          "TF_CLI_ARGS_destroy": "-parallelism=250"
+        },
         { 
           "VAR1":"<val1>"
         },
@@ -58,15 +61,8 @@
           "description":"Resource group name from your IBM Cloud account where the VPC resources should be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-rgs)."
         },
         {
-          "name": "region",
-          "value": "us-east",
-          "type": "string",
-          "secure": false,
-          "description": "IBM Cloud region name where the Spectrum Symphony cluster should be deployed. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-creating-a-vpc-in-a-different-region)."
-        },
-        {
           "name": "zone",
-          "value": "us-east-1",
+          "value": "Please fill here",
           "type": "string",
           "secure": false,
           "description": "IBM Cloud zone name within the selected region where the Spectrum Symphony cluster should be deployed. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-creating-a-vpc-in-a-different-region#get-zones-using-the-cli)."
@@ -90,7 +86,7 @@
           "value": "bx2-2x8",
           "type": "string",
           "secure": false,
-          "description": "Specify the virtual server instance profile type name to be used to create the worker nodes for the Spectrum Symphony cluster. The worker nodes are the ones where the workload execution takes place and the choice should be made according to the characteristic of workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
+          "description": "Specify the virtual server instance profile type name to be used to create the worker nodes for the Spectrum Symphony cluster. The worker nodes are the ones where the workload execution takes place and the choice should be made according to the characteristic of workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles). NOTE: If dedicated_host_enabled == true, available instance prefix (e.g., bx2 and cx2) can be limited depending on your target region. Check `ibmcloud target -r {region_name}; ibmcloud is dedicated-host-profiles`."
         },
         {
           "name": "management_node_instance_type",
@@ -156,20 +152,6 @@
           "description": "Number to represent the IOPS(Input Output Per Second) configuration for block storage to be used for NFS instance (valid only for volume_profile=custom, dependent on volume_capacity). Enter a value in the range 100 - 48000. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles#custom)."
         },
         {
-          "name": "sym_entitlement_ego",
-          "value": "ego_base   3.9   31/12/2021   ()   ()   ()   6a6f0b9f738ccae7a7258fb7a7429195d3a224fa",
-          "type": "string",
-          "secure": false,
-          "description": "EGO Entitlement file content for Symphony license scheduler. You can either download this from Passport Advantage or get it from an existing Symphony install. NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Symphony cluster, but cluster would not start to process workload submissions. You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony?topic=hpc-spectrum-symphony-getting-started-tutorial)."
-        },
-        {
-          "name": "sym_entitlement_soam",
-          "value": "sym_advanced_edition   7.3.1   31/12/2021   ()   ()   ()   ddc1cbbd0fab0b1e2c1a7eb87e5c350e7382c0ca",
-          "type": "string",
-          "secure": false,
-          "description": "SOAM Entitlement file content for core Spectrum software. You can either download this from Passport Advantage or get it from an existing Symphony install.NOTE: If the value specified for this field is incorrect the virtual machines would be provisioned to build the Spectrum Symphony cluster, but cluster would not start to process workload submissions.You would incur charges for the duration the virtual server machines would continue to run. [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony?topic=hpc-spectrum-symphony-getting-started-tutorial)."
-        },
-        {
           "name": "api_key",
           "value": "Please fill here",
           "type": "string",
@@ -185,7 +167,7 @@
         },
         {
           "name": "hyperthreading_enabled",
-          "value": "false",
+          "value": "true",
           "type": "bool",
           "secure": false,
           "description": "True to enable hyper-threading in the cluster nodes (default). Otherwise, hyper-threading will be disabled."
@@ -224,6 +206,18 @@
           "type": "string",
           "secure": false,
           "description": "The peer public IP address to which the VPN will be connected."
+        },
+        {
+          "name": "dedicated_host_enabled",
+          "value": "false",
+          "type": "bool",
+          "description": "Set to true to use dedicated hosts for compute hosts (default: false). Note that Symphony still dynamically provisions compute hosts at public VSIs and dedicated hosts are used only for static compute hosts provisioned at the time the cluster is created. The number of dedicated hosts are calculated from worker_node_min_count and dedicated_host_profile."
+        },
+        {
+          "name": "dedicated_host_placement",
+          "value": "spread",
+          "type": "string",
+          "description": "Specify 'pack' or 'spread'. The 'pack' option will deploy VSIson one dedicated host until full before moving on to the next dedicated host. The 'spread' option will deploy VSIs in round-robin fashion across all the dedicated hosts. The second option should result in mostly even distribution of VSIs on the hosts, while the first option could result in one dedicated host being mostly empty."
         }
       ]
     }
