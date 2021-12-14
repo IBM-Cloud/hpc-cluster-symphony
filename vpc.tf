@@ -624,3 +624,4 @@ resource "ibm_is_dedicated_host" "worker" {
   profile    = local.dh_profile.name
   host_group = ibm_is_dedicated_host_group.worker[0].id
 }
+

@@ -1,13 +1,10 @@
 #!/bin/bash
 
-<<<<<<< HEAD
-=======
 ###################################################
 # Copyright (C) IBM Corp. 2021 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 
->>>>>>> 6b88b1398a58f3b9cbc414062f484dd36c3abdc7
 set -x
 
 ##################################################################
@@ -18,13 +15,8 @@ set -x
 export egoHostRole=${egoHostRole}
 
 #primary specific ===============
-<<<<<<< HEAD
-export entitlementLine1=${sym_entitlement1}
-export entitlementLine2=${sym_entitlement2}
-=======
 export entitlementLine1="ego_base   3.9   ()   ()   ()   ()   0dd01a5e74fa2cf2851965cf64b1166f242e7843"
 export entitlementLine2="sym_advanced_edition   7.3.1   ()   ()   ()   ()   21402f8aebf693f45c9e5a1c595435134be80845"
->>>>>>> 6b88b1398a58f3b9cbc414062f484dd36c3abdc7
 
 #password should be 8 to 15 characters
 export adminPswd=Admin

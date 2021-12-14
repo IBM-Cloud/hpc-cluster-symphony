@@ -22,7 +22,7 @@
           "TF_CLI_ARGS_plan": "-parallelism=250"
         },
         {
-          "TF_CLI_ARGS_destroy": "-parallelism=250"
+          "TF_CLI_ARGS_destroy": "-parallelism=100"
         },
         { 
           "VAR1":"<val1>"
