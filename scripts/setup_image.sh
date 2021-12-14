@@ -1,5 +1,10 @@
 #!/bin/bash
 
+###################################################
+# Copyright (C) IBM Corp. 2021 All Rights Reserved.
+# Licensed under the Apache License v2.0
+###################################################
+
 set -x
 export CLUSTERADMIN=egoadmin
 export CLUSTERNAME=IBMCloudSym731Cluster
