@@ -7,6 +7,23 @@
 
 set -x
 
+yum install zip unzip -y
+
+classfile1="JMSAppender\.class"
+classfile2="JndiLookup\.class"
+
+for jar in $(find /opt/ibm/spectrumcomputing/ -type f -name "*.jar" | grep -e "log4j")
+do
+  classlocation=`unzip -l $jar | grep -e $classfile1 -e $classfile2`
+  if [ ! -z "$classlocation" ]
+  then
+    cpath=`echo ${classlocation##* }`
+    zip -q -d $jar $cpath
+    chown egoadmin:root $jar
+  fi
+done
+yum remove zip unzip -y
+>>>>>>> 87f853d2ef77a96ed94761351d7ecf066925e32f
 ##################################################################
 #args
 #total number of management hosts
@@ -313,6 +330,25 @@ cat <<- EOF > $IBM_CLOUD_PROVIDER_PP_SCRIPT
 set -x
 echo START >> /var/log/postprovisionscripts.log 2>&1
 date '+%Y-%m-%d %H:%M:%S'
+
+yum install zip unzip -y
+
+classfile1="JMSAppender\.class"
+classfile2="JndiLookup\.class"
+
+for jar in \$(find /opt/ibm/spectrumcomputing/ -type f -name "*.jar" | grep -e "log4j")
+do
+  classlocation=\`unzip -l \$jar | grep -e \$classfile1 -e \$classfile2\`
+  if [ ! -z "\$classlocation" ]
+  then
+    cpath=\`echo \${classlocation##* }\`
+    zip -q -d \$jar \$cpath
+    chown egoadmin:root \$jar
+  fi
+done
+yum remove zip unzip -y
+
+>>>>>>> 87f853d2ef77a96ed94761351d7ecf066925e32f
 export HOST_NAME=\$(hostname)
 export HOST_IP=\$(ip addr show eth0 | awk '\$1 == "inet" {gsub(/\/.*$/, "", \$2); print \$2}')
 

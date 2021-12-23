@@ -2,7 +2,7 @@
 
 **Important!** This code deploys an environment that includes IBM Spectrum Symphony, which makes use of Apache Log4j. 
 See the following bulletin for information on implementing mitigations for the [Log4Shell vulnerability](https://www.ibm.com/blogs/psirt/an-update-on-the-apache-log4j-cve-2021-44228-vulnerability/) (CVE-2021-44228): 
-[IBM Spectrum Symphony Log4J Security Bulletin](https://www.ibm.com/support/pages/node/6526756).
+[IBM Spectrum Symphony Log4J Security Bulletin](https://www.ibm.com/support/pages/node/6526756). Note that the mitigation steps are implemented in post-provisioning actions included in the code. However, you can check the bulletin for information on those steps and to verify that the impacted Java class has been removed from the jar file.
 
 # Deployment with Schematics CLI on IBM Cloud
 
