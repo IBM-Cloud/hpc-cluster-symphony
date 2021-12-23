@@ -23,7 +23,6 @@ do
   fi
 done
 yum remove zip unzip -y
->>>>>>> 87f853d2ef77a96ed94761351d7ecf066925e32f
 ##################################################################
 #args
 #total number of management hosts
@@ -348,7 +347,7 @@ do
 done
 yum remove zip unzip -y
 
->>>>>>> 87f853d2ef77a96ed94761351d7ecf066925e32f
+
 export HOST_NAME=\$(hostname)
 export HOST_IP=\$(ip addr show eth0 | awk '\$1 == "inet" {gsub(/\/.*$/, "", \$2); print \$2}')
 
