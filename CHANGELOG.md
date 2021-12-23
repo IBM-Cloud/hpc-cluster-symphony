@@ -11,6 +11,7 @@
 - Clean up symphony entitlements
 - Clean up location(region) input properties
 - Add parallelism to schematics destroy
+- Remove JNDILookup and JMSAppender from classpath to mitigate Log4Shell vulnerability (CVE-2021-44228)
 
 ### **BUG FIXES**
 - Avoid terraform warning regarding interpolation
