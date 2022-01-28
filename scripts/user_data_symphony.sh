@@ -6,17 +6,12 @@
 ###################################################
 
 set -x
-
 ##################################################################
 #args
 #total number of management hosts
 # export numExpectedManagementHosts=3
 #host can be primary, secondary, management or not set for compute
 export egoHostRole=${egoHostRole}
-
-#primary specific ===============
-export entitlementLine1="ego_base   3.9   ()   ()   ()   ()   0dd01a5e74fa2cf2851965cf64b1166f242e7843"
-export entitlementLine2="sym_advanced_edition   7.3.1   ()   ()   ()   ()   21402f8aebf693f45c9e5a1c595435134be80845"
 
 #password should be 8 to 15 characters
 export adminPswd=Admin
@@ -72,6 +67,7 @@ export HOSTS_FILES=${SHARED_TOP_CLUSTERID}/hosts
 export LOCK_FILE=${SHARED_TOP_CLUSTERID}/lock
 #ensure DONE file does not exist before starting
 export DONE_FILE=${SHARED_TOP_CLUSTERID}/done
+export SHARED_HOSTS_FILE=${SHARED_TOP_CLUSTERID}/sharedhosts
 export HOST_NAME=`hostname`
 export HOST_IP=$(ip addr show eth0 | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}')
 export DELAY=15
@@ -83,8 +79,42 @@ export IBM_CLOUD_PROVIDER_SCRIPTS=hostfactory/1.1/providerplugins/ibmcloudgen2/s
 export IBM_CLOUD_PROVIDER_PP_SCRIPT=${EGO_TOP}/${IBM_CLOUD_PROVIDER_SCRIPTS}/post_installgen2.sh
 export IBM_CLOUD_PROVIDER_SHARED_PP_SCRIPT=${SHARED_TOP_SYM}/${IBM_CLOUD_PROVIDER_SCRIPTS}/post_installgen2.sh
 export IBM_CLOUD_PROVIDER_WORK=work/providers/ibmcloudgen2inst
+export LOCAL_HOST_IPV4="127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4"
+export LOCAL_HOST_IPV6="::1         localhost localhost.localdomain localhost6 localhost6.localdomain6"
 
 ##################################################################
+
+function scale_update_worker_hostname
+{
+    if [ ${spectrum_scale} == true ]; then
+        TMP_HOST_NAME=$(grep -F "${HOST_IP} " ${SHARED_HOSTS_FILE} | awk '{ print $3 }')
+        if [ -n "${TMP_HOST_NAME}" ]; then
+            export HOST_NAME=${TMP_HOST_NAME}
+            hostnamectl set-hostname ${HOST_NAME}
+        fi
+    fi
+}
+
+function scale_create_shared_hosts_file
+{
+    if [ ${spectrum_scale} == true ]; then
+        python3 -c "import ipaddress; print('\n'.join([str(ip) +  ' ${hostPrefix}-' + str(ip).replace('.', '-') + '${domainName}' + ' ${hostPrefix}-' + str(ip).replace('.', '-') for ip in ipaddress.IPv4Network('${hf_cidr_block}')]))" >> ${SHARED_HOSTS_FILE}
+    fi
+}
+
+function scale_append_hosts_file
+{
+    if [ ${spectrum_scale} == true ]; then
+        cat ${SHARED_HOSTS_FILE} >> /etc/hosts
+    fi
+}
+
+function scale_disable_hf
+{
+    if [ ${spectrum_scale} == true ]; then
+        [ -f ${EGO_TOP}/eservice/esc/conf/services/hostfactory.xml ] && sed -i -e "s|AUTOMATIC|MANUAL|g" ${EGO_TOP}/eservice/esc/conf/services/hostfactory.xml
+    fi
+}
 
 function config_hyperthreading
 {
@@ -159,6 +189,9 @@ function clean_shared
 function mtu9000
 {
     #Change the MTU setting
+    #ip link set mtu 9000 dev eth0
+    #echo "MTU=9000" >> /etc/sysconfig/network-scripts/ifcfg-eth0
+    #echo "PEERDNS=no" >> /etc/sysconfig/network-scripts/ifcfg-eth0
     ip route replace $CLUSTER_CIDR dev eth0 proto kernel scope link src $HOST_IP mtu 9000
     echo 'ip route replace '$CLUSTER_CIDR' dev eth0 proto kernel scope link src '$HOST_IP' mtu 9000' >> /etc/sysconfig/network-scripts/route-eth0
 }
@@ -170,8 +203,13 @@ function update_hosts
     mkdir -p ${HOSTS_FILES} && cp /tmp/hosts ${HOSTS_FILES}/${HOST_NAME}
     touch ${EGO_HOSTS_FILE}
     cat /tmp/hosts >> ${EGO_HOSTS_FILE}
+    chown ${CLUSTERADMIN} ${EGO_HOSTS_FILE}
+    chmod 644 ${EGO_HOSTS_FILE}
     cat ${HOSTS_FILES}/* > /tmp/hosts
     cp /tmp/hosts /etc/hosts
+    echo "${LOCAL_HOST_IPV4}" >> /etc/hosts
+    echo "${LOCAL_HOST_IPV6}" >> /etc/hosts
+    chmod 644 /etc/hosts
     rm -f /tmp/hosts
 }
 
@@ -181,6 +219,9 @@ function update_hosts_noshare
     echo "${HOST_IP} ${HOST_NAME}${domainName} ${HOST_NAME}" > /tmp/hosts
     cat ${HOSTS_FILES}/* >> /tmp/hosts
     cp /tmp/hosts /etc/hosts
+    echo "${LOCAL_HOST_IPV4}" >> /etc/hosts
+    echo "${LOCAL_HOST_IPV6}" >> /etc/hosts
+    chmod 644 /etc/hosts
     rm -f /tmp/hosts
 }
 
@@ -208,13 +249,21 @@ function create_sshkey
     mkdir -p /root/.ssh
     cat ${SHARED_TOP_CLUSTERID}/root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
     cp ${SHARED_TOP_CLUSTERID}/root/.ssh/id_rsa /root/.ssh/.
+    if [ ${spectrum_scale} == true ]; then
+      echo "${temp_public_key}" >> /root/.ssh/authorized_keys
+    fi
+    echo "StrictHostKeyChecking no" >> ~/.ssh/config
 }
 
 function copy_sshkey
 {
     mkdir -p /root/.ssh
     cat ${SHARED_TOP_CLUSTERID}/root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+    if [ ${spectrum_scale} == true ]; then
+      echo "${temp_public_key}" >> /root/.ssh/authorized_keys
+    fi
     cp ${SHARED_TOP_CLUSTERID}/root/.ssh/id_rsa /root/.ssh/.
+    echo "StrictHostKeyChecking no" >> ~/.ssh/config
 }
 
 function create_sslkey
@@ -349,12 +398,24 @@ if [ ! 'mountpoint -q $SHARED_TOP' ]; then
     exit 1
 fi
 
+if [ ${spectrum_scale} == true ]; then
+    export TMP_HOST_NAME=\$(grep -F "\${HOST_IP} " ${SHARED_HOSTS_FILE} | awk '{ print \$3 }')
+    if [ -n "\${TMP_HOST_NAME}" ]; then
+        export HOST_NAME=\${TMP_HOST_NAME}
+        hostnamectl set-hostname \${HOST_NAME}
+    fi
+fi
 #Fully qualified domain name of the master host
 echo "\${HOST_IP} \${HOST_NAME}${domainName} \${HOST_NAME}" > /tmp/hosts
 cat ${HOSTS_FILES}/* >> /tmp/hosts
 cp /tmp/hosts /etc/hosts
+echo "${LOCAL_HOST_IPV4}" >> /etc/hosts
+echo "${LOCAL_HOST_IPV6}" >> /etc/hosts
+chmod 644 /etc/hosts
 rm -f /tmp/hosts
-
+if [ ${spectrum_scale} == true ]; then
+    cat ${SHARED_HOSTS_FILE} >> /etc/hosts
+fi
 # copy ssh key
 mkdir -p /root/.ssh
 cat ${SHARED_TOP_CLUSTERID}/root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
@@ -380,6 +441,7 @@ export PRIMARY_MASTER=\$(echo \$EGO_MASTER_LIST | cut -d' ' -f1)
 
 egosetsudoers.sh
 egosetrc.sh
+export EGOCONFIG_DISABLE_HOST_CHECK=Y
 su ${CLUSTERADMIN} -c 'egoconfig join \${PRIMARY_MASTER} -f'
 su ${CLUSTERADMIN} -c 'egoconfig addresourceattr "[resourcemap ibmcloud*cloudprovider] [resource corehoursaudit]"'
 echo "source ${EGO_TOP}/profile.platform" >> /root/.bashrc
@@ -474,9 +536,10 @@ function enable_SSL_compute
 function patch_image
 {
     echo "Patching image config"
-    sed -i 's/\(EGO_DYNAMIC_HOST_TIMEOUT=\).*/\15M/' ${EGO_TOP}/kernel/conf/ego.conf
-    echo "net.ipv4.tcp_max_syn_backlog = 65536 " >> /etc/sysctl.conf
-    rm -f /root/preconfig.sh
+    rm -f /root/preconfig*.sh
+    if [ ! -f /usr/bin/python ]; then
+        ln -s /usr/bin/python3 /usr/bin/python
+    fi
 }
 
 function config_symprimary
@@ -517,6 +580,7 @@ function config_symfailover
 
     egosetsudoers.sh
     egosetrc.sh
+    export EGOCONFIG_DISABLE_HOST_CHECK=Y
     su ${CLUSTERADMIN} -c 'egoconfig join ${PRIMARY_MASTER} -f'
     su ${CLUSTERADMIN} -c 'egoconfig mghost ${SHARED_TOP_SYM} -f'
     source ${EGO_TOP}/profile.platform
@@ -536,6 +600,7 @@ function config_symmanagement
     if (( numExpectedManagementHosts > 3 )); then
         sleep $(($RANDOM%15))
     fi
+    export EGOCONFIG_DISABLE_HOST_CHECK=Y
     su ${CLUSTERADMIN} -c 'egoconfig join ${PRIMARY_MASTER} -f'
     su ${CLUSTERADMIN} -c 'egoconfig mghost ${SHARED_TOP_SYM} -f'
     source ${EGO_TOP}/profile.platform
@@ -550,6 +615,7 @@ function config_symcompute
 
     egosetsudoers.sh
     egosetrc.sh
+    export EGOCONFIG_DISABLE_HOST_CHECK=Y
     su ${CLUSTERADMIN} -c 'egoconfig join ${PRIMARY_MASTER} -f'
     su ${CLUSTERADMIN} -c 'egoconfig addresourceattr "[resourcemap ibmcloud*cloudprovider] [resource corehoursaudit]"'
 }
@@ -567,6 +633,9 @@ function wait_for_management_hosts
         fi
         cat ${HOSTS_FILES}/* >> /tmp/hosts
         cp /tmp/hosts /etc/hosts
+        echo "${LOCAL_HOST_IPV4}" >> /etc/hosts
+        echo "${LOCAL_HOST_IPV6}" >> /etc/hosts
+        chmod 644 /etc/hosts
         CURRENT_HOSTS=`wc -l < /tmp/hosts`
         rm -f /tmp/hosts
     done
@@ -674,8 +743,10 @@ if [ "${egoHostRole}" == "primary" ]; then
     update_clusterid
     create_sshkey
     create_sslkey
+    scale_create_shared_hosts_file
     HF_provider_config
     disable_perf
+    scale_disable_hf
     patch_image
     enable_SSL_primary
     config_symprimary
@@ -683,6 +754,7 @@ if [ "${egoHostRole}" == "primary" ]; then
     touch $DONE_FILE
     start_ego
     wait_for_management_hosts
+    scale_append_hosts_file
     update_passwords
     wait_for_candidate_hosts
     rm -f $DONE_FILE
@@ -698,6 +770,7 @@ elif [ "${egoHostRole}" == "secondary" ]; then
     config_symfailover
     start_ego
     wait_for_management_hosts
+    scale_append_hosts_file
 elif [ "${egoHostRole}" == "management" ]; then
     mount_nfs
     wait_for_nfs
@@ -710,12 +783,25 @@ elif [ "${egoHostRole}" == "management" ]; then
     config_symmanagement
     start_ego
     wait_for_management_hosts
+    scale_append_hosts_file
+elif [ "${egoHostRole}" == "scale_storage" ]; then
+    config_hyperthreading
+    mount_nfs
+    wait_for_nfs
+    mtu9000
+    wait_for_candidate_hosts_norestart
+    scale_update_worker_hostname
+    update_hosts_noshare
+    copy_sshkey
+    wait_for_management_hosts
+    scale_append_hosts_file
 else
     config_hyperthreading
     mount_nfs_readonly
     wait_for_nfs
     mtu9000
     wait_for_candidate_hosts_norestart
+    scale_update_worker_hostname
     update_hosts_noshare
     copy_sshkey
     copy_sslkey
@@ -724,4 +810,5 @@ else
     config_symcompute
     start_ego
     wait_for_management_hosts
+    scale_append_hosts_file
 fi

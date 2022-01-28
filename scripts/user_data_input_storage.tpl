@@ -16,3 +16,4 @@ echo START `date '+%Y-%m-%d %H:%M:%S'`
 
 #input parameters
 hf_cidr_block="${hf_cidr_block}"
+spectrum_scale="${spectrum_scale}"

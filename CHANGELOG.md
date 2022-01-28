@@ -1,12 +1,20 @@
 # **CHANGELOG**
 
+## **1.2.0**
+### ENHANCEMENTS
+- Support for Spectrum Scale storage nodes
+- Optimization of NFS for RHEL 8
+
+### **CHANGES**
+- Removed RHEL 7.7 and Centos 7.7 custom images and replaced them with RHEL 8.2 custom image.
+
 ## **1.1.2**
 ### **CHANGES**
 - New custom image having upgraded log4j version(2.17) to mitigate Log4Shell vulnerability (CVE-2021-44228).
 
 ## **1.1.1**
 ### **CHANGES**
-- Remove JNDILookup and JMSAppender from classpath to mitigate Log4Shell vulnerability (CVE-2021-44228)
+- Remove JNDILookup and JMSAppender from classpath to mitigate Log4Shell vulnerability (CVE-2021-44228).
 
 ## **1.1.0**
 ### ENHANCEMENTS
