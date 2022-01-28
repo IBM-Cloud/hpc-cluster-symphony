@@ -24,11 +24,7 @@
         {
           "TF_CLI_ARGS_destroy": "-parallelism=100"
         },
-<<<<<<< HEAD
-        { 
-=======
         {
->>>>>>> 76e2a13236fddf5864646356d2dba1afa240755d
           "VAR1":"<val1>"
         },
         {
@@ -73,28 +69,17 @@
         },
         {
           "name": "image_name",
-<<<<<<< HEAD
-          "value": "hpcc-sym731-rhel77-jan0822-v1",
-          "type": "string",
-          "secure": false,
-          "description":"Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy Spectrum Symphony Cluster. By default, our automation uses a base image with following HPC related packages documented here [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony). If you would like to include your application specific binaries please follow the instructions [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Symphony cluster through this offering."
-=======
           "value": "hpcc-sym731-scale512-rhel82-jan1222-v1",
           "type": "string",
           "secure": false,
           "description":"Name of the custom image that you want to use to create virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the automation uses a base image with additional software packages mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you would like to include your application-specific binary files, follow the instructions in [ Planning for custom images ](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
->>>>>>> 76e2a13236fddf5864646356d2dba1afa240755d
         },
         {
           "name": "storage_node_instance_type",
           "value": "bx2-2x8",
           "type": "string",
           "secure": false,
-<<<<<<< HEAD
-          "description": "Specify the virtual server instance profile type to be used to create the storage nodes for the Spectrum Symphony cluster. The storage nodes are the ones that are used to create an NFS instance to manage the data for HPC workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
-=======
           "description": "Specify the virtual server instance profile type to be used to create the storage node for the Spectrum Symphony cluster. The storage node is the one that is used to create an NFS instance to manage the data for HPC workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
->>>>>>> 76e2a13236fddf5864646356d2dba1afa240755d
         },
         {
           "name": "worker_node_instance_type",
@@ -129,22 +114,14 @@
           "value": "10",
           "type": "number",
           "secure": false,
-<<<<<<< HEAD
-          "description": "The maximum number of worker nodes that should be added to Spectrum Symphony cluster. This is to limit the number of machines that can be added to Spectrum Symphony cluster when auto-scaling configuration is used. This property can be used to manage the cost associated with Spectrum Symphony cluster instance. Enter a value in the range 1 - 500."
-=======
           "description": "The maximum number of worker nodes that can be deployed in the Spectrum Symphony cluster. In order to use the [Host Factory](https://www.ibm.com/docs/en/spectrum-symphony/7.3.1?topic=factory-overview) feature to dynamically create and delete worker nodes based on workload demand, the value selected for this parameter must be larger than worker_node_min_count. If you plan to deploy only static worker nodes in the Spectrum Symphony cluster, e.g., when using Spectrum Scale storage, the value for this parameter should be equal to worker_node_min_count. Enter a value in the range 1 - 500."
->>>>>>> 76e2a13236fddf5864646356d2dba1afa240755d
         },
         {
           "name": "worker_node_min_count",
           "value": "0",
           "type": "number",
           "secure": false,
-<<<<<<< HEAD
-          "description": "The minimum number of worker nodes. This is the number of worker nodes that will be provisioned at the time the cluster is created. Enter a value in the range 0 - 500."
-=======
           "description": "The minimum number of worker nodes. This is the number of static worker nodes that will be provisioned at the time the cluster is created. If using NFS storage, enter a value in the range 0 - 500. If using Spectrum Scale storage, enter a value in the range 1 - 64. NOTE: Spectrum Scale requires a minimum of 3 compute nodes (combination of primary, secondary, management, and worker nodes) to establish a [quorum](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=failure-quorum#nodequo) and maintain data consistency in the even of a node failure. Therefore, the minimum value of 1 may need to be larger if the value specified for management_node_count is less than 2."
->>>>>>> 76e2a13236fddf5864646356d2dba1afa240755d
         },
         {
           "name": "ssh_key_name",
@@ -241,8 +218,6 @@
           "value": "spread",
           "type": "string",
           "description": "Specify 'pack' or 'spread'. The 'pack' option will deploy VSIson one dedicated host until full before moving on to the next dedicated host. The 'spread' option will deploy VSIs in round-robin fashion across all the dedicated hosts. The second option should result in mostly even distribution of VSIs on the hosts, while the first option could result in one dedicated host being mostly empty."
-<<<<<<< HEAD
-=======
         },
         {
           "name": "spectrum_scale_enabled",
@@ -320,7 +295,6 @@
           "type": "string",
           "secure": false,
           "description": "Compute cluster (accessingCluster) file system mount point. The accessingCluster is the cluster that accesses the owningCluster. [Learn more](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=system-mounting-remote-gpfs-file)."
->>>>>>> 76e2a13236fddf5864646356d2dba1afa240755d
         }
       ]
     }
