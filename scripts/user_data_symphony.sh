@@ -548,11 +548,6 @@ function config_symprimary
     egosetsudoers.sh
     egosetrc.sh
     su ${CLUSTERADMIN} -c 'egoconfig join ${HOST_NAME} -f'
-    echo $entitlementLine1 > $ENTITLEMENT_FILE
-    echo $entitlementLine2 >> $ENTITLEMENT_FILE
-    echo $entitlementLine3 >> $ENTITLEMENT_FILE
-    echo $entitlementLine4 >> $ENTITLEMENT_FILE
-    chown ${CLUSTERADMIN} $ENTITLEMENT_FILE
     su ${CLUSTERADMIN} -c 'egoconfig setentitlement $ENTITLEMENT_FILE'
     su ${CLUSTERADMIN} -c 'egoconfig mghost ${SHARED_TOP_SYM} -f'
     source ${EGO_TOP}/profile.platform
