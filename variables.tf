@@ -63,8 +63,8 @@ variable "zone" {
 
 variable "image_name" {
   type        = string
-  default     = "hpcc-sym731-rhel77-jan0822-v1"
-  description = "Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy Spectrum Symphony Cluster. By default, our automation uses a base image with following HPC related packages documented here [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony). If you would like to include your application specific binaries please follow the instructions [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Symphony cluster through this offering."
+  default     = "hpcc-sym731-scale512-rhel82-jan1222-v1"
+  description = "Name of the custom image that you want to use to create virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the automation uses a base image with additional software packages mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you would like to include your application-specific binary files, follow the instructions in [ Planning for custom images ](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
 }
 
 variable "management_node_instance_type" {
@@ -103,7 +103,7 @@ variable "login_node_instance_type" {
 variable "storage_node_instance_type" {
   type        = string
   default     = "bx2-2x8"
-  description = "Specify the virtual server instance profile type to be used to create the storage nodes for the Spectrum Symphony cluster. The storage nodes are the ones that are used to create an NFS instance to manage the data for HPC workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
+  description = "Specify the virtual server instance profile type to be used to create the storage node for the Spectrum Symphony cluster. The storage node is the one that is used to create an NFS instance to manage the data for HPC workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
   validation {
     # regex(...) fails if it cannot find a match
     condition     = can(regex("^[^\\s]+-[0-9]+x[0-9]+", var.storage_node_instance_type))
@@ -114,7 +114,7 @@ variable "storage_node_instance_type" {
 variable "worker_node_min_count" {
   type        = number
   default     = 0
-  description = "The minimum number of worker nodes. This is the number of worker nodes that will be provisioned at the time the cluster is created. Enter a value in the range 0 - 500."
+  description = "The minimum number of worker nodes. This is the number of static worker nodes that will be provisioned at the time the cluster is created. If using NFS storage, enter a value in the range 0 - 500. If using Spectrum Scale storage, enter a value in the range 1 - 64. NOTE: Spectrum Scale requires a minimum of 3 compute nodes (combination of primary, secondary, management, and worker nodes) to establish a [quorum](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=failure-quorum#nodequo) and maintain data consistency in the even of a node failure. Therefore, the minimum value of 1 may need to be larger if the value specified for management_node_count is less than 2."
   validation {
     condition     = 0 <= var.worker_node_min_count && var.worker_node_min_count <= 500
     error_message = "Input \"worker_node_min_count\" must be >= 0 and <= 500."
@@ -124,7 +124,7 @@ variable "worker_node_min_count" {
 variable "worker_node_max_count" {
   type        = number
   default     = 10
-  description = "The maximum number of worker nodes that should be added to Spectrum Symphony cluster. This is to limit the number of machines that can be added to Spectrum Symphony cluster when auto-scaling configuration is used. This property can be used to manage the cost associated with Spectrum Symphony cluster instance. Enter a value in the range 1 - 500."
+  description = "The maximum number of worker nodes that can be deployed in the Spectrum Symphony cluster. In order to use the [Host Factory](https://www.ibm.com/docs/en/spectrum-symphony/7.3.1?topic=factory-overview) feature to dynamically create and delete worker nodes based on workload demand, the value selected for this parameter must be larger than worker_node_min_count. If you plan to deploy only static worker nodes in the Spectrum Symphony cluster, e.g., when using Spectrum Scale storage, the value for this parameter should be equal to worker_node_min_count. Enter a value in the range 1 - 500."
   validation {
     condition     = 1 <= var.worker_node_max_count && var.worker_node_max_count <= 500
     error_message = "Input \"worker_node_max_count must\" be >= 1 and <= 500."
@@ -232,5 +232,115 @@ variable "TF_PARALLELISM" {
   validation {
     condition     = 1 <= var.TF_PARALLELISM && var.TF_PARALLELISM <= 256
     error_message = "Input \"TF_PARALLELISM\" must be >= 1 and <= 256."
+  }
+}
+
+variable "spectrum_scale_enabled"{
+  type = bool
+  default = false
+  description = "Setting this to 'true' will enable Spectrum Scale integration with the cluster. Otherwise, Spectrum Scale integration will be disabled (default). By entering 'true' for the property you have also agreed to one of the two conditions. 1. You are using the software in production and confirm you have sufficient licenses to cover your use under the International Program License Agreement (IPLA). 2. You are evaluating the software and agree to abide by the International License Agreement for Evaluation of Programs (ILAE). NOTE: Failure to comply with licenses for production use of software is a violation of IBM International Program License Agreement. [Learn more](https://www.ibm.com/software/passportadvantage/programlicense.html)."
+}
+
+variable "scale_storage_image_name" {
+  type        = string
+  default     = "hpcc-scale512-rhel82-jan0522-v1"
+  description = "Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy the Spectrum Scale storage cluster. By default, our automation uses a base image with following HPC related packages documented here [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony). If you would like to include your application specific binaries please follow the instructions [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Scale storage cluster through this offering."
+}
+
+variable "scale_storage_node_count" {
+  type        = number
+  default     = 4
+  description = "The number of Spectrum Scale storage nodes that will be provisioned at the time the cluster is created. Enter a value in the range 2 - 18. It has to be divisible by 2."
+  validation {
+    condition     = (var.scale_storage_node_count == 0) || (var.scale_storage_node_count >= 2 && var.scale_storage_node_count <= 34 && var.scale_storage_node_count % 2 == 0)
+    error_message = "Input \"scale_storage_node_count\" must be >= 2 and <= 18 and has to be divisible by 2."
+  }
+}
+
+variable "scale_storage_node_instance_type" {
+  type        = string
+  default     = "cx2d-8x16"
+  description = "Specify the virtual server instance storage profile type name to be used to create the Spectrum Scale storage nodes for the Spectrum Symphony cluster. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
+  validation {
+    condition     = can(regex("^[b|c|m]x[0-9]+d-[0-9]+x[0-9]+", var.scale_storage_node_instance_type))
+    error_message = "The profile must be a valid profile name."
+  }
+}
+
+
+variable "scale_storage_cluster_filesystem_mountpoint" {
+  type        = string
+  default     = "/gpfs/fs1"
+  description = "Spectrum Scale storage cluster (owningCluster) file system mount point. The owningCluster is the cluster that owns and serves the file system to be mounted. [Learn more](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=system-mounting-remote-gpfs-file)."
+
+  validation {
+    condition     = can(regex("^\\/[a-z0-9A-Z-_]+\\/[a-z0-9A-Z-_]+$", var.scale_storage_cluster_filesystem_mountpoint))
+    error_message = "Specified value for \"storage_cluster_filesystem_mountpoint\" is not valid (valid: /gpfs/fs1)."
+  }
+}
+
+variable "scale_filesystem_block_size" {
+  type        = string
+  default     = "4M"
+  description = "File system [block size](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=considerations-block-size). Spectrum Scale supported block sizes (in bytes) include: 256K, 512K, 1M, 2M, 4M, 8M, 16M."
+
+  validation {
+    condition     = can(regex("^256K$|^512K$|^1M$|^2M$|^4M$|^8M$|^16M$", var.scale_filesystem_block_size))
+    error_message = "Specified block size must be a valid IBM Spectrum Scale supported block sizes (256K, 512K, 1M, 2M, 4M, 8M, 16M)."
+  }
+}
+
+variable "scale_storage_cluster_gui_username" {
+  type        = string
+  sensitive   = true
+  default = ""
+  description = "GUI user to perform system management and monitoring tasks on storage cluster. Note: Username should be at least 4 characters, any combination of lowercase and uppercase letters."
+  validation {
+    condition = var.scale_storage_cluster_gui_username == "" || (length(var.scale_storage_cluster_gui_username) >= 4 && length(var.scale_storage_cluster_gui_username) <= 32)
+    error_message = "Specified input for \"storage_cluster_gui_username\" is not valid. username should be greater or equal to 4 letters."
+  }
+}
+
+variable "scale_storage_cluster_gui_password" {
+  type        = string
+  sensitive   = true
+  default     = ""
+  description = "Password for Spectrum Scale storage cluster GUI. Note: Password should be at least 8 characters, must have one number, one lowercase letter, one uppercase letter, and at least one unique character. Password should not contain username."
+  validation {
+    condition = var.scale_storage_cluster_gui_password == "" || (length(var.scale_storage_cluster_gui_password) >= 8 && length(var.scale_storage_cluster_gui_password) <= 32)
+    error_message = "Password should be at least 8 characters, must have one number, one lowercase letter, and one uppercase letter, at least one unique character. Password Should not contain username."
+  }
+}
+
+variable "scale_compute_cluster_gui_username" {
+  type        = string
+  sensitive   = true
+  default     = ""
+  description = "GUI user to perform system management and monitoring tasks on compute cluster. Note: Username should be at least 4 characters, any combination of lowercase and uppercase letters."
+  validation {
+    condition = var.scale_compute_cluster_gui_username == "" || (length(var.scale_compute_cluster_gui_username) >= 4 && length(var.scale_compute_cluster_gui_username) <= 32)
+    error_message = "Specified input for \"storage_cluster_gui_username\" is not valid. username should be greater or equal to 4 letters."
+  }
+}
+
+variable "scale_compute_cluster_gui_password" {
+  type        = string
+  sensitive   = true
+  default     = ""
+  description = "Password for compute cluster GUI. Note: Password should be at least 8 characters, must have one number, one lowercase letter, one uppercase letter, and at least one unique character. Password should not contain username."
+  validation {
+    condition =  var.scale_compute_cluster_gui_password == "" || (length(var.scale_compute_cluster_gui_password) >= 8 && length(var.scale_compute_cluster_gui_password) <= 32)
+    error_message = "Password should be at least 8 characters, must have one number, one lowercase letter, and one uppercase letter, at least one unique character. Password Should not contain username."
+  }
+}
+
+variable "scale_compute_cluster_filesystem_mountpoint" {
+  type        = string
+  default     = "/gpfs/fs1"
+  description = "Compute cluster (accessingCluster) file system mount point. The accessingCluster is the cluster that accesses the owningCluster. [Learn more](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=system-mounting-remote-gpfs-file)."
+
+  validation {
+    condition     = can(regex("^\\/[a-z0-9A-Z-_]+\\/[a-z0-9A-Z-_]+$", var.scale_compute_cluster_filesystem_mountpoint))
+    error_message = "Specified value for \"compute_cluster_filesystem_mountpoint\" is not valid (valid: /gpfs/fs1)."
   }
 }

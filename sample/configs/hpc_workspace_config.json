@@ -24,7 +24,7 @@
         {
           "TF_CLI_ARGS_destroy": "-parallelism=100"
         },
-        { 
+        {
           "VAR1":"<val1>"
         },
         {
@@ -69,17 +69,17 @@
         },
         {
           "name": "image_name",
-          "value": "hpcc-sym731-rhel77-jan0822-v1",
+          "value": "hpcc-sym731-scale512-rhel82-jan1222-v1",
           "type": "string",
           "secure": false,
-          "description":"Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy Spectrum Symphony Cluster. By default, our automation uses a base image with following HPC related packages documented here [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony). If you would like to include your application specific binaries please follow the instructions [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Symphony cluster through this offering."
+          "description":"Name of the custom image that you want to use to create virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the automation uses a base image with additional software packages mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you would like to include your application-specific binary files, follow the instructions in [ Planning for custom images ](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
         },
         {
           "name": "storage_node_instance_type",
           "value": "bx2-2x8",
           "type": "string",
           "secure": false,
-          "description": "Specify the virtual server instance profile type to be used to create the storage nodes for the Spectrum Symphony cluster. The storage nodes are the ones that are used to create an NFS instance to manage the data for HPC workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
+          "description": "Specify the virtual server instance profile type to be used to create the storage node for the Spectrum Symphony cluster. The storage node is the one that is used to create an NFS instance to manage the data for HPC workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
         },
         {
           "name": "worker_node_instance_type",
@@ -114,14 +114,14 @@
           "value": "10",
           "type": "number",
           "secure": false,
-          "description": "The maximum number of worker nodes that should be added to Spectrum Symphony cluster. This is to limit the number of machines that can be added to Spectrum Symphony cluster when auto-scaling configuration is used. This property can be used to manage the cost associated with Spectrum Symphony cluster instance. Enter a value in the range 1 - 500."
+          "description": "The maximum number of worker nodes that can be deployed in the Spectrum Symphony cluster. In order to use the [Host Factory](https://www.ibm.com/docs/en/spectrum-symphony/7.3.1?topic=factory-overview) feature to dynamically create and delete worker nodes based on workload demand, the value selected for this parameter must be larger than worker_node_min_count. If you plan to deploy only static worker nodes in the Spectrum Symphony cluster, e.g., when using Spectrum Scale storage, the value for this parameter should be equal to worker_node_min_count. Enter a value in the range 1 - 500."
         },
         {
           "name": "worker_node_min_count",
           "value": "0",
           "type": "number",
           "secure": false,
-          "description": "The minimum number of worker nodes. This is the number of worker nodes that will be provisioned at the time the cluster is created. Enter a value in the range 0 - 500."
+          "description": "The minimum number of worker nodes. This is the number of static worker nodes that will be provisioned at the time the cluster is created. If using NFS storage, enter a value in the range 0 - 500. If using Spectrum Scale storage, enter a value in the range 1 - 64. NOTE: Spectrum Scale requires a minimum of 3 compute nodes (combination of primary, secondary, management, and worker nodes) to establish a [quorum](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=failure-quorum#nodequo) and maintain data consistency in the even of a node failure. Therefore, the minimum value of 1 may need to be larger if the value specified for management_node_count is less than 2."
         },
         {
           "name": "ssh_key_name",
@@ -218,6 +218,83 @@
           "value": "spread",
           "type": "string",
           "description": "Specify 'pack' or 'spread'. The 'pack' option will deploy VSIson one dedicated host until full before moving on to the next dedicated host. The 'spread' option will deploy VSIs in round-robin fashion across all the dedicated hosts. The second option should result in mostly even distribution of VSIs on the hosts, while the first option could result in one dedicated host being mostly empty."
+        },
+        {
+          "name": "spectrum_scale_enabled",
+          "value": "false",
+          "type": "bool",
+          "secure": false,
+          "description": "Setting this to 'true' will enable Spectrum Scale integration with the cluster. Otherwise, Spectrum Scale integration will be disabled (default). By entering 'true' for the property you have also agreed to one of the two conditions. 1. You are using the software in production and confirm you have sufficient licenses to cover your use under the International Program License Agreement (IPLA). 2. You are evaluating the software and agree to abide by the International License Agreement for Evaluation of Programs (ILAE). NOTE: Failure to comply with licenses for production use of software is a violation of IBM International Program License Agreement. [Learn more](https://www.ibm.com/software/passportadvantage/programlicense.html)."
+        },
+        {
+          "name": "scale_storage_image_name",
+          "value": "hpcc-scale512-rhel82-jan0522-v1",
+          "type": "string",
+          "secure": false,
+          "description": "Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy the Spectrum Scale storage cluster. By default, our automation uses a base image with following HPC related packages documented here [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony). If you would like to include your application specific binaries please follow the instructions [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Scale storage cluster through this offering."
+        },
+        {
+          "name": "scale_storage_node_count",
+          "value": "4",
+          "type": "number",
+          "secure": false,
+          "description": "The number of Spectrum Scale storage nodes that will be provisioned at the time the cluster is created. Enter a value in the range 2 - 18. It has to be divisible by 2."
+        },
+        {
+          "name": "scale_storage_node_instance_type",
+          "value": "bx2d-32x128",
+          "type": "string",
+          "secure": false,
+          "description": "Specify the virtual server instance storage profile type name to be used to create the Spectrum Scale storage nodes for the Spectrum Symphony cluster. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
+        },
+        {
+          "name": "scale_storage_cluster_filesystem_mountpoint",
+          "value": "/gpfs/fs1",
+          "type": "string",
+          "secure": false,
+          "description": "Spectrum Scale storage cluster (owningCluster) file system mount point. The owningCluster is the cluster that owns and serves the file system to be mounted. [Learn more](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=system-mounting-remote-gpfs-file)."
+        },
+        {
+          "name": "scale_filesystem_block_size",
+          "value": "4M",
+          "type": "string",
+          "secure": false,
+          "description": "File system [block size](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=considerations-block-size). Spectrum Scale supported block sizes (in bytes) include: 256K, 512K, 1M, 2M, 4M, 8M, 16M."
+        },
+        {
+          "name": "scale_storage_cluster_gui_username",
+          "value": "",
+          "type": "string",
+          "secure": false,
+          "description": "GUI user to perform system management and monitoring tasks on storage cluster. Note: Username should be at least 4 characters, any combination of lowercase and uppercase letters."
+        },
+        {
+          "name": "scale_storage_cluster_gui_password",
+          "value": "",
+          "type": "string",
+          "secure": true,
+          "description": "Password for Spectrum Scale storage cluster GUI. Note: Password should be at least 8 characters, must have one number, one lowercase letter, one uppercase letter, and at least one unique character. Password should not contain username."
+        },
+        {
+          "name": "scale_compute_cluster_gui_username",
+          "value": "",
+          "type": "string",
+          "secure": true,
+          "description": "GUI user to perform system management and monitoring tasks on compute cluster. Note: Username should be at least 4 characters, any combination of lowercase and uppercase letters."
+        },
+        {
+          "name": "scale_compute_cluster_gui_password",
+          "value": "",
+          "type": "string",
+          "secure": true,
+          "description": "Password for compute cluster GUI. Note: Password should be at least 8 characters, must have one number, one lowercase letter, one uppercase letter, and at least one unique character. Password should not contain username."
+        },
+        {
+          "name": "scale_compute_cluster_filesystem_mountpoint",
+          "value": "/gpfs/fs1",
+          "type": "string",
+          "secure": false,
+          "description": "Compute cluster (accessingCluster) file system mount point. The accessingCluster is the cluster that accesses the owningCluster. [Learn more](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=system-mounting-remote-gpfs-file)."
         }
       ]
     }

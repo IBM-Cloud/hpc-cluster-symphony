@@ -51,8 +51,9 @@ ncpus=$( nproc )
 nthreads=8
 
 if [ "$ncpus" -gt "$nthreads" ]; then
+  start=$(sed -n "/nfsd]/=" /etc/nfs.conf)
   echo "Adjust the thread number for NFS from $nthreads to $ncpus"
-  sed -i "s/^# *RPCNFSDCOUNT.*/RPCNFSDCOUNT=$ncpus/g" /etc/sysconfig/nfs
+  sed -i "$start,$ s/^# *threads.*/threads=$ncpus/1" /etc/nfs.conf
 fi
 
 systemctl start nfs-server

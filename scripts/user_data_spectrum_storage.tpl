@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 ###################################################
-# Copyright (C) IBM Corp. 2021 All Rights Reserved.
+# Copyright (C) IBM Corp. 2022 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 
@@ -15,15 +15,11 @@ echo START `date '+%Y-%m-%d %H:%M:%S'`
 %EXPORT_USER_DATA%
 
 #input parameters
-sym_entitlement1="ego_base   3.9   ()   ()   ()   ()   0dd01a5e74fa2cf2851965cf64b1166f242e7843"
-sym_entitlement2="sym_advanced_edition   7.3.1   ()   ()   ()   ()   21402f8aebf693f45c9e5a1c595435134be80845"
-vpcAPIKeyValue="${vpc_apikey_value}"
-hostPrefix="${host_prefix}"
-hf_cidr_block="${hf_cidr_block}"
 storage_ips="${storage_ips}"
 cluster_name="${cluster_id}"
 numExpectedManagementHosts="${mgmt_count}"
-egoHostRole="${ego_host_role}"
+hyperthreading="${hyperthreading}"
 cluster_cidr="${cluster_cidr}"
+egoHostRole="${ego_host_role}"
 spectrum_scale="${spectrum_scale}"
 temp_public_key="${temp_public_key}"
