@@ -59,4 +59,5 @@ fi
 chmod 0755 /usr/bin/pkexec
 systemctl start nfs-server
 systemctl enable nfs-server
+
 echo END `date '+%Y-%m-%d %H:%M:%S'`

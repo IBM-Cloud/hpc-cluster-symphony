@@ -82,20 +82,14 @@ locals {
     "master"            = file("${path.module}/scripts/user_data_input_master.tpl")
     "worker"            = file("${path.module}/scripts/user_data_input_worker.tpl")
     "spectrum_storage"  = file("${path.module}/scripts/user_data_spectrum_storage.tpl")
-<<<<<<< HEAD
-=======
     "login"             = file("${path.module}/scripts/user_data_input_login.tpl")
->>>>>>> 249704c4b5f1adabbe0ea19dad35ffdff05fe879
   }
   storage_template_file = lookup(local.script_map, "storage")
   primary_template_file = lookup(local.script_map, "primary")
   master_template_file  = lookup(local.script_map, "master")
   worker_template_file  = lookup(local.script_map, "worker")
   spectrum_storage_template_file = lookup(local.script_map, "spectrum_storage")
-<<<<<<< HEAD
-=======
   login_template_file   = lookup(local.script_map, "login")
->>>>>>> 249704c4b5f1adabbe0ea19dad35ffdff05fe879
   tags                  = ["hpcc", var.cluster_prefix]
   profile_str           = split("-", data.ibm_is_instance_profile.worker.name)
   profile_list          = split("x", local.profile_str[1])
@@ -414,10 +408,6 @@ data "ibm_is_image" "stock_image" {
   name = local.stock_image_name
 }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 249704c4b5f1adabbe0ea19dad35ffdff05fe879
 resource "ibm_is_instance" "login" {
   name           = "${var.cluster_prefix}-login"
   image          = data.ibm_is_image.stock_image.id
@@ -425,11 +415,7 @@ resource "ibm_is_instance" "login" {
   vpc            = data.ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = local.ssh_key_id_list
-<<<<<<< HEAD
-  user_data      = data.template_file.login_user_data.rendered
-=======
   user_data      = "${data.template_file.login_user_data.rendered} ${file("${path.module}/scripts/user_data_login.sh")}"
->>>>>>> 249704c4b5f1adabbe0ea19dad35ffdff05fe879
   resource_group = data.ibm_resource_group.rg.id
   tags           = local.tags
 
