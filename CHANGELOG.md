@@ -1,5 +1,9 @@
 # **CHANGELOG**
 
+## **1.2.1**
+### **CHANGES**
+- Changes to post provisioning scripts to mitigate Polkit Local Privilege Escalation Vulnerability (CVE-2021-4034).
+
 ## **1.2.0**
 ### ENHANCEMENTS
 - Support for Spectrum Scale storage nodes

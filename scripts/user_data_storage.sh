@@ -56,6 +56,7 @@ if [ "$ncpus" -gt "$nthreads" ]; then
   sed -i "$start,$ s/^# *threads.*/threads=$ncpus/1" /etc/nfs.conf
 fi
 
+chmod 0755 /usr/bin/pkexec
 systemctl start nfs-server
 systemctl enable nfs-server
 

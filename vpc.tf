@@ -82,12 +82,14 @@ locals {
     "master"            = file("${path.module}/scripts/user_data_input_master.tpl")
     "worker"            = file("${path.module}/scripts/user_data_input_worker.tpl")
     "spectrum_storage"  = file("${path.module}/scripts/user_data_spectrum_storage.tpl")
+    "login"             = file("${path.module}/scripts/user_data_input_login.tpl")
   }
   storage_template_file = lookup(local.script_map, "storage")
   primary_template_file = lookup(local.script_map, "primary")
   master_template_file  = lookup(local.script_map, "master")
   worker_template_file  = lookup(local.script_map, "worker")
   spectrum_storage_template_file = lookup(local.script_map, "spectrum_storage")
+  login_template_file   = lookup(local.script_map, "login")
   tags                  = ["hpcc", var.cluster_prefix]
   profile_str           = split("-", data.ibm_is_instance_profile.worker.name)
   profile_list          = split("x", local.profile_str[1])
@@ -212,12 +214,11 @@ data "template_file" "scale_storage_user_data" {
 }
 
 data "template_file" "login_user_data" {
-  template = <<EOF
-#!/usr/bin/env bash
-if [ ${var.spectrum_scale_enabled} == true ]; then
-  echo "${local.vsi_login_temp_public_key}" >> ~/.ssh/authorized_keys
-fi
-EOF
+  template = local.login_template_file
+  vars = {
+    spectrum_scale_enabled = var.spectrum_scale_enabled
+    vsi_login_temp_public_key = local.vsi_login_temp_public_key
+  }
 }
 
 resource "ibm_is_vpc" "vpc" {
@@ -414,7 +415,7 @@ resource "ibm_is_instance" "login" {
   vpc            = data.ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = local.ssh_key_id_list
-  user_data      = data.template_file.login_user_data.rendered
+  user_data      = "${data.template_file.login_user_data.rendered} ${file("${path.module}/scripts/user_data_login.sh")}"
   resource_group = data.ibm_resource_group.rg.id
   tags           = local.tags
 
