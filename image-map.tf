@@ -2,16 +2,16 @@
 # These are images for computes nodes (primary, secondary, worker nodes etc)
 locals {
   image_region_map = {
-    "hpcc-sym731-scale512-rhel82-jan1222-v1"  = {
-      "eu-gb"    = "r018-76be0105-d2a6-43d3-9bc1-cea1d5536ef4"
-      "eu-de"    = "r010-48156708-066f-4b26-9f2f-a505c7cfb5a1"
-      "us-east"  = "r014-350b51b1-6f12-4573-858a-704604e285c1"
-      "us-south" = "r006-b7818ae6-6791-4131-a25f-744eab8163db"
-      "jp-tok"   = "r022-4059104f-f9f5-499f-b773-854dd134026f"
-      "jp-osa"   = "r034-ecf45a92-f52e-4f19-84cc-5cc49ef64777"
-      "au-syd"   = "r026-87f58e51-c12a-4497-a312-86e4ff42cc98"
-      "br-sao"   = "r042-2f6fd6e6-93f3-49df-a2bf-582090f5731e"
-      "ca-tor"   = "r038-39513311-89a8-4371-8c9d-b3c8ff1d5b76"
+    "hpcc-symp731-scale5131-rhel84-25may2022-v1" = {
+      "ca-tor" = "r038-303b6837-0767-4abc-9950-7e59c5ff1344"
+      "br-sao" = "r042-f4860c73-e883-4ea5-8b92-c81706d2e390"
+      "us-east" = "r014-45c37ae5-726c-4d9b-b567-7ba39ebd60eb"
+      "us-south"= "r006-c8ce7b6b-b40b-4f12-8ce5-0ba947a26524"
+      "jp-osa" = "r034-638b1f1e-84ff-43a8-acc3-ce864c9d6af5"
+      "jp-tok" = "r022-afed1834-572a-4937-9200-d5c25553feef"
+      "au-syd" = "r026-b58c6aa4-684b-4fe3-817c-32faa3157082"
+      "eu-de" = "r010-90a603fa-4881-490d-8d1e-bb9ba127a321"
+      "eu-gb" = "r018-c2dc9947-acf0-47a3-bf91-ee73c27b0a66"
     }
   }
 }

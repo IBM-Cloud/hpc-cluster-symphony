@@ -191,15 +191,16 @@ $ ssh -J root@52.116.122.64 root@10.241.0.20
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_ibm"></a> [ibm](#requirement\_ibm) | 1.30.0 |
+| <a name="requirement_ibm"></a> [ibm](#requirement\_ibm) | 1.41.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_ibm"></a> [ibm](#provider\_ibm) | 1.30.0 |
-| <a name="provider_null"></a> [null](#provider\_null) | 3.1.0 |
-| <a name="provider_template"></a> [template](#provider\_template) | 2.2.0 |
+| <a name="provider_http"></a> [http](#provider\_http) | n/a |
+| <a name="provider_ibm"></a> [ibm](#provider\_ibm) | 1.41.0 |
+| <a name="provider_null"></a> [null](#provider\_null) | n/a |
+| <a name="provider_template"></a> [template](#provider\_template) | n/a |
 
 ## Modules
 
@@ -212,58 +213,61 @@ $ ssh -J root@52.116.122.64 root@10.241.0.20
 | <a name="module_login_ssh_key"></a> [login\_ssh\_key](#module\_login\_ssh\_key) | ./resources/scale_common/generate_keys | n/a |
 | <a name="module_prepare_spectrum_scale_ansible_repo"></a> [prepare\_spectrum\_scale\_ansible\_repo](#module\_prepare\_spectrum\_scale\_ansible\_repo) | ./resources/scale_common/git_utils | n/a |
 | <a name="module_remove_ssh_key"></a> [remove\_ssh\_key](#module\_remove\_ssh\_key) | ./resources/scale_common/remove_ssh | n/a |
+| <a name="module_schematics_sg_tcp_rule"></a> [schematics\_sg\_tcp\_rule](#module\_schematics\_sg\_tcp\_rule) | ./resources/ibmcloud/security/security_tcp_rule | n/a |
 | <a name="module_storage_nodes_wait"></a> [storage\_nodes\_wait](#module\_storage\_nodes\_wait) | ./resources/scale_common/wait | n/a |
 
 ## Resources
 
 | Name | Type |
 |------|------|
-| [ibm_is_dedicated_host.worker](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_dedicated_host) | resource |
-| [ibm_is_dedicated_host_group.worker](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_dedicated_host_group) | resource |
-| [ibm_is_floating_ip.login_fip](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_floating_ip) | resource |
-| [ibm_is_instance.login](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_instance) | resource |
-| [ibm_is_instance.management](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_instance) | resource |
-| [ibm_is_instance.primary](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_instance) | resource |
-| [ibm_is_instance.secondary](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_instance) | resource |
-| [ibm_is_instance.spectrum_scale_storage](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_instance) | resource |
-| [ibm_is_instance.storage](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_instance) | resource |
-| [ibm_is_instance.worker](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_instance) | resource |
-| [ibm_is_public_gateway.mygateway](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_public_gateway) | resource |
-| [ibm_is_security_group.login_sg](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_security_group) | resource |
-| [ibm_is_security_group.sg](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_security_group) | resource |
-| [ibm_is_security_group_rule.egress_all](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_security_group_rule) | resource |
-| [ibm_is_security_group_rule.ingress_all_local](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_security_group_rule) | resource |
-| [ibm_is_security_group_rule.ingress_tcp](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_security_group_rule) | resource |
-| [ibm_is_security_group_rule.ingress_vpn](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_security_group_rule) | resource |
-| [ibm_is_security_group_rule.login_egress_tcp](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_security_group_rule) | resource |
-| [ibm_is_security_group_rule.login_egress_tcp_rhsm](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_security_group_rule) | resource |
-| [ibm_is_security_group_rule.login_egress_udp_rhsm](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_security_group_rule) | resource |
-| [ibm_is_security_group_rule.login_ingress_tcp_rhsm](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_security_group_rule) | resource |
-| [ibm_is_security_group_rule.login_ingress_tcp_temporary](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_security_group_rule) | resource |
-| [ibm_is_security_group_rule.login_ingress_tcp_update](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_security_group_rule) | resource |
-| [ibm_is_security_group_rule.login_ingress_udp_rhsm](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_security_group_rule) | resource |
-| [ibm_is_subnet.login_subnet](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_subnet) | resource |
-| [ibm_is_subnet.subnet](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_subnet) | resource |
-| [ibm_is_volume.nfs](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_volume) | resource |
-| [ibm_is_vpc.vpc](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_vpc) | resource |
-| [ibm_is_vpn_gateway.vpn](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_vpn_gateway) | resource |
-| [ibm_is_vpn_gateway_connection.conn](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/resources/is_vpn_gateway_connection) | resource |
-| [null_resource.remove_security_group_rule](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
-| [ibm_is_dedicated_host_profiles.worker](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_dedicated_host_profiles) | data source |
-| [ibm_is_image.image](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_image) | data source |
-| [ibm_is_image.stock_image](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_image) | data source |
-| [ibm_is_instance_profile.login](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_instance_profile) | data source |
-| [ibm_is_instance_profile.master](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_instance_profile) | data source |
-| [ibm_is_instance_profile.spectrum_scale_storage](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_instance_profile) | data source |
-| [ibm_is_instance_profile.storage](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_instance_profile) | data source |
-| [ibm_is_instance_profile.worker](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_instance_profile) | data source |
-| [ibm_is_region.region](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_region) | data source |
-| [ibm_is_ssh_key.ssh_key](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_ssh_key) | data source |
-| [ibm_is_volume_profile.nfs](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_volume_profile) | data source |
-| [ibm_is_vpc.existing_vpc](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_vpc) | data source |
-| [ibm_is_vpc.vpc](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_vpc) | data source |
-| [ibm_is_zone.zone](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/is_zone) | data source |
-| [ibm_resource_group.rg](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.30.0/docs/data-sources/resource_group) | data source |
+| [ibm_is_dedicated_host.worker](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_dedicated_host) | resource |
+| [ibm_is_dedicated_host_group.worker](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_dedicated_host_group) | resource |
+| [ibm_is_floating_ip.login_fip](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_floating_ip) | resource |
+| [ibm_is_instance.login](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_instance) | resource |
+| [ibm_is_instance.management](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_instance) | resource |
+| [ibm_is_instance.primary](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_instance) | resource |
+| [ibm_is_instance.secondary](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_instance) | resource |
+| [ibm_is_instance.spectrum_scale_storage](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_instance) | resource |
+| [ibm_is_instance.storage](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_instance) | resource |
+| [ibm_is_instance.worker](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_instance) | resource |
+| [ibm_is_public_gateway.mygateway](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_public_gateway) | resource |
+| [ibm_is_security_group.login_sg](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_security_group) | resource |
+| [ibm_is_security_group.sg](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_security_group) | resource |
+| [ibm_is_security_group_rule.egress_all](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_security_group_rule) | resource |
+| [ibm_is_security_group_rule.ingress_all_local](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_security_group_rule) | resource |
+| [ibm_is_security_group_rule.ingress_tcp](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_security_group_rule) | resource |
+| [ibm_is_security_group_rule.ingress_vpn](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_security_group_rule) | resource |
+| [ibm_is_security_group_rule.login_egress_tcp](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_security_group_rule) | resource |
+| [ibm_is_security_group_rule.login_egress_tcp_rhsm](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_security_group_rule) | resource |
+| [ibm_is_security_group_rule.login_egress_udp_rhsm](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_security_group_rule) | resource |
+| [ibm_is_security_group_rule.login_ingress_tcp](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_security_group_rule) | resource |
+| [ibm_is_security_group_rule.login_ingress_tcp_rhsm](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_security_group_rule) | resource |
+| [ibm_is_security_group_rule.login_ingress_udp_rhsm](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_security_group_rule) | resource |
+| [ibm_is_subnet.login_subnet](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_subnet) | resource |
+| [ibm_is_subnet.subnet](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_subnet) | resource |
+| [ibm_is_volume.nfs](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_volume) | resource |
+| [ibm_is_vpc.vpc](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_vpc) | resource |
+| [ibm_is_vpn_gateway.vpn](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_vpn_gateway) | resource |
+| [ibm_is_vpn_gateway_connection.conn](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_vpn_gateway_connection) | resource |
+| [null_resource.delete_schematics_ingress_security_rule](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
+| [http_http.fetch_myip](https://registry.terraform.io/providers/hashicorp/http/latest/docs/data-sources/http) | data source |
+| [ibm_iam_auth_token.token](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/iam_auth_token) | data source |
+| [ibm_is_dedicated_host_profiles.worker](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_dedicated_host_profiles) | data source |
+| [ibm_is_image.image](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_image) | data source |
+| [ibm_is_image.scale_image](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_image) | data source |
+| [ibm_is_image.stock_image](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_image) | data source |
+| [ibm_is_instance_profile.login](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_instance_profile) | data source |
+| [ibm_is_instance_profile.master](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_instance_profile) | data source |
+| [ibm_is_instance_profile.spectrum_scale_storage](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_instance_profile) | data source |
+| [ibm_is_instance_profile.storage](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_instance_profile) | data source |
+| [ibm_is_instance_profile.worker](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_instance_profile) | data source |
+| [ibm_is_region.region](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_region) | data source |
+| [ibm_is_ssh_key.ssh_key](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_ssh_key) | data source |
+| [ibm_is_volume_profile.nfs](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_volume_profile) | data source |
+| [ibm_is_vpc.existing_vpc](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_vpc) | data source |
+| [ibm_is_vpc.vpc](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_vpc) | data source |
+| [ibm_is_zone.zone](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_zone) | data source |
+| [ibm_resource_group.rg](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/resource_group) | data source |
 | [template_file.login_user_data](https://registry.terraform.io/providers/hashicorp/template/latest/docs/data-sources/file) | data source |
 | [template_file.management_user_data](https://registry.terraform.io/providers/hashicorp/template/latest/docs/data-sources/file) | data source |
 | [template_file.primary_user_data](https://registry.terraform.io/providers/hashicorp/template/latest/docs/data-sources/file) | data source |
@@ -277,14 +281,15 @@ $ ssh -J root@52.116.122.64 root@10.241.0.20
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_TF_PARALLELISM"></a> [TF\_PARALLELISM](#input\_TF\_PARALLELISM) | Parallelism/ concurrent operations limit. Valid values are between 1 and 256, both inclusive. [Learn more](https://www.terraform.io/docs/internals/graph.html#walking-the-graph). | `string` | `"250"` | no |
-| <a name="input_TF_VERSION"></a> [TF\_VERSION](#input\_TF\_VERSION) | The version of the Terraform engine that's used in the Schematics workspace. | `string` | `"0.14"` | no |
+| <a name="input_TF_VERSION"></a> [TF\_VERSION](#input\_TF\_VERSION) | The version of the Terraform engine that's used in the Schematics workspace. | `string` | `"1.1"` | no |
+| <a name="input_TF_WAIT_DURATION"></a> [TF\_WAIT\_DURATION](#input\_TF\_WAIT\_DURATION) | wait duration time set for the storage and worker node to complete the entire setup | `string` | `"180s"` | no |
 | <a name="input_api_key"></a> [api\_key](#input\_api\_key) | This is the API key for IBM Cloud account in which the Spectrum Symphony cluster needs to be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-userapikey). | `string` | n/a | yes |
 | <a name="input_cluster_id"></a> [cluster\_id](#input\_cluster\_id) | ID of the cluster used by Symphony for configuration of resources. This must be up to 39 alphanumeric characters including the underscore (\_), the hyphen (-), and the period (.). Other special characters and spaces are not allowed. Do not use the name of any host or user as the name of your cluster. You cannot change it after installation. | `string` | `"HPCCluster"` | no |
 | <a name="input_cluster_prefix"></a> [cluster\_prefix](#input\_cluster\_prefix) | Prefix that is used to name the Spectrum Symphony cluster and IBM Cloud resources that are provisioned to build the Spectrum Symphony cluster instance. You cannot create more than one instance of the Symphony cluster with the same name. Make sure that the name is unique. Enter a prefix name, such as my-hpcc. | `string` | `"hpcc-symphony"` | no |
 | <a name="input_dedicated_host_enabled"></a> [dedicated\_host\_enabled](#input\_dedicated\_host\_enabled) | Set to true to use dedicated hosts for compute hosts (default: false). Note that Symphony still dynamically provisions compute hosts at public VSIs and dedicated hosts are used only for static compute hosts provisioned at the time the cluster is created. The number of dedicated hosts and the profile names for dedicated hosts are calculated from worker\_node\_min\_count and dedicated\_host\_type\_name. | `bool` | `false` | no |
 | <a name="input_dedicated_host_placement"></a> [dedicated\_host\_placement](#input\_dedicated\_host\_placement) | Specify 'pack' or 'spread'. The 'pack' option will deploy VSIson one dedicated host until full before moving on to the next dedicated host. The 'spread' option will deploy VSIs in round-robin fashion across all the dedicated hosts. The second option should result in mostly even distribution of VSIs on the hosts, while the first option could result in one dedicated host being mostly empty. | `string` | `"spread"` | no |
-| <a name="input_hyperthreading_enabled"></a> [hyperthreading\_enabled](#input\_hyperthreading\_enabled) | True to enable hyper-threading in the cluster nodes (default). Otherwise, hyper-threading will be disabled. | `bool` | `true` | no |
-| <a name="input_image_name"></a> [image\_name](#input\_image\_name) | Name of the custom image that you want to use to create virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the automation uses a base image with additional software packages mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you would like to include your application-specific binary files, follow the instructions in [ Planning for custom images ](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering. | `string` | `"hpcc-sym731-scale512-rhel82-jan1222-v1"` | no |
+| <a name="input_hyperthreading_enabled"></a> [hyperthreading\_enabled](#input\_hyperthreading\_enabled) | True to enable hyper-threading in the cluster nodes (default). Otherwise, hyper-threading will be disabled. Note: Do not set hyper-threading to false. An issue with the RHEL 8.4 image related to that setting has been identified that impacts this release [FAQ](https://cloud.ibm.com/docs/hpc-spectrum-symphony?topic=hpc-spectrum-symphony-spectrum-symphony-faqs&interface=ui). | `bool` | `true` | no |
+| <a name="input_image_name"></a> [image\_name](#input\_image\_name) | Name of the custom image that you want to use to create virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the automation uses a base image with additional software packages mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you would like to include your application-specific binary files, follow the instructions in [ Planning for custom images ](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering. | `string` | `"hpcc-symp731-scale5131-rhel84-25may2022-v1"` | no |
 | <a name="input_login_node_instance_type"></a> [login\_node\_instance\_type](#input\_login\_node\_instance\_type) | Specify the virtual server instance profile type name to be used to create the login node for the Spectrum Symphony cluster. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles). | `string` | `"bx2-2x8"` | no |
 | <a name="input_management_node_count"></a> [management\_node\_count](#input\_management\_node\_count) | Number of management nodes. This is the total number of primary, secondary and management nodes. There will be one Primary, one Secondary and the rest of the nodes will be management nodes. Enter a value in the range 1 - 10. | `number` | `3` | no |
 | <a name="input_management_node_instance_type"></a> [management\_node\_instance\_type](#input\_management\_node\_instance\_type) | Specify the virtual server instance profile type name to be used to create the management nodes for the Spectrum Symphony cluster. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles). | `string` | `"bx2-4x16"` | no |
@@ -296,7 +301,7 @@ $ ssh -J root@52.116.122.64 root@10.241.0.20
 | <a name="input_scale_storage_cluster_filesystem_mountpoint"></a> [scale\_storage\_cluster\_filesystem\_mountpoint](#input\_scale\_storage\_cluster\_filesystem\_mountpoint) | Spectrum Scale storage cluster (owningCluster) file system mount point. The owningCluster is the cluster that owns and serves the file system to be mounted. [Learn more](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=system-mounting-remote-gpfs-file). | `string` | `"/gpfs/fs1"` | no |
 | <a name="input_scale_storage_cluster_gui_password"></a> [scale\_storage\_cluster\_gui\_password](#input\_scale\_storage\_cluster\_gui\_password) | Password for Spectrum Scale storage cluster GUI. Note: Password should be at least 8 characters, must have one number, one lowercase letter, one uppercase letter, and at least one unique character. Password should not contain username. | `string` | `""` | no |
 | <a name="input_scale_storage_cluster_gui_username"></a> [scale\_storage\_cluster\_gui\_username](#input\_scale\_storage\_cluster\_gui\_username) | GUI user to perform system management and monitoring tasks on storage cluster. Note: Username should be at least 4 characters, any combination of lowercase and uppercase letters. | `string` | `""` | no |
-| <a name="input_scale_storage_image_name"></a> [scale\_storage\_image\_name](#input\_scale\_storage\_image\_name) | Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy the Spectrum Scale storage cluster. By default, our automation uses a base image with following HPC related packages documented here [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony). If you would like to include your application specific binaries please follow the instructions [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Scale storage cluster through this offering. | `string` | `"hpcc-scale512-rhel82-jan0522-v1"` | no |
+| <a name="input_scale_storage_image_name"></a> [scale\_storage\_image\_name](#input\_scale\_storage\_image\_name) | Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy the Spectrum Scale storage cluster. By default, our automation uses a base image with following HPC related packages documented here [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony). If you would like to include your application specific binaries please follow the instructions [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Scale storage cluster through this offering. | `string` | `"hpcc-scale5131-rhel84-jun0122-v1"` | no |
 | <a name="input_scale_storage_node_count"></a> [scale\_storage\_node\_count](#input\_scale\_storage\_node\_count) | The number of Spectrum Scale storage nodes that will be provisioned at the time the cluster is created. Enter a value in the range 2 - 18. It has to be divisible by 2. | `number` | `4` | no |
 | <a name="input_scale_storage_node_instance_type"></a> [scale\_storage\_node\_instance\_type](#input\_scale\_storage\_node\_instance\_type) | Specify the virtual server instance storage profile type name to be used to create the Spectrum Scale storage nodes for the Spectrum Symphony cluster. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles). | `string` | `"cx2d-8x16"` | no |
 | <a name="input_spectrum_scale_enabled"></a> [spectrum\_scale\_enabled](#input\_spectrum\_scale\_enabled) | Setting this to 'true' will enable Spectrum Scale integration with the cluster. Otherwise, Spectrum Scale integration will be disabled (default). By entering 'true' for the property you have also agreed to one of the two conditions. 1. You are using the software in production and confirm you have sufficient licenses to cover your use under the International Program License Agreement (IPLA). 2. You are evaluating the software and agree to abide by the International License Agreement for Evaluation of Programs (ILAE). NOTE: Failure to comply with licenses for production use of software is a violation of IBM International Program License Agreement. [Learn more](https://www.ibm.com/software/passportadvantage/programlicense.html). | `bool` | `false` | no |

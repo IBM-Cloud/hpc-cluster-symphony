@@ -16,6 +16,7 @@ variable "bastion_ssh_private_key" {}
 variable "scale_infra_repo_clone_path" {}
 variable "total_compute_instances" {}
 variable "total_storage_instances" {}
+variable "host" {}
 
 locals {
   scripts_path                    = replace(path.module, "ansible_remote_mount_playbook", "scripts")
@@ -67,7 +68,7 @@ resource "null_resource" "call_remote_mnt_playbook" {
   connection {
     bastion_host = var.bastion_public_ip
     user         = local.bastion_user
-    host         = "0.0.0.0"
+    host         = var.host
     private_key  = file(var.bastion_ssh_private_key)
   }
 

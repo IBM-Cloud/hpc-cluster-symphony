@@ -1,7 +1,7 @@
 {
   "name": "hpcc-symphony-test",
   "type": [
-    "terraform_v0.14"
+    "terraform_v1.1"
   ],
   "location": "us-east",
   "resource_group": "Default",
@@ -13,7 +13,7 @@
   "template_data": [
     {
       "folder": ".",
-      "type": "terraform_v0.14",
+      "type": "terraform_v1.1",
       "env_values":[
         { 
           "TF_CLI_ARGS_apply": "-parallelism=250"
@@ -69,7 +69,7 @@
         },
         {
           "name": "image_name",
-          "value": "hpcc-sym731-scale512-rhel82-jan1222-v1",
+          "value": "hpcc-symp731-scale5131-rhel84-25may2022-v1",
           "type": "string",
           "secure": false,
           "description":"Name of the custom image that you want to use to create virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the automation uses a base image with additional software packages mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you would like to include your application-specific binary files, follow the instructions in [ Planning for custom images ](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
@@ -170,7 +170,7 @@
           "value": "true",
           "type": "bool",
           "secure": false,
-          "description": "True to enable hyper-threading in the cluster nodes (default). Otherwise, hyper-threading will be disabled."
+          "description": "True to enable hyper-threading in the cluster nodes (default). Otherwise, hyper-threading will be disabled. Note: Do not set hyper-threading to false. An issue with the RHEL 8.4 image related to that setting has been identified that impacts this release. See [FAQ](https://cloud.ibm.com/docs/hpc-spectrum-symphony?topic=hpc-spectrum-symphony-spectrum-symphony-faqs&interface=ui)."
         },
         {
           "name": "ssh_allowed_ips",
@@ -228,7 +228,7 @@
         },
         {
           "name": "scale_storage_image_name",
-          "value": "hpcc-scale512-rhel82-jan0522-v1",
+          "value": "hpcc-scale5131-rhel84-jun0122-v1",
           "type": "string",
           "secure": false,
           "description": "Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy the Spectrum Scale storage cluster. By default, our automation uses a base image with following HPC related packages documented here [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony). If you would like to include your application specific binaries please follow the instructions [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Scale storage cluster through this offering."
@@ -295,6 +295,12 @@
           "type": "string",
           "secure": false,
           "description": "Compute cluster (accessingCluster) file system mount point. The accessingCluster is the cluster that accesses the owningCluster. [Learn more](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=system-mounting-remote-gpfs-file)."
+        },
+        {
+          "name": "TF_WAIT_DURATION",
+          "value": "180s",
+          "type": "string",
+          "description": "wait duration time set for the storage and worker node to complete the entire setup"
         }
       ]
     }

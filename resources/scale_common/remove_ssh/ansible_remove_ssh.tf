@@ -8,6 +8,7 @@ variable "bastion_ssh_private_key" {}
 variable "compute_instances_by_ip" {}
 variable "storage_vsis_1A_by_ip" {}
 variable "key_to_remove" {}
+variable "host" {}
 
 
 locals {
@@ -28,7 +29,7 @@ resource "null_resource" "call_remove_ssh_playbook" {
   connection {
     bastion_host = var.login_ip
     user         = "root"
-    host         = "0.0.0.0"
+    host         = var.host
     private_key  = file(var.bastion_ssh_private_key)
   }
 

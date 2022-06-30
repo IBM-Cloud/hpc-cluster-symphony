@@ -28,6 +28,7 @@ variable "storage_instances_by_id" {}
 variable "storage_instance_disk_map" {}
 variable "storage_cluster_gui_username" {}
 variable "storage_cluster_gui_password" {}
+variable "host" {}
 
 locals {
   tf_inv_path                     = format("%s/%s", "/tmp/.schematics/IBM", "storage_tf_inventory.json")
@@ -116,7 +117,7 @@ resource "null_resource" "call_scale_install_playbook" {
   connection {
     bastion_host = var.bastion_public_ip
     user         = local.bastion_user
-    host         = "0.0.0.0"
+    host         = var.host
     private_key  = file(var.bastion_ssh_private_key)
   }
 

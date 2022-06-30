@@ -82,14 +82,12 @@ locals {
     "master"            = file("${path.module}/scripts/user_data_input_master.tpl")
     "worker"            = file("${path.module}/scripts/user_data_input_worker.tpl")
     "spectrum_storage"  = file("${path.module}/scripts/user_data_spectrum_storage.tpl")
-    "login"             = file("${path.module}/scripts/user_data_input_login.tpl")
   }
   storage_template_file = lookup(local.script_map, "storage")
   primary_template_file = lookup(local.script_map, "primary")
   master_template_file  = lookup(local.script_map, "master")
   worker_template_file  = lookup(local.script_map, "worker")
   spectrum_storage_template_file = lookup(local.script_map, "spectrum_storage")
-  login_template_file   = lookup(local.script_map, "login")
   tags                  = ["hpcc", var.cluster_prefix]
   profile_str           = split("-", data.ibm_is_instance_profile.worker.name)
   profile_list          = split("x", local.profile_str[1])
@@ -117,6 +115,11 @@ data "ibm_is_image" "image" {
   count = local.image_mapping_entry_found ? 0:1
 }
 
+data "ibm_is_image" "scale_image" {
+  name = var.scale_storage_image_name
+  count = local.scale_image_mapping_entry_found ? 0:1
+}
+
 data "template_file" "storage_user_data" {
   template = local.storage_template_file
   vars = {
@@ -132,6 +135,7 @@ data "template_file" "primary_user_data" {
     image_id             = local.image_mapping_entry_found ? local.new_image_id : data.ibm_is_image.image[0].id
     subnet_id            = ibm_is_subnet.subnet.id
     security_group_id    = ibm_is_security_group.sg.id
+    resource_group_id    = data.ibm_resource_group.rg.id
     sshkey_id            = data.ibm_is_ssh_key.ssh_key[local.ssh_key_list[0]].id
     region_name          = data.ibm_is_region.region.name
     zone_name            = data.ibm_is_zone.zone.name
@@ -214,11 +218,16 @@ data "template_file" "scale_storage_user_data" {
 }
 
 data "template_file" "login_user_data" {
-  template = local.login_template_file
-  vars = {
-    spectrum_scale_enabled = var.spectrum_scale_enabled
-    vsi_login_temp_public_key = local.vsi_login_temp_public_key
-  }
+  template = <<EOF
+#!/usr/bin/env bash
+if [ ${var.spectrum_scale_enabled} == true ]; then
+  echo "${local.vsi_login_temp_public_key}" >> ~/.ssh/authorized_keys
+fi
+EOF
+}
+
+data "http" "fetch_myip"{
+  url = "http://ipv4.icanhazip.com"
 }
 
 resource "ibm_is_vpc" "vpc" {
@@ -268,20 +277,7 @@ resource "ibm_is_security_group" "login_sg" {
 }
 
 
-resource "ibm_is_security_group_rule" "login_ingress_tcp_temporary" {
-  count     = var.spectrum_scale_enabled ? 1 : 0
-  group     = ibm_is_security_group.login_sg.id
-  direction = "inbound"
-  remote    = "0.0.0.0/0"
-
-  tcp {
-    port_min = 22
-    port_max = 22
-  }
-}
-
-
-resource "ibm_is_security_group_rule" "login_ingress_tcp_update" {
+resource "ibm_is_security_group_rule" "login_ingress_tcp" {
   for_each  = toset(split(",", var.ssh_allowed_ips))
   group     = ibm_is_security_group.login_sg.id
   direction = "inbound"
@@ -291,19 +287,7 @@ resource "ibm_is_security_group_rule" "login_ingress_tcp_update" {
     port_min = 22
     port_max = 22
   }
-  depends_on = [ibm_is_security_group_rule.login_ingress_tcp_temporary, module.invoke_remote_mount, module.remove_ssh_key]
-}
-
-resource "null_resource" "remove_security_group_rule" {
-  count = var.spectrum_scale_enabled ?  1 : 0
-  provisioner "local-exec" {
-    interpreter = ["/bin/bash", "-c"]
-    command     = "python3 ${local.remove_sg_rule_script_path} --region ${local.region_name} --apikey ${var.api_key} --sg_id ${ibm_is_security_group.login_sg.id} --sg_rule_id ${split(".",ibm_is_security_group_rule.login_ingress_tcp_temporary.0.id)[1]}"
-  }
-  triggers = {
-    build = timestamp()
-  }
-  depends_on = [module.invoke_remote_mount, ibm_is_security_group.login_sg, ibm_is_security_group_rule.login_ingress_tcp_temporary]
+  depends_on = [ibm_is_security_group.login_sg]
 }
 
 resource "ibm_is_security_group_rule" "login_ingress_tcp_rhsm" {
@@ -391,6 +375,15 @@ resource "ibm_is_security_group_rule" "ingress_all_local" {
   remote    = ibm_is_security_group.sg.id
 }
 
+module "schematics_sg_tcp_rule" {
+  count     = var.spectrum_scale_enabled ? 1 : 0
+  source            = "./resources/ibmcloud/security/security_tcp_rule"
+  security_group_id = ibm_is_security_group.login_sg.id
+  sg_direction      = "inbound"
+  remote_ip_addr    = tolist(["${chomp(data.http.fetch_myip.body)}"])
+  depends_on = [ibm_is_security_group.login_sg]
+}
+
 data "ibm_is_ssh_key" "ssh_key" {
   for_each = toset(split(",", var.ssh_key_name))
   name     = each.value
@@ -408,6 +401,7 @@ data "ibm_is_image" "stock_image" {
   name = local.stock_image_name
 }
 
+
 resource "ibm_is_instance" "login" {
   name           = "${var.cluster_prefix}-login"
   image          = data.ibm_is_image.stock_image.id
@@ -415,7 +409,7 @@ resource "ibm_is_instance" "login" {
   vpc            = data.ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = local.ssh_key_id_list
-  user_data      = "${data.template_file.login_user_data.rendered} ${file("${path.module}/scripts/user_data_login.sh")}"
+  user_data      = data.template_file.login_user_data.rendered
   resource_group = data.ibm_resource_group.rg.id
   tags           = local.tags
 
@@ -427,7 +421,6 @@ resource "ibm_is_instance" "login" {
   }
   depends_on = [
     module.login_ssh_key,
-    ibm_is_security_group_rule.login_ingress_tcp_temporary,
     ibm_is_security_group_rule.login_ingress_tcp_rhsm,
     ibm_is_security_group_rule.login_ingress_udp_rhsm,
     ibm_is_security_group_rule.login_egress_tcp,
@@ -527,7 +520,7 @@ resource "ibm_is_instance" "storage" {
 resource "ibm_is_instance" "spectrum_scale_storage" {
   count          = var.spectrum_scale_enabled == true ? var.scale_storage_node_count : 0
   name           = "${var.cluster_prefix}-scale-storage-${count.index}"
-  image          = local.scale_image_id
+  image          = local.scale_image_mapping_entry_found ? local.scale_image_id : data.ibm_is_image.scale_image[0].id
   profile        = data.ibm_is_instance_profile.spectrum_scale_storage.name
   vpc            = data.ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
@@ -743,6 +736,7 @@ Spectrum Scale Integration related steps
 locals {
   // Check whether an entry is found in the scale mapping file for the given scale storage node image
   // scale image used for scale storage node.
+  scale_image_mapping_entry_found = contains(keys(local.scale_image_region_map), var.scale_storage_image_name)
   scale_image_id = contains(keys(local.scale_image_region_map), var.scale_storage_image_name) ? lookup(lookup(local.scale_image_region_map, var.scale_storage_image_name), local.region_name) : "Image not found with the given name"
  
   // path for ansible playbook data configurations
@@ -751,7 +745,7 @@ locals {
   tf_input_json_file_name   = null
 
   // scale version installed on custom images.
-  scale_version             = "5.1.2.0"
+  scale_version             = "5.1.3.1"
 
   // cloud platform as IBMCloud, required for ansible playbook.
   cloud_platform            = "IBMCloud"
@@ -842,18 +836,18 @@ module "login_ssh_key" {
 }
 
 // After completion of scale storage nodes, nodes need wait time to get in running state.
-module "storage_nodes_wait" {
+module "storage_nodes_wait" { ## Setting up the variable time as 180s for the entire set of storage nodes, this approach is used to overcome the issue of ssh and nodes unreachable
   count         = (var.spectrum_scale_enabled && var.scale_storage_node_count > 0) ? 1 : 0
   source        = "./resources/scale_common/wait"
-  wait_duration = "90s"
+  wait_duration = var.TF_WAIT_DURATION
   depends_on    = [ibm_is_instance.spectrum_scale_storage]
 }
 
 // After completion of compute nodes, nodes need wait time to get in running state.
-module "compute_nodes_wait" {
+module "compute_nodes_wait" { # # Setting up the variable time as 180s for the entire set of storage nodes, this approach is used to overcome the issue of ssh and nodes unreachable
   count         = (var.spectrum_scale_enabled && var.scale_storage_node_count > 0) ? 1 : 0
   source        = "./resources/scale_common/wait"
-  wait_duration = "60s"
+  wait_duration = var.TF_WAIT_DURATION
   depends_on    = [ibm_is_instance.primary,ibm_is_instance.secondary,ibm_is_instance.management, ibm_is_instance.worker]
 }
 
@@ -889,6 +883,7 @@ module "invoke_storage_playbook" {
   avail_zones                      = jsonencode([var.zone])
   compute_instance_desc_map        = jsonencode([])
   compute_instance_desc_id         = jsonencode([])
+  host                             = chomp(data.http.fetch_myip.body)
   storage_instances_by_id          = local.strg_vsi_ids_0_disks == null ? jsondecode([]) : jsonencode(local.strg_vsi_ids_0_disks)
   storage_instance_disk_map        = local.strg_vsi_ips_0_disks_dev_map == null ? jsondecode([]) : jsonencode(local.strg_vsi_ips_0_disks_dev_map)
   depends_on                       = [ module.login_ssh_key, module.prepare_spectrum_scale_ansible_repo, module.storage_nodes_wait ,ibm_is_instance.login, ibm_is_instance.spectrum_scale_storage]
@@ -915,6 +910,7 @@ module "invoke_compute_playbook" {
   cloud_platform                   = local.cloud_platform
   avail_zones                      = jsonencode([var.zone])
   compute_instances_by_id          = jsonencode(local.compute_vsi_ids_0_disks)
+  host                             = chomp(data.http.fetch_myip.body)
   compute_instances_by_ip          = local.compute_vsi_by_ip == null ? jsonencode([]) : jsonencode(local.compute_vsi_by_ip)
   depends_on                       = [module.login_ssh_key, ibm_is_instance.primary, ibm_is_instance.secondary, ibm_is_instance.management, ibm_is_instance.worker, module.compute_nodes_wait]
 }
@@ -931,6 +927,7 @@ module "invoke_remote_mount" {
   bastion_ssh_private_key     = var.spectrum_scale_enabled ? module.login_ssh_key.private_key_path : ""
   total_compute_instances     = local.total_compute_instances
   total_storage_instances     = var.scale_storage_node_count
+  host                        = chomp(data.http.fetch_myip.body)
   clone_complete              = var.spectrum_scale_enabled ? module.prepare_spectrum_scale_ansible_repo[0].clone_complete : false
   depends_on                  = [module.invoke_compute_playbook, module.invoke_storage_playbook, ibm_is_security_group.sg, ibm_is_security_group.login_sg]
 }
@@ -944,5 +941,33 @@ module "remove_ssh_key" {
   key_to_remove = var.spectrum_scale_enabled? module.login_ssh_key.public_key.0: ""
   login_ip = ibm_is_floating_ip.login_fip.address
   storage_vsis_1A_by_ip = jsonencode(local.storage_vsis_1A_by_ip)
+  host = chomp(data.http.fetch_myip.body)
   depends_on = [module.invoke_remote_mount]
+}
+
+data "ibm_iam_auth_token" "token" {}
+
+resource "null_resource" "delete_schematics_ingress_security_rule" { # This code executes to refresh the IAM token, so during the execution we would have the latest token updated of IAM cloud so we can destroy the security group rule through API calls
+  count     = var.spectrum_scale_enabled ? 1 : 0
+  provisioner "local-exec" {
+    environment = {
+      REFRESH_TOKEN       = data.ibm_iam_auth_token.token.iam_refresh_token
+      REGION              = local.region_name
+      SECURITY_GROUP      = ibm_is_security_group.login_sg.id
+      SECURITY_GROUP_RULE = module.schematics_sg_tcp_rule[0].security_rule_id[0]
+    }
+    command     = <<EOT
+          echo $SECURITY_GROUP
+          echo $SECURITY_GROUP_RULE
+          TOKEN=$(
+            echo $(
+              curl -X POST "https://iam.cloud.ibm.com/identity/token" -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=refresh_token&refresh_token=$REFRESH_TOKEN" -u bx:bx
+              ) | jq  -r .access_token
+          )
+          curl -X DELETE "https://$REGION.iaas.cloud.ibm.com/v1/security_groups/$SECURITY_GROUP/rules/$SECURITY_GROUP_RULE?version=2021-08-03&generation=2" -H "Authorization: $TOKEN"
+        EOT
+  }
+  depends_on = [
+    module.remove_ssh_key, module.schematics_sg_tcp_rule
+  ]
 }

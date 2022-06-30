@@ -4,6 +4,11 @@
 ###################################################
 
 ### About VPC resources
+
+/*
+Note: Any variable in all capitalized letters is an environment variable that will be marked as hidden in the catalog title.  This variable will not be visible to customers using our offering catalog...
+*/
+
 variable "vpc_name" {
   type        = string
   description = "Name of an existing VPC in which the cluster resources will be deployed. If no value is given, then a new VPC will be provisioned for the cluster. [Learn more](https://cloud.ibm.com/docs/vpc)"
@@ -63,7 +68,7 @@ variable "zone" {
 
 variable "image_name" {
   type        = string
-  default     = "hpcc-sym731-scale512-rhel82-jan1222-v1"
+  default     = "hpcc-symp731-scale5131-rhel84-25may2022-v1"
   description = "Name of the custom image that you want to use to create virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the automation uses a base image with additional software packages mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you would like to include your application-specific binary files, follow the instructions in [ Planning for custom images ](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
 }
 
@@ -164,7 +169,7 @@ variable "management_node_count" {
 variable "hyperthreading_enabled" {
   type = bool
   default = true
-  description = "True to enable hyper-threading in the cluster nodes (default). Otherwise, hyper-threading will be disabled."
+  description = "True to enable hyper-threading in the cluster nodes (default). Otherwise, hyper-threading will be disabled. Note: Do not set hyper-threading to false. An issue with the RHEL 8.4 image related to that setting has been identified that impacts this release [FAQ](https://cloud.ibm.com/docs/hpc-spectrum-symphony?topic=hpc-spectrum-symphony-spectrum-symphony-faqs&interface=ui)."
 }
 
 variable "vpn_enabled" {
@@ -221,7 +226,7 @@ variable "dedicated_host_placement" {
 
 variable "TF_VERSION" {
   type        = string
-  default     = "0.14"
+  default     = "1.1"
   description = "The version of the Terraform engine that's used in the Schematics workspace."
 }
 
@@ -243,7 +248,7 @@ variable "spectrum_scale_enabled"{
 
 variable "scale_storage_image_name" {
   type        = string
-  default     = "hpcc-scale512-rhel82-jan0522-v1"
+  default     = "hpcc-scale5131-rhel84-jun0122-v1"
   description = "Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy the Spectrum Scale storage cluster. By default, our automation uses a base image with following HPC related packages documented here [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony). If you would like to include your application specific binaries please follow the instructions [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Scale storage cluster through this offering."
 }
 
@@ -343,4 +348,10 @@ variable "scale_compute_cluster_filesystem_mountpoint" {
     condition     = can(regex("^\\/[a-z0-9A-Z-_]+\\/[a-z0-9A-Z-_]+$", var.scale_compute_cluster_filesystem_mountpoint))
     error_message = "Specified value for \"compute_cluster_filesystem_mountpoint\" is not valid (valid: /gpfs/fs1)."
   }
+}
+
+variable "TF_WAIT_DURATION" {
+  type = string
+  default = "180s"
+  description = "wait duration time set for the storage and worker node to complete the entire setup"
 }
