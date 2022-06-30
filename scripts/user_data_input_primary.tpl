@@ -25,10 +25,7 @@ securityGroupID="${security_group_id}"
 sshkey_ID="${sshkey_id}"
 regionName="${region_name}"
 zoneName="${zone_name}"
-<<<<<<< HEAD
 resourceGroupID="${resource_group_id}"
-=======
->>>>>>> 09669b716c4db8e8001a2784111871c5844e0300
 hostPrefix="${host_prefix}"
 hf_cidr_block="${hf_cidr_block}"
 hf_profile="${hf_profile}"

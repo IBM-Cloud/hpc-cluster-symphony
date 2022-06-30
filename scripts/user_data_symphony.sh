@@ -34,10 +34,7 @@ export securityGroupID=${securityGroupID}
 export sshkey_ID=${sshkey_ID}
 export regionName=${regionName}
 export zoneName=${zoneName}
-<<<<<<< HEAD
 export resourceGroupID=${resourceGroupID}
-=======
->>>>>>> 09669b716c4db8e8001a2784111871c5844e0300
 #prefix should be 10 characters or fewer
 export hostPrefix=${hostPrefix}
 
@@ -450,10 +447,6 @@ su ${CLUSTERADMIN} -c 'egoconfig join \${PRIMARY_MASTER} -f'
 su ${CLUSTERADMIN} -c 'egoconfig addresourceattr "[resourcemap ibmcloud*cloudprovider] [resource corehoursaudit]"'
 echo "source ${EGO_TOP}/profile.platform" >> /root/.bashrc
 sleep $STARTUP_DELAY
-<<<<<<< HEAD
-=======
-chmod 0755 /usr/bin/pkexec
->>>>>>> 09669b716c4db8e8001a2784111871c5844e0300
 systemctl start ego
 echo END >> /var/log/postprovisionscripts.log 2>&1
 EOF
@@ -475,10 +468,7 @@ cat << EOF > $IBM_CLOUD_TEMPLATE_FILE
     "imageId": "${imageID}",
     "subnetId": "${subnetID}",
     "vpcId": "${vpcID}",
-<<<<<<< HEAD
     "resourceGroupId": "${resourceGroupID}",
-=======
->>>>>>> 09669b716c4db8e8001a2784111871c5844e0300
     "vmType": "${hf_profile}",
     "securityGroupIds": ["${securityGroupID}"],
     "sshkey_id": "${sshkey_ID}",
@@ -734,14 +724,6 @@ function start_ego
     systemctl start ego
 }
 
-<<<<<<< HEAD
-=======
-function polkit
-{
-  # This changes are made to check the security vulnerability
-  chmod 0755 /usr/bin/pkexec
-}
->>>>>>> 09669b716c4db8e8001a2784111871c5844e0300
 ##################################################################
 
 if [ -z "${egoHostRole}" ]; then
@@ -772,10 +754,6 @@ if [ "${egoHostRole}" == "primary" ]; then
     scale_append_hosts_file
     update_passwords
     wait_for_candidate_hosts
-<<<<<<< HEAD
-=======
-    polkit
->>>>>>> 09669b716c4db8e8001a2784111871c5844e0300
     rm -f $DONE_FILE
 elif [ "${egoHostRole}" == "secondary" ]; then
     mount_nfs
@@ -790,10 +768,6 @@ elif [ "${egoHostRole}" == "secondary" ]; then
     start_ego
     wait_for_management_hosts
     scale_append_hosts_file
-<<<<<<< HEAD
-=======
-    polkit
->>>>>>> 09669b716c4db8e8001a2784111871c5844e0300
 elif [ "${egoHostRole}" == "management" ]; then
     mount_nfs
     wait_for_nfs
@@ -807,10 +781,6 @@ elif [ "${egoHostRole}" == "management" ]; then
     start_ego
     wait_for_management_hosts
     scale_append_hosts_file
-<<<<<<< HEAD
-=======
-    polkit
->>>>>>> 09669b716c4db8e8001a2784111871c5844e0300
 elif [ "${egoHostRole}" == "scale_storage" ]; then
     config_hyperthreading
     mount_nfs
@@ -822,10 +792,6 @@ elif [ "${egoHostRole}" == "scale_storage" ]; then
     copy_sshkey
     wait_for_management_hosts
     scale_append_hosts_file
-<<<<<<< HEAD
-=======
-    polkit
->>>>>>> 09669b716c4db8e8001a2784111871c5844e0300
 else
     config_hyperthreading
     mount_nfs_readonly
@@ -842,8 +808,4 @@ else
     start_ego
     wait_for_management_hosts
     scale_append_hosts_file
-<<<<<<< HEAD
-=======
-    polkit
->>>>>>> 09669b716c4db8e8001a2784111871c5844e0300
 fi

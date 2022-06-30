@@ -26,8 +26,4 @@ numExpectedManagementHosts="${mgmt_count}"
 egoHostRole="${ego_host_role}"
 cluster_cidr="${cluster_cidr}"
 spectrum_scale="${spectrum_scale}"
-<<<<<<< HEAD
 temp_public_key="${temp_public_key}"
-=======
-temp_public_key="${temp_public_key}"
->>>>>>> 09669b716c4db8e8001a2784111871c5844e0300
