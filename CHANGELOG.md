@@ -2,7 +2,7 @@
 
 ## **1.2.3**
 ### **BUG FIXES**
-- Fixed bug related to Http data source body depreciation.
+- Fixed bug related to Http data source body deprecation.
 
 ## **1.2.2**
 ### **CHANGES**
