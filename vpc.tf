@@ -380,7 +380,7 @@ module "schematics_sg_tcp_rule" {
   source            = "./resources/ibmcloud/security/security_tcp_rule"
   security_group_id = ibm_is_security_group.login_sg.id
   sg_direction      = "inbound"
-  remote_ip_addr    = tolist(["${chomp(data.http.fetch_myip.body)}"])
+  remote_ip_addr    = tolist(["${chomp(data.http.fetch_myip.response_body)}"])
   depends_on = [ibm_is_security_group.login_sg]
 }
 
@@ -883,7 +883,7 @@ module "invoke_storage_playbook" {
   avail_zones                      = jsonencode([var.zone])
   compute_instance_desc_map        = jsonencode([])
   compute_instance_desc_id         = jsonencode([])
-  host                             = chomp(data.http.fetch_myip.body)
+  host                             = chomp(data.http.fetch_myip.response_body)
   storage_instances_by_id          = local.strg_vsi_ids_0_disks == null ? jsondecode([]) : jsonencode(local.strg_vsi_ids_0_disks)
   storage_instance_disk_map        = local.strg_vsi_ips_0_disks_dev_map == null ? jsondecode([]) : jsonencode(local.strg_vsi_ips_0_disks_dev_map)
   depends_on                       = [ module.login_ssh_key, module.prepare_spectrum_scale_ansible_repo, module.storage_nodes_wait ,ibm_is_instance.login, ibm_is_instance.spectrum_scale_storage]
@@ -910,7 +910,7 @@ module "invoke_compute_playbook" {
   cloud_platform                   = local.cloud_platform
   avail_zones                      = jsonencode([var.zone])
   compute_instances_by_id          = jsonencode(local.compute_vsi_ids_0_disks)
-  host                             = chomp(data.http.fetch_myip.body)
+  host                             = chomp(data.http.fetch_myip.response_body)
   compute_instances_by_ip          = local.compute_vsi_by_ip == null ? jsonencode([]) : jsonencode(local.compute_vsi_by_ip)
   depends_on                       = [module.login_ssh_key, ibm_is_instance.primary, ibm_is_instance.secondary, ibm_is_instance.management, ibm_is_instance.worker, module.compute_nodes_wait]
 }
@@ -927,7 +927,7 @@ module "invoke_remote_mount" {
   bastion_ssh_private_key     = var.spectrum_scale_enabled ? module.login_ssh_key.private_key_path : ""
   total_compute_instances     = local.total_compute_instances
   total_storage_instances     = var.scale_storage_node_count
-  host                        = chomp(data.http.fetch_myip.body)
+  host                        = chomp(data.http.fetch_myip.response_body)
   clone_complete              = var.spectrum_scale_enabled ? module.prepare_spectrum_scale_ansible_repo[0].clone_complete : false
   depends_on                  = [module.invoke_compute_playbook, module.invoke_storage_playbook, ibm_is_security_group.sg, ibm_is_security_group.login_sg]
 }
@@ -941,7 +941,7 @@ module "remove_ssh_key" {
   key_to_remove = var.spectrum_scale_enabled? module.login_ssh_key.public_key.0: ""
   login_ip = ibm_is_floating_ip.login_fip.address
   storage_vsis_1A_by_ip = jsonencode(local.storage_vsis_1A_by_ip)
-  host = chomp(data.http.fetch_myip.body)
+  host = chomp(data.http.fetch_myip.response_body)
   depends_on = [module.invoke_remote_mount]
 }
 
