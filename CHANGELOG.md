@@ -1,5 +1,9 @@
 # **CHANGELOG**
 
+## **1.2.3**
+### **BUG FIXES**
+- Fixed bug related to Http data source body deprecation.
+
 ## **1.2.2**
 ### **CHANGES**
 - RHEL 8.4 Custom image updated with polkit vulnerability fix.
