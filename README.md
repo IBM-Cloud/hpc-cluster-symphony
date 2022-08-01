@@ -191,13 +191,14 @@ $ ssh -J root@52.116.122.64 root@10.241.0.20
 
 | Name | Version |
 |------|---------|
+| <a name="requirement_http"></a> [http](#requirement\_http) | 3.0.1 |
 | <a name="requirement_ibm"></a> [ibm](#requirement\_ibm) | 1.41.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_http"></a> [http](#provider\_http) | n/a |
+| <a name="provider_http"></a> [http](#provider\_http) | 3.0.1 |
 | <a name="provider_ibm"></a> [ibm](#provider\_ibm) | 1.41.0 |
 | <a name="provider_null"></a> [null](#provider\_null) | n/a |
 | <a name="provider_template"></a> [template](#provider\_template) | n/a |
@@ -250,7 +251,7 @@ $ ssh -J root@52.116.122.64 root@10.241.0.20
 | [ibm_is_vpn_gateway.vpn](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_vpn_gateway) | resource |
 | [ibm_is_vpn_gateway_connection.conn](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/resources/is_vpn_gateway_connection) | resource |
 | [null_resource.delete_schematics_ingress_security_rule](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
-| [http_http.fetch_myip](https://registry.terraform.io/providers/hashicorp/http/latest/docs/data-sources/http) | data source |
+| [http_http.fetch_myip](https://registry.terraform.io/providers/hashicorp/http/3.0.1/docs/data-sources/http) | data source |
 | [ibm_iam_auth_token.token](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/iam_auth_token) | data source |
 | [ibm_is_dedicated_host_profiles.worker](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_dedicated_host_profiles) | data source |
 | [ibm_is_image.image](https://registry.terraform.io/providers/IBM-Cloud/ibm/1.41.0/docs/data-sources/is_image) | data source |
