@@ -81,7 +81,9 @@ resource "null_resource" "call_remote_mnt_playbook" {
       verbose        = true
       extra_vars = {
         "ansible_python_interpreter" : "/usr/bin/python3",
-        "scale_cluster_definition_path" : local.remote_mount_def_path
+        "scale_cluster_definition_path" : local.remote_mount_def_path,
+        "scale_install_updated" : false,
+        "scale_config_changed" : false
       }
     }
     ansible_ssh_settings {
