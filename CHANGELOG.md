@@ -1,5 +1,9 @@
 # **CHANGELOG**
 
+## **1.2.4**
+### **BUG FIXES**
+- Fixed bug related to Ansible version 2.10 upgrade.
+
 ## **1.2.3**
 ### **BUG FIXES**
 - Fixed bug related to Http data source body deprecation.
@@ -10,9 +14,9 @@
 - Fixed bug to use users custom image for scale storage nodes. 
 - Fixed bug to create dynamic host with different resource group.
 - Fixed fip issue with ssh allowed ips provided.
-- Scale version has been updated from 5.1.2 to 5.1.3.1
-- Terraform version has been updated from v0.14 to v1.1
-- Wait duration time for storage and compute set up has been increased to 180s
+- Scale version has been updated from 5.1.2 to 5.1.3.1.
+- Terraform version has been updated from v0.14 to v1.1.
+- Wait duration time for storage and compute set up has been increased to 180s.
 
 ## **1.2.1**
 ### **CHANGES**
