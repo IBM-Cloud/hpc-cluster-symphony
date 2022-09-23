@@ -1,5 +1,12 @@
 # **CHANGELOG**
 
+## **1.2.5**
+### **BUG FIXES**
+- Fixed bug related to instance storage datasource lookup when spectrum scale is disabled.
+
+### **CHANGES**
+- Updated login node and nfs storage node to use RHEL 8.6 stock image instead of RHEL 8.2 stock image.
+
 ## **1.2.4**
 ### **BUG FIXES**
 - Fixed bug related to Ansible version 2.10 upgrade.
