@@ -115,11 +115,6 @@ data "ibm_is_image" "image" {
   count = local.image_mapping_entry_found ? 0:1
 }
 
-data "ibm_is_image" "scale_image" {
-  name = var.scale_storage_image_name
-  count = local.scale_image_mapping_entry_found ? 0:1
-}
-
 data "template_file" "storage_user_data" {
   template = local.storage_template_file
   vars = {
@@ -394,7 +389,7 @@ data "ibm_is_instance_profile" "login" {
 }
 
 locals {
-  stock_image_name = "ibm-redhat-8-2-minimal-amd64-2"
+  stock_image_name = "ibm-redhat-8-6-minimal-amd64-1"
 }
 
 data "ibm_is_image" "stock_image" {
@@ -521,7 +516,7 @@ resource "ibm_is_instance" "spectrum_scale_storage" {
   count          = var.spectrum_scale_enabled == true ? var.scale_storage_node_count : 0
   name           = "${var.cluster_prefix}-scale-storage-${count.index}"
   image          = local.scale_image_mapping_entry_found ? local.scale_image_id : data.ibm_is_image.scale_image[0].id
-  profile        = data.ibm_is_instance_profile.spectrum_scale_storage.name
+  profile        = data.ibm_is_instance_profile.spectrum_scale_storage[0].name
   vpc            = data.ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = local.ssh_key_id_list
@@ -790,7 +785,7 @@ locals {
   // For NSD creation, create disk map of attached volumes on scale storage nodes.
   strg_vsi_ips_0_disks_dev_map = {
     for instance in local.storage_vsi_ips_with_0_datadisks :
-    instance => local.vsi_data_volumes_count == 0 ? data.ibm_is_instance_profile.spectrum_scale_storage.disks.0.quantity.0.value == 1 ? ["/dev/vdb"] : ["/dev/vdb", "/dev/vdc"] : null
+    instance => local.vsi_data_volumes_count == 0 ? data.ibm_is_instance_profile.spectrum_scale_storage[0].disks.0.quantity.0.value == 1 ? ["/dev/vdb"] : ["/dev/vdb", "/dev/vdc"] : null
   }
   total_compute_instances = var.management_node_count + var.worker_node_min_count
   // list of all compute nodes id.
@@ -823,8 +818,13 @@ locals {
         : ""))
 }
 
+data "ibm_is_image" "scale_image" {
+  name = var.scale_storage_image_name
+  count = local.scale_image_mapping_entry_found ? 0:1
+}
 
 data "ibm_is_instance_profile" "spectrum_scale_storage" {
+  count = var.spectrum_scale_enabled ? 1 : 0
   name = var.scale_storage_node_instance_type
 }
 
