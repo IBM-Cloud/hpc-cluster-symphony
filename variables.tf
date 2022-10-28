@@ -9,6 +9,7 @@
 Note: Any variable in all capitalized letters is an environment variable that will be marked as hidden in the catalog title.  This variable will not be visible to customers using our offering catalog...
 */
 
+
 variable "vpc_name" {
   type        = string
   description = "Name of an existing VPC in which the cluster resources will be deployed. If no value is given, then a new VPC will be provisioned for the cluster. [Learn more](https://cloud.ibm.com/docs/vpc)"
@@ -70,6 +71,12 @@ variable "image_name" {
   type        = string
   default     = "hpcc-symp731-scale5131-rhel84-25may2022-v1"
   description = "Name of the custom image that you want to use to create virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the automation uses a base image with additional software packages mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you would like to include your application-specific binary files, follow the instructions in [ Planning for custom images ](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
+}
+
+variable "windows_image_name" {
+  type        = string
+  default     = "hpcc-sym731-win2016-10oct22-v1"
+  description = "Name of the custom image that you want to use to create Windows® virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the solution uses a base image with additional software packages, which are mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you want to include your application-specific binary files, follow the instructions in [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images&interface=ui) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
 }
 
 variable "management_node_instance_type" {
@@ -136,6 +143,12 @@ variable "worker_node_max_count" {
   }
 }
 
+variable "windows_worker_node" {
+  type = bool
+  default = false
+  description = "Set to true to deploy Windows® worker nodes in the cluster. By default, the cluster deploys Linux® worker nodes. If the variable is set to true, the values of both ‘worker_node_min_count’ and ‘worker_node_max_count’ should be equal because the current implementation doesn't support dynamic creation of worker nodes through Host Factory." 
+}
+
 variable "volume_capacity" {
   type        = number
   default     = 100
@@ -196,12 +209,23 @@ variable "vpn_preshared_key" {
   description = "The pre-shared key for the VPN."
 }
 
-variable "ssh_allowed_ips" {
-  type        = string
-  default     = "0.0.0.0/0"
-  description = "Comma separated list of IP addresses that can access the Spectrum Symphony instance through SSH interface. The default value allows any IP address to access the cluster."
-}
-
+variable "remote_allowed_ips" {
+	type        = list(string)
+	description = "Comma-separated list of IP addresses that can access the Spectrum Symphony instance through an SSH/RDP interface. For security purposes, provide the public IP addresses assigned to the devices that are authorized to establish SSH/RDP connections (for example, [\"169.45.117.34\"]). To fetch the IP address of the device, use [https://ipv4.icanhazip.com/](https://ipv4.icanhazip.com/)."
+	validation {
+    condition     = alltrue([
+            for o in var.remote_allowed_ips : !contains(["0.0.0.0/0", "0.0.0.0"], o)
+            ])
+    error_message = "For the purpose of security provide the public IP address(es) assigned to the device(s) authorized to establish SSH connections. Use https://ipv4.icanhazip.com/ to fetch the ip address of the device."
+  }
+  validation {
+	  condition = alltrue([
+		for a in var.remote_allowed_ips : can(regex("^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",a))
+	  ])
+	  error_message = "Provided IP address format is not valid. Check if Ip address format has comma instead of dot and there should be double quotes between each IP address range if using multiple ip ranges. For multiple IP address use format [\"169.45.117.34\",\"128.122.144.145\"]."
+	}
+  }
+  
 variable "volume_profile" {
   type        = string
   default     = "general-purpose"
@@ -299,7 +323,7 @@ variable "scale_storage_cluster_gui_username" {
   type        = string
   sensitive   = true
   default = ""
-  description = "GUI user to perform system management and monitoring tasks on storage cluster. Note: Username should be at least 4 characters, any combination of lowercase and uppercase letters."
+  description = "GUI user to perform system management_node and monitoring tasks on storage cluster. Note: Username should be at least 4 characters, any combination of lowercase and uppercase letters."
   validation {
     condition = var.scale_storage_cluster_gui_username == "" || (length(var.scale_storage_cluster_gui_username) >= 4 && length(var.scale_storage_cluster_gui_username) <= 32)
     error_message = "Specified input for \"storage_cluster_gui_username\" is not valid. username should be greater or equal to 4 letters."
@@ -321,7 +345,7 @@ variable "scale_compute_cluster_gui_username" {
   type        = string
   sensitive   = true
   default     = ""
-  description = "GUI user to perform system management and monitoring tasks on compute cluster. Note: Username should be at least 4 characters, any combination of lowercase and uppercase letters."
+  description = "GUI user to perform system management_node and monitoring tasks on compute cluster. Note: Username should be at least 4 characters, any combination of lowercase and uppercase letters."
   validation {
     condition = var.scale_compute_cluster_gui_username == "" || (length(var.scale_compute_cluster_gui_username) >= 4 && length(var.scale_compute_cluster_gui_username) <= 32)
     error_message = "Specified input for \"storage_cluster_gui_username\" is not valid. username should be greater or equal to 4 letters."

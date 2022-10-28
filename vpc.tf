@@ -33,7 +33,7 @@ data "ibm_is_vpc" "vpc" {
   // Depends on creation of new VPC or look up of existing VPC based on value of var.vpc_name,
   depends_on = [ibm_is_vpc.vpc, data.ibm_is_vpc.existing_vpc]
 }
-data "ibm_is_instance_profile" "master" {
+data "ibm_is_instance_profile" "management_node" {
   name = var.management_node_instance_type
 }
 
@@ -79,13 +79,14 @@ locals {
   script_map = {
     "storage"           = file("${path.module}/scripts/user_data_input_storage.tpl")
     "primary"           = file("${path.module}/scripts/user_data_input_primary.tpl")
-    "master"            = file("${path.module}/scripts/user_data_input_master.tpl")
+    "management_node"   = file("${path.module}/scripts/user_data_input_management_node.tpl")
     "worker"            = file("${path.module}/scripts/user_data_input_worker.tpl")
     "spectrum_storage"  = file("${path.module}/scripts/user_data_spectrum_storage.tpl")
+    "windows"           = file("${path.module}/scripts/windows_worker_user_data.ps1")
   }
   storage_template_file = lookup(local.script_map, "storage")
   primary_template_file = lookup(local.script_map, "primary")
-  master_template_file  = lookup(local.script_map, "master")
+  management_node_template_file  = lookup(local.script_map, "management_node")
   worker_template_file  = lookup(local.script_map, "worker")
   spectrum_storage_template_file = lookup(local.script_map, "spectrum_storage")
   tags                  = ["hpcc", var.cluster_prefix]
@@ -107,7 +108,6 @@ locals {
 
   // Use existing VPC if var.vpc_name is not empty
   vpc_name                  = var.vpc_name == "" ? ibm_is_vpc.vpc.*.name[0] : data.ibm_is_vpc.existing_vpc.*.name[0]
-  ssh_allowed_ip_cnd     =  var.ssh_allowed_ips == "0.0.0.0/0"
 }
 
 data "ibm_is_image" "image" {
@@ -148,12 +148,15 @@ data "template_file" "primary_user_data" {
     hyperthreading       = var.hyperthreading_enabled
     cluster_cidr         = ibm_is_subnet.subnet.ipv4_cidr_block
     spectrum_scale       = var.spectrum_scale_enabled
-    temp_public_key     = local.vsi_login_temp_public_key
+    temp_public_key      = local.vsi_login_temp_public_key
+    windows_worker_node  = var.windows_worker_node
+    EgoUserName          = local.EgoUserName
+    EgoPassword          = local.EgoPassword
   }
 }
 
 data "template_file" "secondary_user_data" {
-  template = local.master_template_file
+  template = local.management_node_template_file
   vars = {
     vpc_apikey_value     = var.api_key
     hf_cidr_block        = ibm_is_subnet.subnet.ipv4_cidr_block
@@ -165,11 +168,14 @@ data "template_file" "secondary_user_data" {
     cluster_cidr         = ibm_is_subnet.subnet.ipv4_cidr_block
     spectrum_scale       = var.spectrum_scale_enabled
     temp_public_key     = local.vsi_login_temp_public_key
+    windows_worker_node = var.windows_worker_node
+    EgoUserName          = local.EgoUserName
+    EgoPassword          = local.EgoPassword
   }
 }
 
-data "template_file" "management_user_data" {
-  template = local.master_template_file
+data "template_file" "management_node_user_data" {
+  template = local.management_node_template_file
   vars = {
     vpc_apikey_value     = var.api_key
     hf_cidr_block        = ibm_is_subnet.subnet.ipv4_cidr_block
@@ -177,10 +183,13 @@ data "template_file" "management_user_data" {
     cluster_id           = local.cluster_name
     host_prefix          = var.cluster_prefix
     mgmt_count           = var.management_node_count
-    ego_host_role        = "management"
+    ego_host_role        = "management_node"
     cluster_cidr         = ibm_is_subnet.subnet.ipv4_cidr_block
     spectrum_scale       = var.spectrum_scale_enabled
     temp_public_key     = local.vsi_login_temp_public_key
+    windows_worker_node = var.windows_worker_node
+    EgoUserName          = local.EgoUserName
+    EgoPassword          = local.EgoPassword
   }
 }
 
@@ -194,6 +203,9 @@ data "template_file" "worker_user_data" {
     cluster_cidr        = ibm_is_subnet.subnet.ipv4_cidr_block
     spectrum_scale      = var.spectrum_scale_enabled
     temp_public_key     = local.vsi_login_temp_public_key
+    windows_worker_node = var.windows_worker_node
+    EgoUserName          = local.EgoUserName
+    EgoPassword          = local.EgoPassword
   }
 }
 
@@ -273,10 +285,10 @@ resource "ibm_is_security_group" "login_sg" {
 
 
 resource "ibm_is_security_group_rule" "login_ingress_tcp" {
-  for_each  = toset(split(",", var.ssh_allowed_ips))
+  count = length(var.remote_allowed_ips)
   group     = ibm_is_security_group.login_sg.id
   direction = "inbound"
-  remote    = each.value
+  remote    = var.remote_allowed_ips[count.index]
 
   tcp {
     port_min = 22
@@ -286,7 +298,6 @@ resource "ibm_is_security_group_rule" "login_ingress_tcp" {
 }
 
 resource "ibm_is_security_group_rule" "login_ingress_tcp_rhsm" {
-  for_each  = toset(split(",", var.ssh_allowed_ips))
   group     = ibm_is_security_group.login_sg.id
   direction = "inbound"
   remote    = "161.26.0.0/16"
@@ -298,7 +309,6 @@ resource "ibm_is_security_group_rule" "login_ingress_tcp_rhsm" {
 }
 
 resource "ibm_is_security_group_rule" "login_ingress_udp_rhsm" {
-  for_each  = toset(split(",", var.ssh_allowed_ips))
   group     = ibm_is_security_group.login_sg.id
   direction = "inbound"
   remote    = "161.26.0.0/16"
@@ -370,6 +380,16 @@ resource "ibm_is_security_group_rule" "ingress_all_local" {
   remote    = ibm_is_security_group.sg.id
 }
 
+resource "ibm_is_security_group_rule" "ingress_ucmp" {
+  group     = ibm_is_security_group.sg.id
+  direction = "inbound"
+  remote    = "0.0.0.0/0"
+  icmp {
+    code = 0
+    type = 8
+  }
+}
+
 module "schematics_sg_tcp_rule" {
   count     = var.spectrum_scale_enabled ? 1 : 0
   source            = "./resources/ibmcloud/security/security_tcp_rule"
@@ -428,7 +448,7 @@ resource "ibm_is_instance" "login" {
 #                       IP ADDRESS MAPPING
 #####################################################################
 # LSF assumes all the node IPs are known before their startup.
-# This causes a cyclic dependency, e.g., masters must know their IPs
+# This causes a cyclic dependency, e.g., management_nodes must know their IPs
 # before starting themselves. We resolve this by explicitly
 # assigining IP addresses calculated by cidrhost(cidr_block, index).
 #
@@ -464,14 +484,14 @@ locals {
     for idx in range(local.spectrum_storage_node_count) :
     cidrhost(ibm_is_subnet.subnet.ipv4_cidr_block, idx + 4 + length(local.storage_ips))
   ]
-  master_ips = [
+  management_node_ips = [
     for idx in range(var.management_node_count) :
     cidrhost(ibm_is_subnet.subnet.ipv4_cidr_block, idx + 4 + length(local.storage_ips) + length(local.spectrum_storage_ips))
   ]
 
   worker_ips = [
     for idx in range(var.worker_node_min_count) :
-    cidrhost(ibm_is_subnet.subnet.ipv4_cidr_block, idx + 4 + length(local.storage_ips) + length(local.spectrum_storage_ips) +length(local.master_ips))
+    cidrhost(ibm_is_subnet.subnet.ipv4_cidr_block, idx + 4 + length(local.storage_ips) + length(local.spectrum_storage_ips) +length(local.management_node_ips))
   ]
   validate_worker_cnd = var.worker_node_min_count <= var.worker_node_max_count
   validate_worker_msg = "worker_node_max_count has to be greater or equal to worker_node_min_count"
@@ -533,7 +553,7 @@ resource "ibm_is_instance" "spectrum_scale_storage" {
     ibm_is_instance.storage,
     ibm_is_instance.login,
     ibm_is_instance.primary,
-    ibm_is_instance.management,
+    ibm_is_instance.management_node,
     ibm_is_security_group_rule.ingress_tcp,
     ibm_is_security_group_rule.ingress_all_local,
     ibm_is_security_group_rule.egress_all
@@ -544,7 +564,7 @@ resource "ibm_is_instance" "primary" {
   count          = 1
   name           = "${var.cluster_prefix}-primary-${count.index}"
   image          = local.image_mapping_entry_found ? local.new_image_id : data.ibm_is_image.image[0].id
-  profile        = data.ibm_is_instance_profile.master.name
+  profile        = data.ibm_is_instance_profile.management_node.name
   vpc            = data.ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = local.ssh_key_id_list
@@ -556,7 +576,7 @@ resource "ibm_is_instance" "primary" {
     name                 = "eth0"
     subnet               = ibm_is_subnet.subnet.id
     security_groups      = [ibm_is_security_group.sg.id]
-    primary_ipv4_address = local.master_ips[count.index]
+    primary_ipv4_address = local.management_node_ips[count.index]
   }
   depends_on = [
     module.login_ssh_key,
@@ -571,7 +591,7 @@ resource "ibm_is_instance" "secondary" {
   count          = var.management_node_count > 1 ? 1: 0
   name           = "${var.cluster_prefix}-secondary-${count.index}"
   image          = local.image_mapping_entry_found ? local.new_image_id : data.ibm_is_image.image[0].id
-  profile        = data.ibm_is_instance_profile.master.name
+  profile        = data.ibm_is_instance_profile.management_node.name
   vpc            = data.ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = local.ssh_key_id_list
@@ -583,7 +603,7 @@ resource "ibm_is_instance" "secondary" {
     name                 = "eth0"
     subnet               = ibm_is_subnet.subnet.id
     security_groups      = [ibm_is_security_group.sg.id]
-    primary_ipv4_address = local.master_ips[count.index + 1]
+    primary_ipv4_address = local.management_node_ips[count.index + 1]
   }
   depends_on = [
     ibm_is_instance.storage,
@@ -594,23 +614,23 @@ resource "ibm_is_instance" "secondary" {
   ]
 }
 
-resource "ibm_is_instance" "management" {
+resource "ibm_is_instance" "management_node" {
   count          = var.management_node_count > 2 ? var.management_node_count - 2: 0
-  name           = "${var.cluster_prefix}-management-${count.index}"
+  name           = "${var.cluster_prefix}-management-node-${count.index}"
   image          = local.image_mapping_entry_found ? local.new_image_id : data.ibm_is_image.image[0].id
-  profile        = data.ibm_is_instance_profile.master.name
+  profile        = data.ibm_is_instance_profile.management_node.name
   vpc            = data.ibm_is_vpc.vpc.id
   zone           = data.ibm_is_zone.zone.name
   keys           = local.ssh_key_id_list
   resource_group = data.ibm_resource_group.rg.id
-  user_data      = "${data.template_file.management_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
+  user_data      = "${data.template_file.management_node_user_data.rendered} ${file("${path.module}/scripts/user_data_symphony.sh")}"
 
   tags           = local.tags
   primary_network_interface {
     name                 = "eth0"
     subnet               = ibm_is_subnet.subnet.id
     security_groups      = [ibm_is_security_group.sg.id]
-    primary_ipv4_address = local.master_ips[count.index + 2]
+    primary_ipv4_address = local.management_node_ips[count.index + 2]
   }
   depends_on = [
     ibm_is_instance.storage,
@@ -622,9 +642,8 @@ resource "ibm_is_instance" "management" {
   ]
 }
 
-
 resource "ibm_is_instance" "worker" {
-  count          = var.worker_node_min_count
+  count          = var.windows_worker_node ? 0 : var.worker_node_min_count 
   name           = "${var.cluster_prefix}-worker-${count.index}"
   image          = local.image_mapping_entry_found ? local.new_image_id : data.ibm_is_image.image[0].id
   profile        = data.ibm_is_instance_profile.worker.name
@@ -645,7 +664,7 @@ resource "ibm_is_instance" "worker" {
     ibm_is_instance.storage,
     ibm_is_instance.primary,
     ibm_is_instance.secondary,
-    ibm_is_instance.management,
+    ibm_is_instance.management_node,
     ibm_is_security_group_rule.ingress_tcp,
     ibm_is_security_group_rule.ingress_all_local,
     ibm_is_security_group_rule.egress_all,
@@ -726,6 +745,82 @@ resource "ibm_is_dedicated_host" "worker" {
 }
 
 /*
+Symphony Windows related steps
+*/
+locals{
+
+  EgoUserName = "egoadmin"
+  EgoPassword = "Symphony@123"
+
+  windows_worker_node_prefix = "-w"
+  
+  windows_template_file = lookup(local.script_map, "windows")
+  
+  // Check whether an entry is found in the mapping file for the given symphony compute node image for windows
+  windows_image_mapping_entry_found = contains(keys(local.image_region_map), var.windows_image_name)
+  new_windows_image_id = local.windows_image_mapping_entry_found ? lookup(lookup(local.image_region_map, var.windows_image_name), local.region_name) : "Image not found with the given name"
+
+  validate_scale_cnd = var.spectrum_scale_enabled ? var.windows_worker_node ? false : true : true
+  validate_scale_msg = " spectrum_scale not supported with windows worker node"
+  validate_scale_chk = regex(
+      "^${local.validate_scale_msg}$",
+      ( local.validate_scale_cnd ? local.validate_scale_msg : "" ) )
+
+  validate_windows_worker_max_cnd = !var.windows_worker_node || (var.windows_worker_node && (var.worker_node_min_count == var.worker_node_max_count))
+  validate_windows_worker_max_msg = "If windows worker is enabled, Input worker_node_min_count and worker_node_max_count must be equal."
+  validate_windows_worker_max_check = regex(
+      "^${local.validate_windows_worker_max_msg}$",
+      ( local.validate_windows_worker_max_cnd ? local.validate_windows_worker_max_msg : ""))
+}
+
+data "template_file" "windows_worker_user_data" {
+  count    = var.windows_worker_node ? var.worker_node_min_count : 0 
+  template = local.windows_template_file
+  vars = {
+    storage_ip    = join(" ", local.storage_ips)
+    EgoUserName   = local.EgoUserName
+    EgoPassword   = local.EgoPassword
+    computer_name = "${var.cluster_prefix}${local.windows_worker_node_prefix}${count.index}"
+    cluster_id          = local.cluster_name
+  }
+}
+
+data "ibm_is_image" "windows_worker_image" {
+  name = var.windows_image_name
+  count = local.windows_image_mapping_entry_found ? 0:1
+}
+
+// This module is used to invoke compute playbook, to setup windows worker.
+module "invoke_windows_security_group_rules" {
+  count                            = var.windows_worker_node ? 1 : 0
+  source                           = "./resources/windows/security_group_rules"
+  remote_allowed_ips               = var.remote_allowed_ips
+  security_group                   = ibm_is_security_group.sg.id
+  depends_on                       = [ibm_is_security_group.sg]
+}
+
+resource "ibm_is_instance" "windows_worker" {
+  count          = var.windows_worker_node ? var.worker_node_min_count : 0 
+  name           = "${var.cluster_prefix}${local.windows_worker_node_prefix}${count.index}"
+  image          = local.windows_image_mapping_entry_found ? local.new_windows_image_id : data.ibm_is_image.windows_worker_image[0].id
+  profile        = data.ibm_is_instance_profile.worker.name
+  vpc            = data.ibm_is_vpc.vpc.id
+  zone           = data.ibm_is_zone.zone.name
+  keys           = local.ssh_key_id_list
+  resource_group = data.ibm_resource_group.rg.id
+  tags           = local.tags
+  dedicated_host = var.dedicated_host_enabled ? ibm_is_dedicated_host.worker[var.dedicated_host_placement == "spread" ? count.index % local.dh_count: floor(count.index / local.dh_worker_count)].id: null
+  user_data      = "${data.template_file.windows_worker_user_data[count.index].rendered}"
+  primary_network_interface {
+    name                 = "eth0"
+    subnet               = ibm_is_subnet.subnet.id
+    security_groups      = [ibm_is_security_group.sg.id]
+    primary_ipv4_address = local.worker_ips[count.index]
+  }
+  depends_on     = [module.login_ssh_key, ibm_is_instance.primary, ibm_is_instance.secondary, ibm_is_instance.management_node,module.invoke_windows_security_group_rules]
+}
+
+/*
 Spectrum Scale Integration related steps
 */
 locals {
@@ -789,10 +884,10 @@ locals {
   }
   total_compute_instances = var.management_node_count + var.worker_node_min_count
   // list of all compute nodes id.
-  compute_vsi_ids_0_disks = concat(ibm_is_instance.primary.*.id, ibm_is_instance.secondary.*.id, ibm_is_instance.management.*.id, ibm_is_instance.worker.*.id)
+  compute_vsi_ids_0_disks = concat(ibm_is_instance.primary.*.id, ibm_is_instance.secondary.*.id, ibm_is_instance.management_node.*.id, ibm_is_instance.worker.*.id)
 
   // list of all compute vsi ips.
-  compute_vsi_by_ip = concat(ibm_is_instance.primary[*].primary_network_interface[0]["primary_ipv4_address"], ibm_is_instance.secondary[*].primary_network_interface[0]["primary_ipv4_address"], ibm_is_instance.management[*].primary_network_interface[0]["primary_ipv4_address"], ibm_is_instance.worker[*].primary_network_interface[0]["primary_ipv4_address"])
+  compute_vsi_by_ip = concat(ibm_is_instance.primary[*].primary_network_interface[0]["primary_ipv4_address"], ibm_is_instance.secondary[*].primary_network_interface[0]["primary_ipv4_address"], ibm_is_instance.management_node[*].primary_network_interface[0]["primary_ipv4_address"], ibm_is_instance.worker[*].primary_network_interface[0]["primary_ipv4_address"])
   validate_scale_count_cnd =  !var.spectrum_scale_enabled || (var.spectrum_scale_enabled && (var.scale_storage_node_count > 1))
   validate_scale_count_msg = "Input \"scale_storage_node_count\" must be >= 2 and <= 18 and has to be divisible by 2."
   validate_scale_count_chk = regex(
@@ -848,7 +943,7 @@ module "compute_nodes_wait" { # # Setting up the variable time as 180s for the e
   count         = (var.spectrum_scale_enabled && var.scale_storage_node_count > 0) ? 1 : 0
   source        = "./resources/scale_common/wait"
   wait_duration = var.TF_WAIT_DURATION
-  depends_on    = [ibm_is_instance.primary,ibm_is_instance.secondary,ibm_is_instance.management, ibm_is_instance.worker]
+  depends_on    = [ibm_is_instance.primary,ibm_is_instance.secondary,ibm_is_instance.management_node, ibm_is_instance.worker]
 }
 
 // This module is used to clone ansible repo for scale.
@@ -912,7 +1007,7 @@ module "invoke_compute_playbook" {
   compute_instances_by_id          = jsonencode(local.compute_vsi_ids_0_disks)
   host                             = chomp(data.http.fetch_myip.response_body)
   compute_instances_by_ip          = local.compute_vsi_by_ip == null ? jsonencode([]) : jsonencode(local.compute_vsi_by_ip)
-  depends_on                       = [module.login_ssh_key, ibm_is_instance.primary, ibm_is_instance.secondary, ibm_is_instance.management, ibm_is_instance.worker, module.compute_nodes_wait]
+  depends_on                       = [module.login_ssh_key, ibm_is_instance.primary, ibm_is_instance.secondary, ibm_is_instance.management_node, ibm_is_instance.worker, module.compute_nodes_wait]
 }
 
 // This module is used to invoke remote mount

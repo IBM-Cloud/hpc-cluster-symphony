@@ -1,5 +1,9 @@
 # **CHANGELOG**
 
+## **1.3.0**
+### ENHANCEMENTS
+- Support for Windows worker node
+
 ## **1.2.5**
 ### **BUG FIXES**
 - Fixed bug related to instance storage datasource lookup when spectrum scale is disabled.
