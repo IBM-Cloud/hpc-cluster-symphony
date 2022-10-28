@@ -173,11 +173,11 @@
           "description": "True to enable hyper-threading in the cluster nodes (default). Otherwise, hyper-threading will be disabled. Note: Do not set hyper-threading to false. An issue with the RHEL 8.4 image related to that setting has been identified that impacts this release. See [FAQ](https://cloud.ibm.com/docs/hpc-spectrum-symphony?topic=hpc-spectrum-symphony-spectrum-symphony-faqs&interface=ui)."
         },
         {
-          "name": "ssh_allowed_ips",
-          "value": "",
-          "type": "string",
+          "name": "remote_allowed_ips",
+          "value": "[\"Please fill here\"]",
+          "type": "list(string)",
           "secure": false,
-          "description": "Comma separated list of IP addresses that can access the Spectrum Symphony instance through SSH interface. The default value allows any IP address to access the cluster."
+          "description": "Comma-separated list of IP addresses that can access the Spectrum Symphony instance through an SSH/RDP interface. For security purposes, provide the public IP addresses assigned to the devices that are authorized to establish SSH/RDP connections (for example, [\"169.45.117.34\"]). To fetch the IP address of the device, use [https://ipv4.icanhazip.com/](https://ipv4.icanhazip.com/)."
         },
         {
           "name": "vpn_enabled",

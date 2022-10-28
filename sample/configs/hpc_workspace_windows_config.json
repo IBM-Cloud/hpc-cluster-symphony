@@ -1,0 +1,183 @@
+{
+    "name": "hpcc-symphony-windows-test",
+    "type": [
+      "terraform_v1.1"
+    ],
+    "location": "us-east",
+    "resource_group": "Default",
+    "description": "",
+    "tags": ["hpcc", "symphony"],
+    "template_repo": {
+      "url": "https://github.com/IBM-Cloud/hpc-cluster-symphony"
+    },
+    "template_data": [
+      {
+        "folder": ".",
+        "type": "terraform_v1.1",
+        "env_values":[
+          { 
+            "TF_CLI_ARGS_apply": "-parallelism=250"
+          },
+          { 
+            "TF_CLI_ARGS_plan": "-parallelism=250"
+          },
+          {
+            "TF_CLI_ARGS_destroy": "-parallelism=100"
+          },
+          {
+            "VAR1":"<val1>"
+          },
+          {
+            "VAR2":"<val2>"
+          } 
+        ],
+        "variablestore": [
+          {
+            "name": "cluster_prefix",
+            "value": "hpcc-symphony-windows",
+            "type": "string",
+            "secure": false,
+            "description": "Prefix that is used to name the Spectrum Symphony cluster and IBM Cloud resources that are provisioned to build the Spectrum Symphony cluster instance. You cannot create more than one instance of the Symphony cluster with the same name. Make sure that the name is unique. Enter a prefix name, such as my-hpcc."
+          },
+          {
+            "name": "cluster_id",
+            "value": "HpccTest",
+            "type": "string",
+            "secure": false,
+            "description": "ID of the cluster used by Symphony for configuration of resources. Post deployment the value can be verified using command `egosh ego info`."
+          },
+          {
+            "name": "vpc_name",
+            "value": "",
+            "type": "string",
+            "secure": false,
+            "description": "Name of an existing VPC in which the cluster resources will be deployed. If no value is given, then a new VPC will be provisioned for the cluster. [Learn more](https://cloud.ibm.com/docs/vpc)"
+          },
+          {
+            "name": "resource_group",
+            "value": "Default",
+            "type": "string",
+            "secure": false,
+            "description":"Resource group name from your IBM Cloud account where the VPC resources should be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-rgs)."
+          },
+          {
+            "name": "zone",
+            "value": "Please fill here",
+            "type": "string",
+            "secure": false,
+            "description": "IBM Cloud zone name within the selected region where the Spectrum Symphony cluster should be deployed. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-creating-a-vpc-in-a-different-region#get-zones-using-the-cli)."
+          },
+          {
+            "name": "storage_node_instance_type",
+            "value": "bx2-2x8",
+            "type": "string",
+            "secure": false,
+            "description": "Specify the virtual server instance profile type to be used to create the storage node for the Spectrum Symphony cluster. The storage node is the one that is used to create an NFS instance to manage the data for HPC workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
+          },
+          {
+            "name": "worker_node_instance_type",
+            "value": "bx2-4x16",
+            "type": "string",
+            "secure": false,
+            "description": "Specify the virtual server instance profile type name to be used to create the worker nodes for the Spectrum Symphony cluster. The worker nodes are the ones where the workload execution takes place and the choice should be made according to the characteristic of workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles). NOTE: If dedicated_host_enabled == true, available instance prefix (e.g., bx2 and cx2) can be limited depending on your target region. Check `ibmcloud target -r {region_name}; ibmcloud is dedicated-host-profiles`."
+          },
+          {
+            "name": "management_node_instance_type",
+            "value": "bx2-4x16",
+            "type": "string",
+            "secure": false,
+            "description": "Specify the virtual server instance profile type name to be used to create the management nodes for the Spectrum Symphony cluster. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
+          },
+          {
+            "name": "login_node_instance_type",
+            "value": "bx2-2x8",
+            "type": "string",
+            "secure": false,
+            "description": "Specify the virtual server instance profile type name to be used to create the login node for the Spectrum Symphony cluster. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
+          },
+          {
+            "name": "management_node_count",
+            "value": "3",
+            "type": "number",
+            "secure": false,
+            "description": "Number of management nodes. This is the total number of primary, secondary and management nodes. There will be one Primary, one Secondary and the rest of the nodes will be management nodes. Enter a value in the range 1 - 10."
+          },
+          {
+            "name": "worker_node_max_count",
+            "value": "2",
+            "type": "number",
+            "secure": false,
+            "description": "The maximum number of worker nodes that can be deployed in the Spectrum Symphony cluster. In order to use the [Host Factory](https://www.ibm.com/docs/en/spectrum-symphony/7.3.1?topic=factory-overview) feature to dynamically create and delete worker nodes based on workload demand, the value selected for this parameter must be larger than worker_node_min_count. If you plan to deploy only static worker nodes in the Spectrum Symphony cluster, e.g., when using Spectrum Scale storage, the value for this parameter should be equal to worker_node_min_count. Enter a value in the range 1 - 500."
+          },
+          {
+            "name": "worker_node_min_count",
+            "value": "2",
+            "type": "number",
+            "secure": false,
+            "description": "The minimum number of worker nodes. This is the number of static worker nodes that will be provisioned at the time the cluster is created. If using NFS storage, enter a value in the range 0 - 500. If using Spectrum Scale storage, enter a value in the range 1 - 64. NOTE: Spectrum Scale requires a minimum of 3 compute nodes (combination of primary, secondary, management, and worker nodes) to establish a [quorum](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=failure-quorum#nodequo) and maintain data consistency in the even of a node failure. Therefore, the minimum value of 1 may need to be larger if the value specified for management_node_count is less than 2."
+          },
+          {
+            "name": "windows_worker_node",
+            "value": "true",
+            "type": "string",
+            "secure": false,
+            "description": "Set to true to deploy windows worker nodes in cluster and by default cluster will deploy linux worker nodes. If this variable is set to true, current implementation doesn't support dynamic creation of worker nodes thru host factory. So, the values of both 'worker_node_min_count' and 'worker_node_max_count' should be equal."
+          },
+          {
+            "name": "ssh_key_name",
+            "value": "Please fill here",
+            "type": "string",
+            "secure": false,
+            "description":"Comma-separated list of names of the SSH key configured in your IBM Cloud account that is used to establish a connection to the Symphony primary node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given here. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
+          },
+          {
+            "name": "api_key",
+            "value": "Please fill here",
+            "type": "string",
+            "secure": true,
+            "description": "This is the API key for IBM Cloud account in which the Spectrum Symphony cluster needs to be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-userapikey)."
+          },
+          {
+            "name": "sym_license_confirmation",
+            "value": "true",
+            "type": "string",
+            "secure": false,
+            "description": "Confirm your use of IBM Spectrum Symphony licenses. By entering 'true' for the property you have agreed to one of the two conditions. 1. You are using the software in production and confirm you have sufficient licenses to cover your use under the International Program License Agreement (IPLA). 2. You are evaluating the software and agree to abide by the International License Agreement for Evaluation of Programs (ILAE). NOTE: Failure to comply with licenses for production use of software is a violation of IBM International Program License Agreement. [Learn more](https://www.ibm.com/software/passportadvantage/programlicense.html)."
+          },
+          {
+            "name": "hyperthreading_enabled",
+            "value": "true",
+            "type": "bool",
+            "secure": false,
+            "description": "True to enable hyper-threading in the cluster nodes (default). Otherwise, hyper-threading will be disabled. Note: Do not set hyper-threading to false. An issue with the RHEL 8.4 image related to that setting has been identified that impacts this release. See [FAQ](https://cloud.ibm.com/docs/hpc-spectrum-symphony?topic=hpc-spectrum-symphony-spectrum-symphony-faqs&interface=ui)."
+          },
+          {
+            "name": "remote_allowed_ips",
+            "value": "[\"Please fill here\"]",
+            "type": "list(string)",
+            "secure": false,
+            "description": "Comma-separated list of IP addresses that can access the Spectrum Symphony instance through an SSH/RDP interface. For security purposes, provide the public IP addresses assigned to the devices that are authorized to establish SSH/RDP connections (for example, [\"169.45.117.34\"]). To fetch the IP address of the device, use [https://ipv4.icanhazip.com/](https://ipv4.icanhazip.com/)."
+          },
+          {
+            "name": "dedicated_host_enabled",
+            "value": "false",
+            "type": "bool",
+            "description": "Set to true to use dedicated hosts for compute hosts (default: false). Note that Symphony still dynamically provisions compute hosts at public VSIs and dedicated hosts are used only for static compute hosts provisioned at the time the cluster is created. The number of dedicated hosts are calculated from worker_node_min_count and dedicated_host_profile."
+          },
+          {
+            "name": "dedicated_host_placement",
+            "value": "spread",
+            "type": "string",
+            "description": "Specify 'pack' or 'spread'. The 'pack' option will deploy VSIson one dedicated host until full before moving on to the next dedicated host. The 'spread' option will deploy VSIs in round-robin fashion across all the dedicated hosts. The second option should result in mostly even distribution of VSIs on the hosts, while the first option could result in one dedicated host being mostly empty."
+          },
+          {
+            "name": "TF_WAIT_DURATION",
+            "value": "180s",
+            "type": "string",
+            "description": "wait duration time set for the storage and worker node to complete the entire setup"
+          }
+        ]
+      }
+    ]
+  }
+  

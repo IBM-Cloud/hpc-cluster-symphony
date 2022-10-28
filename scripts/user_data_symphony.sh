@@ -8,9 +8,9 @@
 set -x
 ##################################################################
 #args
-#total number of management hosts
+#total number of management_node hosts
 # export numExpectedManagementHosts=3
-#host can be primary, secondary, management or not set for compute
+#host can be primary, secondary, management_node or not set for compute
 export egoHostRole=${egoHostRole}
 
 #password should be 8 to 15 characters
@@ -199,7 +199,7 @@ function mtu9000
 
 function update_hosts
 {
-    #Fully qualified domain name of the master host
+    #Fully qualified domain name of the management_node host
     echo "${HOST_IP} ${HOST_NAME}${domainName} ${HOST_NAME}" > /tmp/hosts
     mkdir -p ${HOSTS_FILES} && cp /tmp/hosts ${HOSTS_FILES}/${HOST_NAME}
     touch ${EGO_HOSTS_FILE}
@@ -216,7 +216,7 @@ function update_hosts
 
 function update_hosts_noshare
 {
-    #Fully qualified domain name of the master host
+    #Fully qualified domain name of the management_node host
     echo "${HOST_IP} ${HOST_NAME}${domainName} ${HOST_NAME}" > /tmp/hosts
     cat ${HOSTS_FILES}/* >> /tmp/hosts
     cp /tmp/hosts /etc/hosts
@@ -406,7 +406,7 @@ if [ ${spectrum_scale} == true ]; then
         hostnamectl set-hostname \${HOST_NAME}
     fi
 fi
-#Fully qualified domain name of the master host
+#Fully qualified domain name of the management_node host
 echo "\${HOST_IP} \${HOST_NAME}${domainName} \${HOST_NAME}" > /tmp/hosts
 cat ${HOSTS_FILES}/* >> /tmp/hosts
 cp /tmp/hosts /etc/hosts
@@ -436,14 +436,14 @@ if [ "${enableSSL}" == "Y" ]; then
 fi
 
 source ${EGO_TOP}/profile.platform
-#parse shared ego.conf for primary master
-export EGO_MASTER_LIST=\$(gawk -F= '/EGO_MASTER_LIST/{print \$2}' ${SHARED_EGO_CONF_FILE} | tr -d \")
-export PRIMARY_MASTER=\$(echo \$EGO_MASTER_LIST | cut -d' ' -f1)
+#parse shared ego.conf for primary management_node
+export EGO_MANAGEMENT_NODE_LIST=\$(gawk -F= '/EGO_MASTER_LIST/{print \$2}' ${SHARED_EGO_CONF_FILE} | tr -d \")
+export PRIMARY_MANAGEMENT_NODE=\$(echo \$EGO_MANAGEMENT_NODE_LIST | cut -d' ' -f1)
 
 egosetsudoers.sh
 egosetrc.sh
 export EGOCONFIG_DISABLE_HOST_CHECK=Y
-su ${CLUSTERADMIN} -c 'egoconfig join \${PRIMARY_MASTER} -f'
+su ${CLUSTERADMIN} -c 'egoconfig join \${PRIMARY_MANAGEMENT_NODE} -f'
 su ${CLUSTERADMIN} -c 'egoconfig addresourceattr "[resourcemap ibmcloud*cloudprovider] [resource corehoursaudit]"'
 echo "source ${EGO_TOP}/profile.platform" >> /root/.bashrc
 sleep $STARTUP_DELAY
@@ -564,32 +564,32 @@ function config_symprimary
 
     touch ${EGO_HOSTS_FILE} && chown ${CLUSTERADMIN} ${EGO_HOSTS_FILE}
     cat /etc/hosts >> ${EGO_HOSTS_FILE}
-    export EGO_MASTER_LIST=`gawk -F= '/EGO_MASTER_LIST/{print $2}' ${SHARED_EGO_CONF_FILE} | tr -d \"`
+    export EGO_MANAGEMENT_NODE_LIST=`gawk -F= '/EGO_MASTER_LIST/{print $2}' ${SHARED_EGO_CONF_FILE} | tr -d \"`
 }
 
 function config_symfailover
 {
     source ${EGO_TOP}/profile.platform
-    #parse shared ego.conf for primary master
-    export EGO_MASTER_LIST=`gawk -F= '/EGO_MASTER_LIST/{print $2}' ${SHARED_EGO_CONF_FILE} | tr -d \"`
-    export PRIMARY_MASTER=`echo $EGO_MASTER_LIST | cut -d' ' -f1`
-    export NEW_MASTER_LIST=$(echo ${EGO_MASTER_LIST} | tr ' ' ','),${HOST_NAME}
+    #parse shared ego.conf for primary management_node
+    export EGO_MANAGEMENT_NODE_LIST=`gawk -F= '/EGO_MASTER_LIST/{print $2}' ${SHARED_EGO_CONF_FILE} | tr -d \"`
+    export PRIMARY_MANAGEMENT_NODE=`echo $EGO_MANAGEMENT_NODE_LIST | cut -d' ' -f1`
+    export NEW_MANAGEMENT_NODE_LIST=$(echo ${EGO_MANAGEMENT_NODE_LIST} | tr ' ' ','),${HOST_NAME}
 
     egosetsudoers.sh
     egosetrc.sh
     export EGOCONFIG_DISABLE_HOST_CHECK=Y
-    su ${CLUSTERADMIN} -c 'egoconfig join ${PRIMARY_MASTER} -f'
+    su ${CLUSTERADMIN} -c 'egoconfig join ${PRIMARY_MANAGEMENT_NODE} -f'
     su ${CLUSTERADMIN} -c 'egoconfig mghost ${SHARED_TOP_SYM} -f'
     source ${EGO_TOP}/profile.platform
-    su ${CLUSTERADMIN} -c 'egoconfig masterlist ${NEW_MASTER_LIST}'
+    su ${CLUSTERADMIN} -c 'egoconfig masterlist ${NEW_MANAGEMENT_NODE_LIST}'
 }
 
 function config_symmanagement
 {
     source ${EGO_TOP}/profile.platform
-    #parse shared ego.conf for primary master
-    export EGO_MASTER_LIST=`gawk -F= '/EGO_MASTER_LIST/{print $2}' ${SHARED_EGO_CONF_FILE} | tr -d \"`
-    export PRIMARY_MASTER=`echo $EGO_MASTER_LIST | cut -d' ' -f1`
+    #parse shared ego.conf for primary management_node
+    export EGO_MANAGEMENT_NODE_LIST=`gawk -F= '/EGO_MASTER_LIST/{print $2}' ${SHARED_EGO_CONF_FILE} | tr -d \"`
+    export PRIMARY_MANAGEMENT_NODE=`echo $EGO_MANAGEMENT_NODE_LIST | cut -d' ' -f1`
 
     egosetsudoers.sh
     egosetrc.sh
@@ -598,7 +598,7 @@ function config_symmanagement
         sleep $(($RANDOM%15))
     fi
     export EGOCONFIG_DISABLE_HOST_CHECK=Y
-    su ${CLUSTERADMIN} -c 'egoconfig join ${PRIMARY_MASTER} -f'
+    su ${CLUSTERADMIN} -c 'egoconfig join ${PRIMARY_MANAGEMENT_NODE} -f'
     su ${CLUSTERADMIN} -c 'egoconfig mghost ${SHARED_TOP_SYM} -f'
     source ${EGO_TOP}/profile.platform
 }
@@ -606,20 +606,20 @@ function config_symmanagement
 function config_symcompute
 {
     source ${EGO_TOP}/profile.platform
-    #parse shared ego.conf for primary master
-    export EGO_MASTER_LIST=`gawk -F= '/EGO_MASTER_LIST/{print $2}' ${SHARED_EGO_CONF_FILE} | tr -d \"`
-    export PRIMARY_MASTER=`echo $EGO_MASTER_LIST | cut -d' ' -f1`
+    #parse shared ego.conf for primary management_node
+    export EGO_MANAGEMENT_NODE_LIST=`gawk -F= '/EGO_MASTER_LIST/{print $2}' ${SHARED_EGO_CONF_FILE} | tr -d \"`
+    export PRIMARY_MANAGEMENT_NODE=`echo $EGO_MANAGEMENT_NODE_LIST | cut -d' ' -f1`
 
     egosetsudoers.sh
     egosetrc.sh
     export EGOCONFIG_DISABLE_HOST_CHECK=Y
-    su ${CLUSTERADMIN} -c 'egoconfig join ${PRIMARY_MASTER} -f'
+    su ${CLUSTERADMIN} -c 'egoconfig join ${PRIMARY_MANAGEMENT_NODE} -f'
     su ${CLUSTERADMIN} -c 'egoconfig addresourceattr "[resourcemap ibmcloud*cloudprovider] [resource corehoursaudit]"'
 }
 
 function wait_for_management_hosts
 {
-    # wait for all management hosts to report their IP address
+    # wait for all management_node hosts to report their IP address
     CURRENT_HOSTS=0
     while (( CURRENT_HOSTS < numExpectedManagementHosts ))
     do
@@ -640,7 +640,7 @@ function wait_for_management_hosts
 
 function wait_for_candidate_hosts
 {
-    # wait for all candidate hosts to update MASTERS_LIST
+    # wait for all candidate hosts to update MANAGEMENT_NODES_LIST
     CURRENT_HOSTS=0
     EXPECTED_PRIMARY_HOSTS=1
     if (( numExpectedManagementHosts > 1 )); then
@@ -652,38 +652,38 @@ function wait_for_candidate_hosts
         sleep $DELAY
         sleep $(($RANDOM%5))
         # if candidate list changed need to restart ego
-        NEW_EGO_MASTERS_LIST=`gawk -F= '/EGO_MASTER_LIST/{print $2}' ${SHARED_EGO_CONF_FILE} | tr -d \"`
-        if [ "${NEW_EGO_MASTERS_LIST}" != "${EGO_MASTERS_LIST}" ]; then
+        NEW_EGO_MANAGEMENT_NODES_LIST=`gawk -F= '/EGO_MASTER_LIST/{print $2}' ${SHARED_EGO_CONF_FILE} | tr -d \"`
+        if [ "${NEW_EGO_MANAGEMENT_NODES_LIST}" != "${EGO_MANAGEMENT_NODES_LIST}" ]; then
             echo "New candidate joined, need to restart ego"
-            EGO_MASTERS_LIST=${NEW_EGO_MASTERS_LIST}
+            EGO_MANAGEMENT_NODES_LIST=${NEW_EGO_MANAGEMENT_NODES_LIST}
             systemctl restart ego
         fi
-        words=( $EGO_MASTERS_LIST )
+        words=( $EGO_MANAGEMENT_NODES_LIST )
         CURRENT_HOSTS=${#words[@]}
     done
 }
 
 function wait_for_candidate_hosts_norestart
 {
-    # wait for all candidate hosts to update MASTERS_LIST
+    # wait for all candidate hosts to update MANAGEMENT_NODES_LIST
     CURRENT_HOSTS=0
     EXPECTED_PRIMARY_HOSTS=1
     if (( numExpectedManagementHosts > 1 )); then
         EXPECTED_PRIMARY_HOSTS=2
     fi
 
-    export EGO_MASTER_LIST=`gawk -F= '/EGO_MASTER_LIST/{print $2}' ${SHARED_EGO_CONF_FILE} | tr -d \"`
+    export EGO_MANAGEMENT_NODE_LIST=`gawk -F= '/EGO_MASTER_LIST/{print $2}' ${SHARED_EGO_CONF_FILE} | tr -d \"`
     while (( CURRENT_HOSTS < EXPECTED_PRIMARY_HOSTS ))
     do
         sleep $DELAY
         sleep $(($RANDOM%5))
         # if candidate list changed need to restart ego
-        NEW_EGO_MASTERS_LIST=`gawk -F= '/EGO_MASTER_LIST/{print $2}' ${SHARED_EGO_CONF_FILE} | tr -d \"`
-        if [ "${NEW_EGO_MASTERS_LIST}" != "${EGO_MASTERS_LIST}" ]; then
+        NEW_EGO_MANAGEMENT_NODES_LIST=`gawk -F= '/EGO_MASTER_LIST/{print $2}' ${SHARED_EGO_CONF_FILE} | tr -d \"`
+        if [ "${NEW_EGO_MANAGEMENT_NODES_LIST}" != "${EGO_MANAGEMENT_NODES_LIST}" ]; then
             echo "New candidate joined"
-            EGO_MASTERS_LIST=${NEW_EGO_MASTERS_LIST}
+            EGO_MANAGEMENT_NODES_LIST=${NEW_EGO_MANAGEMENT_NODES_LIST}
         fi
-        words=( $EGO_MASTERS_LIST )
+        words=( $EGO_MANAGEMENT_NODES_LIST )
         CURRENT_HOSTS=${#words[@]}
     done
 }
@@ -724,6 +724,31 @@ function start_ego
     systemctl start ego
 }
 
+function set_ego_password
+{
+    for I in 1 2 3 4 5
+    do
+        if egosh user logon -u Admin -x Admin; then
+            break;
+        fi
+        echo "Waiting cluster is up $I/5"
+        sleep ${DELAY}
+    done
+
+    #Update EGO password
+    executecmd='.\'
+    EGOUSERNAME="$executecmd${EgoUserName}"
+    egosh ego execpasswd -u $EGOUSERNAME -x ${EgoPassword} -noverify
+    sed -i -e "s|egoadmin|.\\\egoadmin|g" $EGO_CONFDIR/ConsumerTrees.xml
+
+    # Re-register symping app
+    soamview app symping7.3.1 -p >sp.xml 
+    soamreg sp.xml -f
+    #Restart ego process
+    egosh ego restart -f
+    egosh user logoff
+}
+
 ##################################################################
 
 if [ -z "${egoHostRole}" ]; then
@@ -754,6 +779,9 @@ if [ "${egoHostRole}" == "primary" ]; then
     scale_append_hosts_file
     update_passwords
     wait_for_candidate_hosts
+    if [ ${windows_worker_node} == true ]; then
+        set_ego_password
+    fi
     rm -f $DONE_FILE
 elif [ "${egoHostRole}" == "secondary" ]; then
     mount_nfs
@@ -768,7 +796,7 @@ elif [ "${egoHostRole}" == "secondary" ]; then
     start_ego
     wait_for_management_hosts
     scale_append_hosts_file
-elif [ "${egoHostRole}" == "management" ]; then
+elif [ "${egoHostRole}" == "management_node" ]; then
     mount_nfs
     wait_for_nfs
     mtu9000
