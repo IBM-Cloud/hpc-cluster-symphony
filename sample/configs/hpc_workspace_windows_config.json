@@ -14,22 +14,22 @@
       {
         "folder": ".",
         "type": "terraform_v1.1",
-        "env_values":[
-          { 
+        "env_values": [
+          {
             "TF_CLI_ARGS_apply": "-parallelism=250"
           },
-          { 
+          {
             "TF_CLI_ARGS_plan": "-parallelism=250"
           },
           {
             "TF_CLI_ARGS_destroy": "-parallelism=100"
           },
           {
-            "VAR1":"<val1>"
+            "VAR1": "<val1>"
           },
           {
-            "VAR2":"<val2>"
-          } 
+            "VAR2": "<val2>"
+          }
         ],
         "variablestore": [
           {
@@ -58,7 +58,7 @@
             "value": "Default",
             "type": "string",
             "secure": false,
-            "description":"Resource group name from your IBM Cloud account where the VPC resources should be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-rgs)."
+            "description": "Resource group name from your IBM Cloud account where the VPC resources should be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-rgs)."
           },
           {
             "name": "zone",
@@ -79,7 +79,7 @@
             "value": "bx2-4x16",
             "type": "string",
             "secure": false,
-            "description": "Specify the virtual server instance profile type name to be used to create the worker nodes for the Spectrum Symphony cluster. The worker nodes are the ones where the workload execution takes place and the choice should be made according to the characteristic of workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles). NOTE: If dedicated_host_enabled == true, available instance prefix (e.g., bx2 and cx2) can be limited depending on your target region. Check `ibmcloud target -r {region_name}; ibmcloud is dedicated-host-profiles`."
+            "description": "Specify the virtual server instance or bare metal server profile type name to be used to create the worker nodes for the Spectrum Symphony cluster based on worker_node_type. The worker nodes are the ones where the workload execution takes place and the choice should be made according to the characteristic of workloads. For more information, see [virtual server instance ](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles) and [bare metal server profiles](https://cloud.ibm.com/docs/vpc?topic=vpc-bare-metal-servers-profile&interface=ui). NOTE: If dedicated_host_enabled == true, available instance prefix (e.g., bx2 and cx2) can be limited depending on your target region. Check `ibmcloud target -r {region_name}; ibmcloud is dedicated-host-profiles`."
           },
           {
             "name": "management_node_instance_type",
@@ -107,14 +107,14 @@
             "value": "2",
             "type": "number",
             "secure": false,
-            "description": "The maximum number of worker nodes that can be deployed in the Spectrum Symphony cluster. In order to use the [Host Factory](https://www.ibm.com/docs/en/spectrum-symphony/7.3.1?topic=factory-overview) feature to dynamically create and delete worker nodes based on workload demand, the value selected for this parameter must be larger than worker_node_min_count. If you plan to deploy only static worker nodes in the Spectrum Symphony cluster, e.g., when using Spectrum Scale storage, the value for this parameter should be equal to worker_node_min_count. Enter a value in the range 1 - 500."
+            "description": "The maximum number of virtual server instance or bare metal server worker nodes that can be provisioned in the cluster. To take advantage of the auto-scale feature from [Host Factory](https://www.ibm.com/docs/en/spectrum-symphony/7.3.1?topic=factory-overview), the value needs to be greater than worker_node_min_count. If using virtual server instances, enter a value in the range 1 - 500. If using bare metal servers, the value needs to match worker_node_min_count, and the permitted value is in the range 1 - 16. Note: If you plan to use Spectrum Scale storage, the value for this parameter should be equal to worker_node_min_count."
           },
           {
             "name": "worker_node_min_count",
             "value": "2",
             "type": "number",
             "secure": false,
-            "description": "The minimum number of worker nodes. This is the number of static worker nodes that will be provisioned at the time the cluster is created. If using NFS storage, enter a value in the range 0 - 500. If using Spectrum Scale storage, enter a value in the range 1 - 64. NOTE: Spectrum Scale requires a minimum of 3 compute nodes (combination of primary, secondary, management, and worker nodes) to establish a [quorum](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=failure-quorum#nodequo) and maintain data consistency in the even of a node failure. Therefore, the minimum value of 1 may need to be larger if the value specified for management_node_count is less than 2."
+            "description": "The minimum number of virtual server instance or bare metal server worker nodes that will be provisioned at the time the cluster is created. For bare metal servers, enter a value in the range 1 - 16. For virtual server instances with NFS storage, enter a value in the range 0 - 500. For virtual server instances with Spectrum Scale storage, enter a value in the range 1 - 64. Note: Spectrum Scale requires a minimum of 3 compute nodes (combination of primary, secondary, management, and worker nodes) to establish a [quorum](https://www.ibm.com/docs/en/spectrum-scale/5.1.5?topic=failure-quorum#nodequo) and maintain data consistency if a node fails. Therefore, the minimum value of 1 might need to be larger if the value specified for management_node_count is less than 2."
           },
           {
             "name": "windows_worker_node",
@@ -128,7 +128,7 @@
             "value": "Please fill here",
             "type": "string",
             "secure": false,
-            "description":"Comma-separated list of names of the SSH key configured in your IBM Cloud account that is used to establish a connection to the Symphony primary node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given here. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
+            "description": "Comma-separated list of names of the SSH key configured in your IBM Cloud account that is used to establish a connection to the Symphony primary node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given here. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
           },
           {
             "name": "api_key",
@@ -138,11 +138,11 @@
             "description": "This is the API key for IBM Cloud account in which the Spectrum Symphony cluster needs to be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-userapikey)."
           },
           {
-            "name": "sym_license_confirmation",
-            "value": "true",
+            "name": "ibm_customer_number",
+            "value": "Please fill here",
             "type": "string",
-            "secure": false,
-            "description": "Confirm your use of IBM Spectrum Symphony licenses. By entering 'true' for the property you have agreed to one of the two conditions. 1. You are using the software in production and confirm you have sufficient licenses to cover your use under the International Program License Agreement (IPLA). 2. You are evaluating the software and agree to abide by the International License Agreement for Evaluation of Programs (ILAE). NOTE: Failure to comply with licenses for production use of software is a violation of IBM International Program License Agreement. [Learn more](https://www.ibm.com/software/passportadvantage/programlicense.html)."
+            "secure": true,
+            "description": "Comma-separated list of the IBM Customer Number(s) (ICN) that is used for the Bring Your Own License (BYOL) entitlement check. For more information on how to find your ICN, see [What is my IBM Customer Number (ICN)?](https://www.ibm.com/support/pages/what-my-ibm-customer-number-icn)."
           },
           {
             "name": "hyperthreading_enabled",
@@ -175,6 +175,24 @@
             "value": "180s",
             "type": "string",
             "description": "wait duration time set for the storage and worker node to complete the entire setup"
+          },
+          {
+            "name": "vpc_cidr_block",
+            "value": "[\"10.241.0.0/18\"]",
+            "type": "list(string)",
+            "description": "IBM Cloud VPC address prefixes that are needed for VPC creation. Since the solution supports only a single availability zone, provide one CIDR address prefix for VPC creation. For more information, see [Bring your own subnet](https://cloud.ibm.com/docs/vpc?topic=vpc-configuring-address-prefixes)."
+          },
+          {
+            "name": "vpc_cluster_private_subnets_cidr_blocks",
+            "value": "[\"10.241.0.0/22\"]",
+            "type": "list(string)",
+            "description": "The CIDR block that's required for the creation of the compute and storage cluster private subnet. Modify the CIDR block if it has already been reserved or used for other applications within the VPC or conflicts with any on-premises CIDR blocks when using a hybrid environment. Provide only one CIDR block for the creation of the compute and storage subnet. Make sure to select a CIDR block size that will accommodate the maximum number of management, storage, and both static and dynamic worker nodes that you expect to have in your cluster.  For more information on CIDR block size selection, see [Choosing IP ranges for your VPC](https://cloud.ibm.com/docs/vpc?topic=vpc-choosing-ip-ranges-for-your-vpc)."
+          },
+          {
+            "name": "vpc_cluster_login_private_subnets_cidr_blocks",
+            "value": "[\"10.241.4.0/28\"]",
+            "type": "list(string)",
+            "description": "The CIDR block that's required for the creation of the login cluster private subnet. Modify the CIDR block if it has already been reserved or used for other applications within the VPC or conflicts with any on-premises CIDR blocks when using a hybrid environment. Provide only one CIDR block for the creation of the login subnet. Since login subnet is used only for the creation of login virtual server instance provide a CIDR range of /28."
           }
         ]
       }

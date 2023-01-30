@@ -38,6 +38,7 @@ export resourceGroupID=${resourceGroupID}
 #prefix should be 10 characters or fewer
 export hostPrefix=${hostPrefix}
 
+
 #required ports for firewall
 #GUI: 8443
 #EGO: 17870, 27820(SSL only)
@@ -70,7 +71,7 @@ export LOCK_FILE=${SHARED_TOP_CLUSTERID}/lock
 export DONE_FILE=${SHARED_TOP_CLUSTERID}/done
 export SHARED_HOSTS_FILE=${SHARED_TOP_CLUSTERID}/sharedhosts
 export HOST_NAME=`hostname`
-export HOST_IP=$(ip addr show eth0 | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}')
+export export HOST_IP=$(hostname -I)
 export DELAY=15
 export STARTUP_DELAY=1
 export ENTITLEMENT_FILE=$EGO_TOP/kernel/conf/sym_adv_entitlement.dat
@@ -88,7 +89,7 @@ export LOCAL_HOST_IPV6="::1         localhost localhost.localdomain localhost6 l
 function scale_update_worker_hostname
 {
     if [ ${spectrum_scale} == true ]; then
-        TMP_HOST_NAME=$(grep -F "${HOST_IP} " ${SHARED_HOSTS_FILE} | awk '{ print $3 }')
+        TMP_HOST_NAME=$(grep -F "${HOST_IP}" ${SHARED_HOSTS_FILE} | awk '{ print $3 }')
         if [ -n "${TMP_HOST_NAME}" ]; then
             export HOST_NAME=${TMP_HOST_NAME}
             hostnamectl set-hostname ${HOST_NAME}
@@ -187,6 +188,56 @@ function clean_shared
     mkdir -p ${SHARED_TOP_SYM} ${HOSTS_FILES} && chown -R ${CLUSTERADMIN} ${SHARED_TOP_CLUSTERID}
 }
 
+function push_bin_nfs
+{
+    count=-1
+    while (( count != 0 ))
+    do
+        sleep 5
+        echo "waiting for package decryption"
+        count=$(find /opt/IBM/symphony_cloud_packages/*.gpg 2>/dev/null | wc -l)
+        if [ $count == 0 ]; then
+            mv /opt/IBM/symphony_cloud_packages ${SHARED_TOP}
+            echo "symphony binary files moved"
+        fi
+    done
+    if [ ${spectrum_scale} == true ]; then
+        count=-1
+        while (( count != 0 ))
+        do
+            sleep 5
+            echo "waiting for package decryption"
+            count=$(find /opt/IBM/gpfs_cloud_rpms/*.gpg 2>/dev/null | wc -l)
+            if [ $count == 0 ]; then
+                mv /opt/IBM/gpfs_cloud_rpms ${SHARED_TOP}
+                echo "scale binary files moved"
+            fi
+        done
+    fi
+}
+
+function install_symp
+{
+    if ! rpm -q --quiet egocore ; then
+      echo "Symphony package not found"
+      /bin/bash ${SHARED_TOP}/symphony_cloud_packages/install_symphony.sh
+      echo "installed symphony"
+    fi
+}
+
+function install_scale
+{
+      /bin/bash ${SHARED_TOP}/gpfs_cloud_rpms/install_scale.sh
+      echo "installed scale"
+}
+
+function bare_metal_mtu9000
+{
+  echo ${worker_node_type}
+  echo "MTU=9000" >> "/etc/sysconfig/network-scripts/ifcfg-ens1"
+  systemctl restart NetworkManager
+}
+
 function mtu9000
 {
     #Change the MTU setting
@@ -250,9 +301,7 @@ function create_sshkey
     mkdir -p /root/.ssh
     cat ${SHARED_TOP_CLUSTERID}/root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
     cp ${SHARED_TOP_CLUSTERID}/root/.ssh/id_rsa /root/.ssh/.
-    if [ ${spectrum_scale} == true ]; then
-      echo "${temp_public_key}" >> /root/.ssh/authorized_keys
-    fi
+    echo "${temp_public_key}" >> /root/.ssh/authorized_keys
     echo "StrictHostKeyChecking no" >> ~/.ssh/config
 }
 
@@ -629,7 +678,7 @@ function wait_for_management_hosts
             echo "${HOST_IP} ${HOST_NAME}${domainName} ${HOST_NAME}" > /tmp/hosts
         fi
         cat ${HOSTS_FILES}/* >> /tmp/hosts
-        cp /tmp/hosts /etc/hosts
+        cat /tmp/hosts >> /etc/hosts
         echo "${LOCAL_HOST_IPV4}" >> /etc/hosts
         echo "${LOCAL_HOST_IPV6}" >> /etc/hosts
         chmod 644 /etc/hosts
@@ -764,6 +813,9 @@ if [ "${egoHostRole}" == "primary" ]; then
     update_hosts
     update_clusterid
     create_sshkey
+    if [ ${worker_node_type} == "baremetal" ]; then
+      push_bin_nfs
+    fi
     create_sslkey
     scale_create_shared_hosts_file
     HF_provider_config
@@ -824,16 +876,22 @@ else
     config_hyperthreading
     mount_nfs_readonly
     wait_for_nfs
-    mtu9000
-    wait_for_candidate_hosts_norestart
+    copy_sshkey
     scale_update_worker_hostname
     update_hosts_noshare
-    copy_sshkey
+    scale_append_hosts_file
+    if [ ${worker_node_type} == "baremetal" ]; then
+      install_scale
+      bare_metal_mtu9000
+    else
+      mtu9000
+    fi
+    install_symp
+    wait_for_candidate_hosts_norestart
     copy_sslkey
     patch_image
     enable_SSL_compute
     config_symcompute
     start_ego
     wait_for_management_hosts
-    scale_append_hosts_file
 fi

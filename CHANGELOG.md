@@ -1,5 +1,12 @@
 # **CHANGELOG**
 
+## **1.4.0**
+### ENHANCEMENTS
+- Support for Baremetal worker node.
+- Spectrum Scale version has been updated from 5.1.3.1 to 5.1.5.1.
+- Support custom cidr block for vpc and subnet creation.
+- Support Entitlement check for Symphony license validation.
+
 ## **1.3.0**
 ### ENHANCEMENTS
 - Support for Windows worker node

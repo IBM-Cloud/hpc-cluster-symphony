@@ -4,7 +4,7 @@
 ###################################################
 
 output "ssh_command" {
-  value = "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -L 18443:localhost:8443 -J root@${ibm_is_floating_ip.login_fip.address} root@${ibm_is_instance.primary[0].primary_network_interface[0].primary_ipv4_address}"
+  value = "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -L 18443:localhost:8443 -J root@${module.login_fip.floating_ip_address} root@${module.primary_vsi[0].primary_network_interface}"
 }
 
 output "vpc_name" {
@@ -12,11 +12,11 @@ output "vpc_name" {
 }
 
 output "vpn_config_info" {
-  value = var.vpn_enabled ? "IP: ${ibm_is_vpn_gateway.vpn[0].public_ip_address}, CIDR: ${ibm_is_subnet.subnet.ipv4_cidr_block}, UDP ports: 500, 4500": null
+  value = var.vpn_enabled ? "IP : ${module.vpn[0].vpn_gateway_public_ip_address}, CIDR: ${module.subnet.ipv4_cidr_block}, UDP ports : 500, 4500 ": null
 }
 
 output "spectrum_scale_storage_ssh_command" {
-  value = var.spectrum_scale_enabled ? "ssh -J root@${ibm_is_floating_ip.login_fip.address} root@${ibm_is_instance.spectrum_scale_storage[0].primary_network_interface[0].primary_ipv4_address}": null
+  value = var.spectrum_scale_enabled ? "ssh -J root@${module.login_fip.floating_ip_address} root@${module.spectrum_scale_storage[0].primary_network_interface}": null
 }
 
 output "region_name" {
