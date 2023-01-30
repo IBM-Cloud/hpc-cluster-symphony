@@ -18,44 +18,45 @@ variable "vpc_name" {
 
 variable "ssh_key_name" {
   type        = string
-  description = "Comma-separated list of names of the SSH key configured in your IBM Cloud account that is used to establish a connection to the Symphony primary node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given here. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
+  description = "Comma-separated list of names of the SSH keys that is configured in your IBM Cloud account that is used to establish a connection to the Symphony primary node. Ensure the SSH key is present in the same resource group and region where the cluster is being provisioned. If you do not have an SSH key in your IBM Cloud account, create one by using the instructions given at [SSH Keys](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys)."
 }
 
 variable "api_key" {
   type        = string
   sensitive   = true
-  description = "This is the API key for IBM Cloud account in which the Spectrum Symphony cluster needs to be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-userapikey)."
+  description = "This is the IBM Cloud API key for IBM Cloud account where the IBM Spectrum Symphony cluster needs to be deployed. For more information on how to create an API key, see [Managing user API keys](https://cloud.ibm.com/docs/account?topic=account-userapikey)."
   validation {
     condition     = var.api_key != ""
     error_message = "API key for IBM Cloud must be set."
   }
 }
 
-variable "sym_license_confirmation" {
+variable "ibm_customer_number" {
   type        = string
-  description = "Confirm your use of IBM Spectrum Symphony licenses. By entering 'true' for the property you have agreed to one of the two conditions. 1. You are using the software in production and confirm you have sufficient licenses to cover your use under the International Program License Agreement (IPLA). 2. You are evaluating the software and agree to abide by the International License Agreement for Evaluation of Programs (ILAE). NOTE: Failure to comply with licenses for production use of software is a violation of IBM International Program License Agreement. [Learn more](https://www.ibm.com/software/passportadvantage/programlicense.html)."
+  sensitive   = true
+  description = "Comma-separated list of the IBM Customer Number(s) (ICN) that is used for the Bring Your Own License (BYOL) entitlement check. For more information on how to find your ICN, see [What is my IBM Customer Number (ICN)?](https://www.ibm.com/support/pages/what-my-ibm-customer-number-icn)."
   validation {
-    condition = var.sym_license_confirmation== "true"
-    error_message = "Confirm your use of IBM Spectrum Symphony licenses. By entering 'true' for the property you have agreed to one of the two conditions. 1. You are using the software in production and confirm you have sufficient licenses to cover your use under the International Program License Agreement (IPLA). 2. You are evaluating the software and agree to abide by the International License Agreement for Evaluation of Programs (ILAE). NOTE: Failure to comply with licenses for production use of software is a violation of IBM International Program License Agreement. [Learn more](https://www.ibm.com/software/passportadvantage/programlicense.html)."
+    condition     = trimspace(var.ibm_customer_number) != ""
+    error_message = "Specified input for \"ibm_customer_number\" cannot be empty."
   }
 }
 
 variable "resource_group" {
   type        = string
   default     = "Default"
-  description = "Resource group name from your IBM Cloud account where the VPC resources should be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-rgs)."
+  description = "Resource group name from your IBM Cloud account where the VPC resources should be deployed. Note: Do not modify the \"Default\" value if you would like to use the auto-scaling capability. For additional information on resource groups, see [Managing resource groups](https://cloud.ibm.com/docs/account?topic=account-rgs)."
 }
 
 variable "cluster_prefix" {
   type        = string
   default     = "hpcc-symphony"
-  description = "Prefix that is used to name the Spectrum Symphony cluster and IBM Cloud resources that are provisioned to build the Spectrum Symphony cluster instance. You cannot create more than one instance of the Symphony cluster with the same name. Make sure that the name is unique. Enter a prefix name, such as my-hpcc."
+  description = "Prefix that is used to name the Spectrum Symphony cluster and IBM Cloud resources that are provisioned to build the Spectrum Symphony cluster instance. You cannot create more than one instance of the Symphony cluster with the same name. Make sure that the name is unique."
 }
 
 variable "cluster_id" {
   type        = string
   default     = "HPCCluster"
-  description = "ID of the cluster used by Symphony for configuration of resources. This must be up to 39 alphanumeric characters including the underscore (_), the hyphen (-), and the period (.). Other special characters and spaces are not allowed. Do not use the name of any host or user as the name of your cluster. You cannot change it after installation."
+  description = "Unique ID of the cluster used by Symphony for configuration of resources. This must be up to 39 alphanumeric characters including the underscore (_), the hyphen (-), and the period (.). Other special characters and spaces are not allowed. Do not use the name of any host or user as the name of your cluster. You cannot change it after installation."
   validation {
     condition = 0 < length(var.cluster_id) && length(var.cluster_id) < 40 && can(regex("^[a-zA-Z0-9_.-]+$", var.cluster_id))
     error_message = "The ID must be up to 39 alphanumeric characters including the underscore (_), the hyphen (-), and the period (.). Other special characters and spaces are not allowed."
@@ -67,9 +68,43 @@ variable "zone" {
   description = "IBM Cloud zone name within the selected region where the Spectrum Symphony cluster should be deployed. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-creating-a-vpc-in-a-different-region#get-zones-using-the-cli)."
 }
 
+variable "vpc_cidr_block" {
+  type        = list(string)
+  default     = ["10.241.0.0/18"]
+  description = "IBM Cloud VPC address prefixes that are needed for VPC creation. Since the solution supports only a single availability zone, provide one CIDR address prefix for VPC creation. For more information, see [Bring your own subnet](https://cloud.ibm.com/docs/vpc?topic=vpc-configuring-address-prefixes)."
+  validation {
+    condition     = length(var.vpc_cidr_block) <= 1
+    error_message = "Our Automation supports only a single AZ to deploy resources. Provide one CIDR range of address prefix."
+  }
+}
+
+variable "vpc_cluster_private_subnets_cidr_blocks" {
+  type        = list(string)
+  default     = ["10.241.0.0/22"]
+  description = "The CIDR block that's required for the creation of the compute and storage cluster private subnet. Modify the CIDR block if it has already been reserved or used for other applications within the VPC or conflicts with any on-premises CIDR blocks when using a hybrid environment. Provide only one CIDR block for the creation of the compute and storage subnet. Make sure to select a CIDR block size that will accommodate the maximum number of management, storage, and both static and dynamic worker nodes that you expect to have in your cluster.  For more information on CIDR block size selection, see [Choosing IP ranges for your VPC](https://cloud.ibm.com/docs/vpc?topic=vpc-choosing-ip-ranges-for-your-vpc)."
+  validation {
+    condition     = length(var.vpc_cluster_private_subnets_cidr_blocks) <= 1
+    error_message = "Our Solution supports only a single AZ to deploy resources. Provide one CIDR range of subnet creation."
+  }
+}
+
+variable "vpc_cluster_login_private_subnets_cidr_blocks" {
+  type        = list(string)
+  default     = ["10.241.4.0/28"]
+  description = "The CIDR block that's required for the creation of the login cluster private subnet. Modify the CIDR block if it has already been reserved or used for other applications within the VPC or conflicts with any on-premises CIDR blocks when using a hybrid environment. Provide only one CIDR block for the creation of the login subnet. Since login subnet is used only for the creation of login virtual server instance provide a CIDR range of /28."
+  validation {
+    condition     = length(var.vpc_cluster_login_private_subnets_cidr_blocks) <= 1
+    error_message = "Our Automation supports only a single AZ to deploy resources. Provide one CIDR range of subnet creation."
+  }
+  validation {
+    condition     =  tonumber(regex("/(\\d+)", join(",",var.vpc_cluster_login_private_subnets_cidr_blocks))[0]) <= 28
+    error_message = "Our solution uses this subnet to create only a login virtual server instance, providing a bigger CIDR size will waste the usage of available IP. A CIDR range of /28 is sufficient for the creation of login subnet."
+  }
+}
+
 variable "image_name" {
   type        = string
-  default     = "hpcc-symp731-scale5131-rhel84-25may2022-v1"
+  default     = "hpcc-symp731-scale5151-rhel84-v1-4"
   description = "Name of the custom image that you want to use to create virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the automation uses a base image with additional software packages mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you would like to include your application-specific binary files, follow the instructions in [ Planning for custom images ](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
 }
 
@@ -82,7 +117,7 @@ variable "windows_image_name" {
 variable "management_node_instance_type" {
   type        = string
   default     = "bx2-4x16"
-  description = "Specify the virtual server instance profile type name to be used to create the management nodes for the Spectrum Symphony cluster. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
+  description = "Specify the virtual server instance profile type to be used to create the management nodes for the Spectrum Symphony cluster. For choices on profile types, see [Instance profiles](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
   validation {
     # regex(...) fails if it cannot find a match
     condition     = can(regex("^[^\\s]+-[0-9]+x[0-9]+", var.management_node_instance_type))
@@ -90,10 +125,20 @@ variable "management_node_instance_type" {
   }
 }
 
+variable "worker_node_type" {
+  description = "The type of server that's used for the worker nodes: virtual server instance or bare metal server. If you choose vsi, the worker nodes are deployed on virtual server instances, or if you choose baremetal, the worker nodes are deployed on bare metal servers. Note: If baremetal is selected, only static worker nodes are supported; you will not be able to use the Spectrum Symphony Host Factory feature for auto-scaling on the cluster."
+  default = "vsi"
+  validation {
+    condition = can(regex("^(vsi|baremetal)$", lower(var.worker_node_type)))
+    #condition     = contains(["scratch", "persistent"], lower(var.storage_type))
+    error_message = "Our automation support only worker node type as vsi and baremetal, provide any one of the value."
+  }
+}
+
 variable "worker_node_instance_type" {
   type        = string
   default     = "bx2-4x16"
-  description = "Specify the virtual server instance profile type name to be used to create the worker nodes for the Spectrum Symphony cluster. The worker nodes are the ones where the workload execution takes place and the choice should be made according to the characteristic of workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles). NOTE: If dedicated_host_enabled == true, available instance prefix (e.g., bx2 and cx2) can be limited depending on your target region. Check `ibmcloud target -r {region_name}; ibmcloud is dedicated-host-profiles`."
+  description = "Specify the virtual server instance or bare metal server profile type name to be used to create the worker nodes for the Spectrum Symphony cluster based on worker_node_type. The worker nodes are the ones where the workload execution takes place and the choice should be made according to the characteristic of workloads. For more information, see [virtual server instance ](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles) and [bare metal server profiles](https://cloud.ibm.com/docs/vpc?topic=vpc-bare-metal-servers-profile&interface=ui). NOTE: If dedicated_host_enabled == true, available instance prefix (e.g., bx2 and cx2) can be limited depending on your target region. Check `ibmcloud target -r {region_name}; ibmcloud is dedicated-host-profiles`."
   validation {
     # regex(...) fails if it cannot find a match
     condition     = can(regex("^[^\\s]+-[0-9]+x[0-9]+", var.worker_node_instance_type))
@@ -104,7 +149,7 @@ variable "worker_node_instance_type" {
 variable "login_node_instance_type" {
   type        = string
   default     = "bx2-2x8"
-  description = "Specify the virtual server instance profile type name to be used to create the login node for the Spectrum Symphony cluster. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
+  description = "Specify the virtual server instance profile type to be used to create the login node for the Spectrum Symphony cluster. For choices on profile types, see [Instance profiles](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
   validation {
     # regex(...) fails if it cannot find a match
     condition     = can(regex("^[^\\s]+-[0-9]+x[0-9]+", var.login_node_instance_type))
@@ -115,7 +160,7 @@ variable "login_node_instance_type" {
 variable "storage_node_instance_type" {
   type        = string
   default     = "bx2-2x8"
-  description = "Specify the virtual server instance profile type to be used to create the storage node for the Spectrum Symphony cluster. The storage node is the one that is used to create an NFS instance to manage the data for HPC workloads. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
+  description = "Specify the virtual server instance profile type to be used to create the storage node for the Spectrum Symphony cluster. The storage node is the one that would be used to create an NFS instance to manage the data for HPC workloads. For choices on profile types, see [Instance profiles](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
   validation {
     # regex(...) fails if it cannot find a match
     condition     = can(regex("^[^\\s]+-[0-9]+x[0-9]+", var.storage_node_instance_type))
@@ -126,7 +171,7 @@ variable "storage_node_instance_type" {
 variable "worker_node_min_count" {
   type        = number
   default     = 0
-  description = "The minimum number of worker nodes. This is the number of static worker nodes that will be provisioned at the time the cluster is created. If using NFS storage, enter a value in the range 0 - 500. If using Spectrum Scale storage, enter a value in the range 1 - 64. NOTE: Spectrum Scale requires a minimum of 3 compute nodes (combination of primary, secondary, management, and worker nodes) to establish a [quorum](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=failure-quorum#nodequo) and maintain data consistency in the even of a node failure. Therefore, the minimum value of 1 may need to be larger if the value specified for management_node_count is less than 2."
+  description = "The minimum number of virtual server instance or bare metal server worker nodes that will be provisioned at the time the cluster is created. For bare metal servers, enter a value in the range 1 - 16. For virtual server instances with NFS storage, enter a value in the range 0 - 500. For virtual server instances with Spectrum Scale storage, enter a value in the range 1 - 64. Note: Spectrum Scale requires a minimum of 3 compute nodes (combination of primary, secondary, management, and worker nodes) to establish a [quorum](https://www.ibm.com/docs/en/spectrum-scale/5.1.5?topic=failure-quorum#nodequo) and maintain data consistency if a node fails. Therefore, the minimum value of 1 might need to be larger if the value specified for management_node_count is less than 2."
   validation {
     condition     = 0 <= var.worker_node_min_count && var.worker_node_min_count <= 500
     error_message = "Input \"worker_node_min_count\" must be >= 0 and <= 500."
@@ -136,17 +181,18 @@ variable "worker_node_min_count" {
 variable "worker_node_max_count" {
   type        = number
   default     = 10
-  description = "The maximum number of worker nodes that can be deployed in the Spectrum Symphony cluster. In order to use the [Host Factory](https://www.ibm.com/docs/en/spectrum-symphony/7.3.1?topic=factory-overview) feature to dynamically create and delete worker nodes based on workload demand, the value selected for this parameter must be larger than worker_node_min_count. If you plan to deploy only static worker nodes in the Spectrum Symphony cluster, e.g., when using Spectrum Scale storage, the value for this parameter should be equal to worker_node_min_count. Enter a value in the range 1 - 500."
+  description = "The maximum number of virtual server instance or bare metal server worker nodes that can be provisioned in the cluster. To take advantage of the auto-scale feature from [Host Factory](https://www.ibm.com/docs/en/spectrum-symphony/7.3.1?topic=factory-overview), the value needs to be greater than worker_node_min_count. If using virtual server instances, enter a value in the range 1 - 500. If using bare metal servers, the value needs to match worker_node_min_count, and the permitted value is in the range 1 - 16. Note: If you plan to use Spectrum Scale storage, the value for this parameter should be equal to worker_node_min_count."
   validation {
     condition     = 1 <= var.worker_node_max_count && var.worker_node_max_count <= 500
     error_message = "Input \"worker_node_max_count must\" be >= 1 and <= 500."
   }
 }
 
+
 variable "windows_worker_node" {
   type = bool
   default = false
-  description = "Set to true to deploy Windows® worker nodes in the cluster. By default, the cluster deploys Linux® worker nodes. If the variable is set to true, the values of both ‘worker_node_min_count’ and ‘worker_node_max_count’ should be equal because the current implementation doesn't support dynamic creation of worker nodes through Host Factory." 
+  description = "Set to true to deploy Windows® worker nodes in the cluster. By default, the cluster deploys Linux® worker nodes. If the variable is set to true, the values of both worker_node_min_count and worker_node_max_count should be equal because the current implementation doesn't support dynamic creation of worker nodes through Host Factory."
 }
 
 variable "volume_capacity" {
@@ -162,7 +208,7 @@ variable "volume_capacity" {
 variable "volume_iops" {
   type        = number
   default     = 300
-  description = "Number to represent the IOPS(Input Output Per Second) configuration for block storage to be used for NFS instance (valid only for volume_profile=custom, dependent on volume_capacity). Enter a value in the range 100 - 48000. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles#custom)."
+  description = "Number to represent the IOPS configuration for block storage to be used for NFS instance (valid only for volume_profile=custom, dependent on volume_capacity). Enter a value in the range 100 - 48000. For possible options of IOPS, see [Custom IOPS profile](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles#custom)."
   validation {
     condition     = 100 <= var.volume_iops && var.volume_iops <= 48000
     error_message = "Input \"volume_iops\" must be >= 100 and <= 48000."
@@ -182,13 +228,13 @@ variable "management_node_count" {
 variable "hyperthreading_enabled" {
   type = bool
   default = true
-  description = "True to enable hyper-threading in the cluster nodes (default). Otherwise, hyper-threading will be disabled. Note: Do not set hyper-threading to false. An issue with the RHEL 8.4 image related to that setting has been identified that impacts this release [FAQ](https://cloud.ibm.com/docs/hpc-spectrum-symphony?topic=hpc-spectrum-symphony-spectrum-symphony-faqs&interface=ui)."
+  description = "Setting this to true will enable hyper-threading in the worker nodes of the cluster(default). Otherwise, hyper-threading will be disabled."
 }
 
 variable "vpn_enabled" {
   type = bool
   default = false
-  description = "Set to true to deploy a VPN gateway for VPC in the cluster (default: false)."
+  description = "Set the value as true to deploy a VPN gateway for VPC in the cluster."
 }
 
 variable "vpn_peer_cidrs" {
@@ -211,7 +257,7 @@ variable "vpn_preshared_key" {
 
 variable "remote_allowed_ips" {
 	type        = list(string)
-	description = "Comma-separated list of IP addresses that can access the Spectrum Symphony instance through an SSH/RDP interface. For security purposes, provide the public IP addresses assigned to the devices that are authorized to establish SSH/RDP connections (for example, [\"169.45.117.34\"]). To fetch the IP address of the device, use [https://ipv4.icanhazip.com/](https://ipv4.icanhazip.com/)."
+	description = "Comma-separated list of IP addresses that can access the Spectrum Symphony instance through an SSH or RDP interface. For security purposes, provide the public IP addresses assigned to the devices that are authorized to establish SSH or RDP connections (for example, [\"169.45.117.34\"]). To fetch the IP address of the device, use [https://ipv4.icanhazip.com/](https://ipv4.icanhazip.com/)."
 	validation {
     condition     = alltrue([
             for o in var.remote_allowed_ips : !contains(["0.0.0.0/0", "0.0.0.0"], o)
@@ -229,19 +275,19 @@ variable "remote_allowed_ips" {
 variable "volume_profile" {
   type        = string
   default     = "general-purpose"
-  description = "Name of the block storage volume type to be used for NFS instance. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles)."
+  description = "Name of the block storage volume type to be used for NFS instance. For possible options, see[Block storage profiles](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles)."
 }
 
 variable "dedicated_host_enabled" {
   type        = bool
   default     = false
-  description = "Set to true to use dedicated hosts for compute hosts (default: false). Note that Symphony still dynamically provisions compute hosts at public VSIs and dedicated hosts are used only for static compute hosts provisioned at the time the cluster is created. The number of dedicated hosts and the profile names for dedicated hosts are calculated from worker_node_min_count and dedicated_host_type_name."
+  description = "Set to true to use dedicated hosts for compute hosts (default: false). Note that Symphony still dynamically provisions compute hosts at public virtual server instances and dedicated hosts are used only for static compute hosts provisioned at the time the cluster is created. The number of dedicated hosts and the profile names for dedicated hosts are calculated from worker_node_min_count and dedicated_host_type_name."
 }
 
 variable "dedicated_host_placement" {
   type        = string
   default     = "spread"
-  description = "Specify 'pack' or 'spread'. The 'pack' option will deploy VSIson one dedicated host until full before moving on to the next dedicated host. The 'spread' option will deploy VSIs in round-robin fashion across all the dedicated hosts. The second option should result in mostly even distribution of VSIs on the hosts, while the first option could result in one dedicated host being mostly empty."
+  description = "Specify 'pack' or 'spread'. The 'pack' option will deploy virtual server instances on one dedicated host until full before moving on to the next dedicated host. The 'spread' option will deploy virtual server instances in round-robin fashion across all the dedicated hosts. The second option should result in mostly even distribution of instances on the hosts, while the first option might result in one dedicated host being mostly empty."
   validation {
     condition     = var.dedicated_host_placement == "spread" || var.dedicated_host_placement == "pack"
     error_message = "Supported values for dedicated_host_placement: spread or pack."
@@ -267,19 +313,19 @@ variable "TF_PARALLELISM" {
 variable "spectrum_scale_enabled"{
   type = bool
   default = false
-  description = "Setting this to 'true' will enable Spectrum Scale integration with the cluster. Otherwise, Spectrum Scale integration will be disabled (default). By entering 'true' for the property you have also agreed to one of the two conditions. 1. You are using the software in production and confirm you have sufficient licenses to cover your use under the International Program License Agreement (IPLA). 2. You are evaluating the software and agree to abide by the International License Agreement for Evaluation of Programs (ILAE). NOTE: Failure to comply with licenses for production use of software is a violation of IBM International Program License Agreement. [Learn more](https://www.ibm.com/software/passportadvantage/programlicense.html)."
+  description = "Setting this to 'true' will enable Spectrum Scale integration with the cluster. Otherwise, Spectrum Scale integration will be disabled (default). By entering 'true' for the property you have also agreed to one of the two conditions. 1. You are using the software in production and confirm you have sufficient licenses to cover your use under the International Program License Agreement (IPLA). 2. You are evaluating the software and agree to abide by the International License Agreement for Evaluation of Programs (ILAE). NOTE: Failure to comply with licenses for production use of software is a violation of [IBM International Program License Agreement](https://www.ibm.com/software/passportadvantage/programlicense.html)."
 }
 
 variable "scale_storage_image_name" {
   type        = string
-  default     = "hpcc-scale5131-rhel84-jun0122-v1"
-  description = "Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy the Spectrum Scale storage cluster. By default, our automation uses a base image with following HPC related packages documented here [Learn more](https://cloud.ibm.com/docs/hpc-spectrum-symphony). If you would like to include your application specific binaries please follow the instructions [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Scale storage cluster through this offering."
+  default     = "hpcc-scale5151-rhel84"
+  description = "Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy the Spectrum Scale storage cluster. By default, our automation uses a base image plus the Spectrum Scale software and any other software packages that it requires. If you'd like, you can follow the instructions for [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Scale storage cluster through this offering."
 }
 
 variable "scale_storage_node_count" {
   type        = number
   default     = 4
-  description = "The number of Spectrum Scale storage nodes that will be provisioned at the time the cluster is created. Enter a value in the range 2 - 18. It has to be divisible by 2."
+  description = "The number of Spectrum Scale storage nodes that are provisioned at the time the cluster is created. Enter a value in the range 2 - 18. It has to be divisible by 2."
   validation {
     condition     = (var.scale_storage_node_count == 0) || (var.scale_storage_node_count >= 2 && var.scale_storage_node_count <= 34 && var.scale_storage_node_count % 2 == 0)
     error_message = "Input \"scale_storage_node_count\" must be >= 2 and <= 18 and has to be divisible by 2."
@@ -289,7 +335,7 @@ variable "scale_storage_node_count" {
 variable "scale_storage_node_instance_type" {
   type        = string
   default     = "cx2d-8x16"
-  description = "Specify the virtual server instance storage profile type name to be used to create the Spectrum Scale storage nodes for the Spectrum Symphony cluster. [Learn more](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
+  description = "Specify the virtual server instance storage profile type name to be used to create the Spectrum Scale storage nodes for the Spectrum Symphony cluster. For more information, see [Instance profiles](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
   validation {
     condition     = can(regex("^[b|c|m]x[0-9]+d-[0-9]+x[0-9]+", var.scale_storage_node_instance_type))
     error_message = "The profile must be a valid profile name."
@@ -300,7 +346,7 @@ variable "scale_storage_node_instance_type" {
 variable "scale_storage_cluster_filesystem_mountpoint" {
   type        = string
   default     = "/gpfs/fs1"
-  description = "Spectrum Scale storage cluster (owningCluster) file system mount point. The owningCluster is the cluster that owns and serves the file system to be mounted. [Learn more](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=system-mounting-remote-gpfs-file)."
+  description = "Spectrum Scale storage cluster (owningCluster) file system mount point. The owningCluster is the cluster that owns and serves the file system to be mounted.  For more information, see [Mounting a remote GPFS file system](https://www.ibm.com/docs/en/spectrum-scale/5.1.5?topic=system-mounting-remote-gpfs-file)."
 
   validation {
     condition     = can(regex("^\\/[a-z0-9A-Z-_]+\\/[a-z0-9A-Z-_]+$", var.scale_storage_cluster_filesystem_mountpoint))
@@ -311,7 +357,7 @@ variable "scale_storage_cluster_filesystem_mountpoint" {
 variable "scale_filesystem_block_size" {
   type        = string
   default     = "4M"
-  description = "File system [block size](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=considerations-block-size). Spectrum Scale supported block sizes (in bytes) include: 256K, 512K, 1M, 2M, 4M, 8M, 16M."
+  description = "File system [block size](https://www.ibm.com/docs/en/spectrum-scale/5.1.5?topic=considerations-block-size). Spectrum Scale supported block sizes (in bytes) include: 256K, 512K, 1M, 2M, 4M, 8M, 16M."
 
   validation {
     condition     = can(regex("^256K$|^512K$|^1M$|^2M$|^4M$|^8M$|^16M$", var.scale_filesystem_block_size))
@@ -366,7 +412,7 @@ variable "scale_compute_cluster_gui_password" {
 variable "scale_compute_cluster_filesystem_mountpoint" {
   type        = string
   default     = "/gpfs/fs1"
-  description = "Compute cluster (accessingCluster) file system mount point. The accessingCluster is the cluster that accesses the owningCluster. [Learn more](https://www.ibm.com/docs/en/spectrum-scale/5.1.2?topic=system-mounting-remote-gpfs-file)."
+  description = "Compute cluster (accessingCluster) file system mount point. The accessingCluster is the cluster that accesses the owningCluster. For more information, see [Mounting a remote GPFS file system](https://www.ibm.com/docs/en/spectrum-scale/5.1.5?topic=system-mounting-remote-gpfs-file)."
 
   validation {
     condition     = can(regex("^\\/[a-z0-9A-Z-_]+\\/[a-z0-9A-Z-_]+$", var.scale_compute_cluster_filesystem_mountpoint))
@@ -379,3 +425,4 @@ variable "TF_WAIT_DURATION" {
   default = "180s"
   description = "wait duration time set for the storage and worker node to complete the entire setup"
 }
+

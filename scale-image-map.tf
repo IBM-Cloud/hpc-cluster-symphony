@@ -1,16 +1,16 @@
-# This mapping file has entries for scale storage node images
+# This mapping file has entries for scale storage node images. The Scale version used on these images are 5.1.5.1
 locals {
   scale_image_region_map = {
-    "hpcc-scale5131-rhel84-jun0122-v1": {
-      "eu-de" = "r010-f26116c5-66b5-41be-b081-bafc9af4d0f9",
-      "us-east" = "r014-cd25a87d-96c7-4b51-ab22-63cccb65985b",
-      "us-south" = "r006-e388ff31-3637-4613-8872-80033a925db6",
-      "jp-tok" = "r022-0aa7a74f-8922-44cf-8a74-8d4c39b80143"
-      "eu-gb" = "r018-d544e3c3-bda5-44c0-8cc3-ba8306cc69d2",
-      "jp-osa" = "r034-8cafc8d5-11a7-4d63-9f05-c3f725214288",
-      "ca-tor" = "r038-8b881d90-1fe6-4d11-a4f4-3770305589fb",
-      "au-syd" = "r026-35832f39-df05-4b6c-b213-d8cb5a2cfcb9",
-      "br-sao" = "r042-80543a2f-9ecb-4942-b637-40b7413128c2"
+    "hpcc-scale5151-rhel84": {
+      "eu-de"   = "r010-628122a3-a86d-4963-9095-a18744a69ce0",
+      "us-east" = "r014-0a08b24d-c104-44da-891d-79ee7e2b1094",
+      "us-south" = "r006-1b6dfe5d-d931-4c2a-857f-0e77b9113def",
+      "jp-tok"  = "r022-ec1909f5-c451-4bcc-967e-354ce287b351"
+      "eu-gb"   = "r018-df9491c5-329c-49ba-b95c-29b643fa175a",
+      "jp-osa"  = "r034-e61a3415-6dea-4595-a7a3-cccce2c75855",
+      "ca-tor"  = "r038-22c92687-b8d5-4fc5-b5b9-335db41f85e4",
+      "au-syd"  = "r026-bb754d5d-7461-4b0e-a43b-f9d2834e03a9",
+      "br-sao"  = "r042-df7f7ed8-3424-450f-a9a9-539454831ac6"
     }
   }
 }

@@ -84,6 +84,7 @@ resource "local_file" "create_scale_tuning_parameters" {
  prefetchaggressivenesswrite=0
  prefetchaggressivenessread=2
  autoload=yes
+ autoBuildGPL=yes
 EOT
   filename = local.scale_tuning_param_path
 }
@@ -130,7 +131,7 @@ resource "null_resource" "call_scale_install_playbook" {
       verbose        = true
       extra_vars = {
         "scale_version" : var.scale_version,
-        "ansible_python_interpreter" : "/usr/bin/python3",
+        "ansible_python_interpreter" : "auto",
         "scale_cluster_definition_path" : local.scale_cluster_def_path,
         "scale_install_updated" : false,
         "scale_config_changed" : false
