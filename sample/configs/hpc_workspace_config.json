@@ -211,7 +211,7 @@
           "name": "dedicated_host_enabled",
           "value": "false",
           "type": "bool",
-          "description": "Set to true to use dedicated hosts for compute hosts (default: false). Note that Symphony still dynamically provisions compute hosts at public virtual server instances and dedicated hosts are used only for static compute hosts provisioned at the time the cluster is created. The number of dedicated hosts and the profile names for dedicated hosts are calculated from worker_node_min_count and dedicated_host_type_name."
+          "description": "Set to true to use dedicated hosts for compute hosts (default: false). Note that Symphony still dynamically provisions compute hosts at public virtual server instances and dedicated hosts are used only for static compute hosts provisioned at the time the cluster is created. The number of dedicated hosts and the profile names for dedicated hosts are calculated from worker_node_min_count and worker_node_instance_type."
         },
         {
           "name": "dedicated_host_placement",
@@ -312,7 +312,7 @@
           "name": "vpc_cidr_block",
           "value": "[\"10.241.0.0/18\"]",
           "type": "list(string)",
-          "description": "IBM Cloud VPC address prefixes that are needed for VPC creation. Since the solution supports only a single availability zone, provide one CIDR address prefix for VPC creation. For more information, see [Bring your own subnet](https://cloud.ibm.com/docs/vpc?topic=vpc-configuring-address-prefixes)."
+          "description": "Creates the address prefix for the new VPC, when the vpc_name variable is empty. Only a single address prefix is allowed. For more information, see [Setting IP ranges](https://cloud.ibm.com/docs/vpc?topic=vpc-vpc-addressing-plan-design)."
         },
         {
           "name": "vpc_cluster_private_subnets_cidr_blocks",

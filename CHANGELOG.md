@@ -1,5 +1,9 @@
 # **CHANGELOG**
 
+## **1.4.1**
+### **BUG FIXES**
+- Fixed bug related to the creation of new subnets with custom cidr under the existing vpc range.
+
 ## **1.4.0**
 ### ENHANCEMENTS
 - Support for Baremetal worker node.

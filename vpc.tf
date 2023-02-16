@@ -8,88 +8,6 @@
 # Download IBM Cloud Provider binary from release page. https://github.com/IBM-Cloud/terraform-provider-ibm/releases
 # And copy it to $HOME/.terraform.d/plugins/terraform-provider-ibm_v1.2.4
 
-/*
-Data source process to fetch all the existing value from IBM cloud environment
-*/
-
-data "ibm_resource_group" "rg" {
-  name = var.resource_group
-}
-
-data "ibm_is_region" "region" {
-  #name = join("-", slice(split("-", var.zone), 0, 2))
-  name = local.region_name
-}
-
-data "ibm_is_zone" "zone" {
-  name   = var.zone
-  region = data.ibm_is_region.region.name
-}
-
-data "ibm_is_vpc" "existing_vpc" {
-  // Lookup for this VPC resource only if var.vpc_name is not empty
-  count = var.vpc_name != "" ? 1:0
-  name  = var.vpc_name
-}
-
-data "ibm_is_vpc" "vpc" {
-  name = local.vpc_name
-  // Depends on creation of new VPC or look up of existing VPC based on value of var.vpc_name,
-  depends_on = [module.vpc, data.ibm_is_vpc.existing_vpc]
-}
-
-data "ibm_is_instance_profile" "management_node" {
-  name = var.management_node_instance_type
-}
-
-data "ibm_is_instance_profile" "worker" {
-  count = var.worker_node_type == "vsi" ? 1 : 0
-  name = var.worker_node_instance_type
-}
-
-data "ibm_is_instance_profile" "login" {
-  name = var.login_node_instance_type
-}
-
-data "ibm_is_instance_profile" "storage" {
-  name = var.storage_node_instance_type
-}
-
-data "ibm_is_bare_metal_server_profile" "worker_bare_metal_server_profile" {
-  count = var.worker_node_type == "baremetal" ? 1 : 0
-  name = var.worker_node_instance_type
-}
-
-data "ibm_is_dedicated_host_profiles" "worker" {
-  count = var.dedicated_host_enabled ? 1: 0
-}
-
-data "ibm_is_volume_profile" "nfs" {
-  name = var.volume_profile
-}
-
-data "ibm_is_ssh_key" "ssh_key" {
-  for_each = toset(split(",", var.ssh_key_name))
-  name     = each.value
-}
-
-data "ibm_is_image" "stock_image" {
-  name = local.stock_image_name
-}
-
-data "ibm_is_image" "baremetal_image" {
-  name = local.worker_bare_metal_server_osimage_name
-}
-
-data "ibm_is_image" "image" {
-  name = var.image_name
-  count = local.image_mapping_entry_found ? 0:1
-}
-
-data "http" "fetch_myip"{
-  url = "http://ipv4.icanhazip.com"
-}
-
 # if dedicated_host_enabled == true, determine the profile name of dedicated hosts and the number of them from worker_node_min_count and worker profile class
 locals {
   region_name = join("-", slice(split("-", var.zone), 0, 2))
@@ -290,8 +208,9 @@ module "vpc" {
 }
 // This module creates a vpc_address_prefix as we are now using custom CIDR range for VPC creation
 module "vpc_address_prefix" {
+  count        = var.vpc_name == "" ? 1 : 0
   source       = "./resources/ibmcloud/network/vpc_address_prefix"
-  vpc_id       = module.vpc[0].vpc_id
+  vpc_id       = data.ibm_is_vpc.vpc.id
   address_name = format("%s-addr", var.cluster_prefix)
   zones        = var.zone
   cidr_block   = var.vpc_cidr_block
@@ -310,7 +229,7 @@ module "public_gw" {
 module "login_subnet" {
   source            = "./resources/ibmcloud/network/login_subnet"
   login_subnet_name = "${var.cluster_prefix}-login-subnet"
-  vpc               = module.vpc[0].vpc_id
+  vpc               = data.ibm_is_vpc.vpc.id
   zone              = data.ibm_is_zone.zone.name
   ipv4_cidr_block   = var.vpc_cluster_login_private_subnets_cidr_blocks[0]
   resource_group    = data.ibm_resource_group.rg.id
@@ -322,7 +241,7 @@ module "login_subnet" {
 module "subnet" {
   source            = "./resources/ibmcloud/network/subnet"
   subnet_name       = "${var.cluster_prefix}-subnet"
-  vpc               = module.vpc[0].vpc_id
+  vpc               = data.ibm_is_vpc.vpc.id
   zone              = data.ibm_is_zone.zone.name
   ipv4_cidr_block   = var.vpc_cluster_private_subnets_cidr_blocks[0]
   public_gateway    = module.public_gw.public_gateway_id
@@ -452,13 +371,7 @@ locals {
     for idx in range(var.worker_node_min_count) :
     cidrhost(module.subnet.ipv4_cidr_block, idx + 4 + length(local.storage_ips) + length(local.spectrum_storage_ips) +length(local.management_node_ips))
   ]
-  validate_worker_cnd = var.worker_node_min_count <= var.worker_node_max_count
-  validate_worker_msg = "worker_node_max_count has to be greater or equal to worker_node_min_count"
-  validate_worker_chk = regex(
-      "^${local.validate_worker_msg}$",
-      ( local.validate_worker_cnd
-        ? local.validate_worker_msg
-        : "" ) )
+
   vsi_login_temp_public_key = module.login_ssh_key.public_key
   peer_cidr_list = var.vpn_enabled ? split(",", var.vpn_peer_cidrs): []
 }
@@ -733,17 +646,7 @@ locals{
   windows_image_mapping_entry_found = contains(keys(local.image_region_map), var.windows_image_name)
   new_windows_image_id = local.windows_image_mapping_entry_found ? lookup(lookup(local.image_region_map, var.windows_image_name), local.region_name) : "Image not found with the given name"
 
-  validate_scale_cnd = var.spectrum_scale_enabled ? var.windows_worker_node ? false : true : true
-  validate_scale_msg = " spectrum_scale not supported with windows worker node"
-  validate_scale_chk = regex(
-      "^${local.validate_scale_msg}$",
-      ( local.validate_scale_cnd ? local.validate_scale_msg : "" ) )
 
-  validate_windows_worker_max_cnd = !var.windows_worker_node || (var.windows_worker_node && (var.worker_node_min_count == var.worker_node_max_count))
-  validate_windows_worker_max_msg = "If windows worker is enabled, Input worker_node_min_count and worker_node_max_count must be equal."
-  validate_windows_worker_max_check = regex(
-      "^${local.validate_windows_worker_max_msg}$",
-      ( local.validate_windows_worker_max_cnd ? local.validate_windows_worker_max_msg : ""))
 }
 
 
@@ -815,33 +718,6 @@ locals {
   // cloud platform as IBMCloud, required for ansible playbook.
   cloud_platform            = "IBMCloud"
 
-  //validate storage gui password
-  validate_storage_gui_password_cnd = (var.spectrum_scale_enabled && (replace(lower(var.scale_storage_cluster_gui_password), lower(var.scale_storage_cluster_gui_username), "" ) == lower(var.scale_storage_cluster_gui_password)) && can(regex("^.{8,}$", var.scale_storage_cluster_gui_password) != "") && can(regex("[0-9]{1,}", var.scale_storage_cluster_gui_password) != "") && can(regex("[a-z]{1,}", var.scale_storage_cluster_gui_password) != "") && can(regex("[A-Z]{1,}",var.scale_storage_cluster_gui_password ) != "") && can(regex("[!@#$%^&*()_+=-]{1,}", var.scale_storage_cluster_gui_password ) != "" )&& trimspace(var.scale_storage_cluster_gui_password) != "") || !var.spectrum_scale_enabled
-  gui_password_msg = "Password should be at least 8 characters, must have one number, one lowercase letter, and one uppercase letter, at least one unique character. Password Should not contain username"
-  validate_storage_gui_password_chk = regex(
-          "^${local.gui_password_msg}$",
-          ( local.validate_storage_gui_password_cnd ? local.gui_password_msg : "") )
-
-  // validate compute gui password
-  validate_compute_gui_password_cnd = (var.spectrum_scale_enabled && (replace(lower(var.scale_compute_cluster_gui_password), lower(var.scale_compute_cluster_gui_username),"") == lower(var.scale_compute_cluster_gui_password)) && can(regex("^.{8,}$", var.scale_compute_cluster_gui_password) != "") && can(regex("[0-9]{1,}", var.scale_compute_cluster_gui_password) != "") && can(regex("[a-z]{1,}", var.scale_compute_cluster_gui_password) != "") && can(regex("[A-Z]{1,}",var.scale_compute_cluster_gui_password ) != "") && can(regex("[!@#$%^&*()_+=-]{1,}", var.scale_compute_cluster_gui_password ) != "" )&& trimspace(var.scale_compute_cluster_gui_password) != "") || !var.spectrum_scale_enabled
-  validate_compute_gui_password_chk = regex(
-          "^${local.gui_password_msg}$",
-          ( local.validate_compute_gui_password_cnd ? local.gui_password_msg : ""))
-
-  //validate scale storage gui user name
-  validate_scale_storage_gui_username_cnd = (var.spectrum_scale_enabled && length(var.scale_storage_cluster_gui_username) >= 4 && length(var.scale_storage_cluster_gui_username) <= 32 && trimspace(var.scale_storage_cluster_gui_username) != "") || !var.spectrum_scale_enabled
-  storage_gui_username_msg = "Specified input for \"storage_cluster_gui_username\" is not valid."
-  validate_storage_gui_username_chk = regex(
-          "^${local.storage_gui_username_msg}",
-          (local.validate_scale_storage_gui_username_cnd? local.storage_gui_username_msg: ""))
-
-  // validate compute gui username
-  validate_compute_gui_username_cnd = (var.spectrum_scale_enabled && length(var.scale_compute_cluster_gui_username) >= 4 && length(var.scale_compute_cluster_gui_username) <= 32 && trimspace(var.scale_compute_cluster_gui_username) != "") || !var.spectrum_scale_enabled
-  compute_gui_username_msg = "Specified input for \"compute_cluster_gui_username\" is not valid."
-  validate_compute_gui_username_chk = regex(
-          "^${local.compute_gui_username_msg}",
-          (local.validate_compute_gui_username_cnd? local.compute_gui_username_msg: ""))
-
   // path where ansible playbook will be cloned from github public repo.
   scale_infra_repo_clone_path = "/tmp/.schematics/IBM/ibm-spectrumscale-cloud-deploy"
 
@@ -863,54 +739,6 @@ locals {
   compute_vsi_ids_0_disks = concat(module.primary_vsi.*.primary_id, module.secondary_vsi.*.secondary_id, module.management_node_vsi.*.management_id, module.worker_vsi.*.worker_id, module.bare_metal_server.*.bare_metal_server_id)
   // list of all compute vsi ips.
   compute_vsi_by_ip = concat(module.primary_vsi[*].primary_network_interface, module.secondary_vsi[*].primary_network_interface, module.management_node_vsi[*].primary_network_interface, module.worker_vsi[*].primary_network_interface, module.bare_metal_server[*].primary_network_interface)
-
-  validate_scale_count_cnd =  !var.spectrum_scale_enabled || (var.spectrum_scale_enabled && (var.scale_storage_node_count > 1))
-  validate_scale_count_msg = "Input \"scale_storage_node_count\" must be >= 2 and <= 18 and has to be divisible by 2."
-  validate_scale_count_chk = regex(
-      "^${local.validate_scale_count_msg}$",
-      ( local.validate_scale_count_cnd
-        ? local.validate_scale_count_msg
-        : "" ) )
-
-  validate_scale_worker_min_cnd =  !var.spectrum_scale_enabled || (var.spectrum_scale_enabled && (var.management_node_count + var.worker_node_min_count > 2 && var.worker_node_min_count > 0 && var.worker_node_min_count <= 64))
-  validate_scale_worker_min_msg = "Input worker_node_min_count must be greater than 0 and less than or equal to 64 and total_quorum_node i.e, sum of management_node_count and worker_node_min_count should be greater than 2, if spectrum_scale_enabled set to true."
-  validate_scale_worker_min_chk = regex(
-      "^${local.validate_scale_worker_min_msg}$",
-      ( local.validate_scale_worker_min_cnd
-        ? local.validate_scale_worker_min_msg
-        : "" ) )
-
-  validate_scale_worker_max_cnd = !var.spectrum_scale_enabled || (var.spectrum_scale_enabled && (var.worker_node_min_count == var.worker_node_max_count))
-  validate_scale_worker_max_msg = "If scale is enabled, Input worker_node_min_count must be equal to worker_node_max_count."
-  validate_scale_worker_max_check = regex(
-      "^${local.validate_scale_worker_max_msg}$",
-      ( local.validate_scale_worker_max_cnd
-        ? local.validate_scale_worker_max_msg
-        : ""))
-
-  // Since bare metal server creation is supported only in few specific zone, the below validation ensure to return an error message if any other zone value are provided from variable file
-  validate_zone                  = var.worker_node_type == "baremetal" ? contains(["us-south-1", "us-south-3", "eu-de-1", "eu-de-2"], var.zone) : true
-  zone_msg                       = "The solution supports bare metal server creation in only given availability zones i.e. us-south-1, us-south-3, eu-de-1, and eu-de-2. To deploy bare metal compute server provide any one of the supported availability zones."
-  validate_persistent_region_chk = regex("^${local.zone_msg}$", (local.validate_zone ? local.zone_msg : ""))
-
-  // Validating the dedicated host creation only if the worker type is set as vsi. This function block works during the generate plan
-  validate_dedicated_host = var.dedicated_host_enabled == true ? var.worker_node_type == "vsi" : true
-  dedicated_host_msg                       = "The solution supports dedicated host creation only when the worker_node_type is set as vsi. Provide worker_node_type only as vsi, to enable dedicated host. "
-  dedicated_host_enabled_chk = regex("^${local.dedicated_host_msg}$", (local.validate_dedicated_host ? local.dedicated_host_msg : ""))
-
-  // Solution supports maximum of 16 baremetal node creation. This validation ensure to throw an error message if the value is greater than 16
-  validate_worker_min_max_count = ( var.spectrum_scale_enabled && var.worker_node_type == "baremetal" ? var.worker_node_min_count == var.worker_node_max_count && var.worker_node_min_count >= 1 && var.worker_node_min_count <=16 && var.worker_node_max_count >=1 && var.worker_node_max_count <= 16 : (var.worker_node_type == "baremetal" ? var.worker_node_min_count == var.worker_node_max_count && var.worker_node_min_count >= 1 && var.worker_node_min_count <=16 && var.worker_node_max_count >=1 && var.worker_node_max_count <= 16 : true))
-  count_msg                       = "The solution supports worker_node_min_count to be greater than or equal to 1 and less than or equal to 16 , Input worker_node_min_count must be equal to worker_node_max_count since dynamic host is not supported worker_node_type is set as baremetal."
-  validate_worker_count_chk = regex("^${local.count_msg}$", (local.validate_worker_min_max_count ? local.count_msg : ""))
-
-  // Validate baremetal profile
-  validate_bare_metal_profile = var.worker_node_type == "baremetal" ? can(regex("^[b|c|m]x[0-9]+d?-[a-z]+-[0-9]+x[0-9]+", var.worker_node_instance_type)) : true
-  bare_metal_profile_error = "Specified profile must be a valid baremetal profile type. For example cx2d-metal-96x192 , bx2d-metal-96x384. Refer worker_node_instance_type description for link."
-  validate_bare_metal_profile_chk = regex("^${local.bare_metal_profile_error}$", (local.validate_bare_metal_profile ? local.bare_metal_profile_error : ""))
-
-  validate_windows_worker_node       = var.windows_worker_node ? var.worker_node_type == "vsi" : true
-  windows_worker_node_error_message  = "When windows worker node is set as true, the worker_node_type should be set as vsi. Because windows worker node doesn't support baremetal servers."
-  validate_windows_worker_node_check = regex("^${local.windows_worker_node_error_message}$", (local.validate_windows_worker_node? local.windows_worker_node_error_message : ""))
 
   worker_bare_metal_server_osimage_name = "ibm-redhat-8-4-minimal-amd64-3"
 
