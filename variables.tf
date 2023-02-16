@@ -71,7 +71,7 @@ variable "zone" {
 variable "vpc_cidr_block" {
   type        = list(string)
   default     = ["10.241.0.0/18"]
-  description = "IBM Cloud VPC address prefixes that are needed for VPC creation. Since the solution supports only a single availability zone, provide one CIDR address prefix for VPC creation. For more information, see [Bring your own subnet](https://cloud.ibm.com/docs/vpc?topic=vpc-configuring-address-prefixes)."
+  description = "Creates the address prefix for the new VPC, when the vpc_name variable is empty. Only a single address prefix is allowed. For more information, see [Setting IP ranges](https://cloud.ibm.com/docs/vpc?topic=vpc-vpc-addressing-plan-design)."
   validation {
     condition     = length(var.vpc_cidr_block) <= 1
     error_message = "Our Automation supports only a single AZ to deploy resources. Provide one CIDR range of address prefix."
@@ -281,7 +281,7 @@ variable "volume_profile" {
 variable "dedicated_host_enabled" {
   type        = bool
   default     = false
-  description = "Set to true to use dedicated hosts for compute hosts (default: false). Note that Symphony still dynamically provisions compute hosts at public virtual server instances and dedicated hosts are used only for static compute hosts provisioned at the time the cluster is created. The number of dedicated hosts and the profile names for dedicated hosts are calculated from worker_node_min_count and dedicated_host_type_name."
+  description = "Set to true to use dedicated hosts for compute hosts (default: false). Note that Symphony still dynamically provisions compute hosts at public virtual server instances and dedicated hosts are used only for static compute hosts provisioned at the time the cluster is created. The number of dedicated hosts and the profile names for dedicated hosts are calculated from worker_node_min_count and worker_node_instance_type."
 }
 
 variable "dedicated_host_placement" {
