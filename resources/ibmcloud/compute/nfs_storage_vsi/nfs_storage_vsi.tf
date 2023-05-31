@@ -1,3 +1,8 @@
+###################################################
+# Copyright (C) IBM Corp. 2023 All Rights Reserved.
+# Licensed under the Apache License v2.0
+###################################################
+
 terraform {
   required_providers {
     ibm = {
@@ -19,7 +24,9 @@ variable "subnet_id" {}
 variable "security_group" {}
 variable "volumes" {}
 variable "primary_ipv4_address" {}
-
+variable "instance_id" {}
+variable "zone_id" {}
+variable "dns_domain" {}
 
 resource "ibm_is_instance" "storage" {
   name           = var.vsi_name
@@ -40,7 +47,61 @@ resource "ibm_is_instance" "storage" {
     primary_ip {
       address            = var.primary_ipv4_address
     }
-    #primary_ipv4_address = var.primary_ipv4_address
   }
 }
+
+locals {
+  instance = [ {
+      name = var.vsi_name
+      primary_network_interface = var.primary_ipv4_address
+    }
+  ]
+  dns_record_ttl = 300
+  instances = flatten(local.instance)
+}
+
+// Support lookup by fully qualified domain name
+resource "ibm_dns_resource_record" "dns_record_record_a" {
+  for_each = {
+    for instance in local.instances : instance.name => instance.primary_network_interface
+  }
+
+  instance_id = var.instance_id
+  zone_id     = var.zone_id
+  type        = "A"
+  name        = each.key
+  rdata       = each.value
+  ttl         = local.dns_record_ttl
+}
+
+// Support lookup by ip address returning fully qualified domain name
+resource "ibm_dns_resource_record" "dns_resource_record_ptr" {
+  for_each = {
+    for instance in local.instances : instance.name => instance.primary_network_interface
+  }
+
+  instance_id = var.instance_id
+  zone_id     = var.zone_id
+  type        = "PTR"
+  name        = each.value
+  rdata       = format("%s.%s", each.key, var.dns_domain)
+  ttl         = local.dns_record_ttl
+  depends_on  = [ibm_dns_resource_record.dns_record_record_a]
+}
+
+output "name" {
+  value = ibm_is_instance.storage.name
+  depends_on = [ibm_dns_resource_record.dns_record_record_a, ibm_dns_resource_record.dns_resource_record_ptr]
+}
+
+output "primary_id" {
+  value = ibm_is_instance.storage.id
+  depends_on = [ibm_dns_resource_record.dns_record_record_a, ibm_dns_resource_record.dns_resource_record_ptr]
+}
+
+output "primary_network_interface" {
+  value = ibm_is_instance.storage.primary_network_interface[0].primary_ip.0.address
+  depends_on = [ibm_dns_resource_record.dns_record_record_a, ibm_dns_resource_record.dns_resource_record_ptr]
+}
+
 

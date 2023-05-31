@@ -1,7 +1,7 @@
 {
     "name": "hpcc-symphony-windows-test",
     "type": [
-      "terraform_v1.1"
+      "terraform_v1.3"
     ],
     "location": "us-east",
     "resource_group": "Default",
@@ -13,7 +13,7 @@
     "template_data": [
       {
         "folder": ".",
-        "type": "terraform_v1.1",
+        "type": "terraform_v1.3",
         "env_values": [
           {
             "TF_CLI_ARGS_apply": "-parallelism=250"
@@ -193,6 +193,12 @@
             "value": "[\"10.241.4.0/28\"]",
             "type": "list(string)",
             "description": "The CIDR block that's required for the creation of the login cluster private subnet. Modify the CIDR block if it has already been reserved or used for other applications within the VPC or conflicts with any on-premises CIDR blocks when using a hybrid environment. Provide only one CIDR block for the creation of the login subnet. Since login subnet is used only for the creation of login virtual server instance provide a CIDR range of /28."
+          },
+          {
+            "name": "vpc_worker_dns_domain",
+            "value": "dnsworker.com",
+            "type": "string",
+            "description": "IBM Cloud DNS Services domain name to be used for the compute cluster, e.g., test.example.corp."
           }
         ]
       }

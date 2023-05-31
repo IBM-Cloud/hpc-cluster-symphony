@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 ###################################################
-# Copyright (C) IBM Corp. 2022 All Rights Reserved.
+# Copyright (C) IBM Corp. 2023 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 
@@ -17,6 +17,7 @@ echo START `date '+%Y-%m-%d %H:%M:%S'`
 #input parameters
 storage_ips="${storage_ips}"
 cluster_name="${cluster_id}"
+dns_domain_name="${dns_domain_name}"
 numExpectedManagementHosts="${mgmt_count}"
 hyperthreading="${hyperthreading}"
 cluster_cidr="${cluster_cidr}"
@@ -24,3 +25,4 @@ egoHostRole="${ego_host_role}"
 spectrum_scale="${spectrum_scale}"
 temp_public_key="${temp_public_key}"
 worker_node_type="${worker_node_type}"
+storage_type="${storage_type}"

@@ -1,5 +1,5 @@
 ###################################################
-# Copyright (C) IBM Corp. 2021 All Rights Reserved.
+# Copyright (C) IBM Corp. 2023 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 
@@ -8,7 +8,7 @@ terraform {
   required_providers {
     ibm = {
       source  = "IBM-Cloud/ibm"
-      version = "1.46.0"
+      version = "1.53.0"
     }
     http = {
       source = "hashicorp/http"

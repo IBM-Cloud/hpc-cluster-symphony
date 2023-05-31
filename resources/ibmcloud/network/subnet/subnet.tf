@@ -1,3 +1,8 @@
+###################################################
+# Copyright (C) IBM Corp. 2023 All Rights Reserved.
+# Licensed under the Apache License v2.0
+###################################################
+
 terraform {
   required_providers {
     ibm = {
@@ -30,4 +35,8 @@ output "subnet_id" {
 
 output "ipv4_cidr_block" {
   value = ibm_is_subnet.subnet.ipv4_cidr_block
+}
+
+output "subnet_crn" {
+  value = ibm_is_subnet.subnet.crn
 }

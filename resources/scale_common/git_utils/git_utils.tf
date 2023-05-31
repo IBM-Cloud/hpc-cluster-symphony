@@ -1,21 +1,16 @@
 ###################################################
-# Copyright (C) IBM Corp. 2022 All Rights Reserved.
+# Copyright (C) IBM Corp. 2023 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
+
 /*
-    GIT operations to clone specific branch, tag.
+    GIT operations to clone specific branch or tag.
 */
 
 variable "branch" {}
+variable "tag" {}
 variable "clone_path" {}
-variable "ansible_repo" {
-  default = "IBM/ibm-spectrum-scale-install-infra"
-}
-variable "tag" {
-  default = null
-}
 
-// provider to integrate with github
 terraform {
   required_providers {
     github = {
@@ -24,13 +19,12 @@ terraform {
     }
   }
 }
-
-// Get the ansible repo.
+# data resource fetched the ansible-repo
 data "github_repository" "ansible_repo" {
-  full_name = var.ansible_repo
+  full_name = "IBM/ibm-spectrum-scale-install-infra"
 }
 
-// create directory where repo has to be cloned
+# clone the repo to the provided path
 resource "null_resource" "create_clone_path" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
@@ -38,7 +32,7 @@ resource "null_resource" "create_clone_path" {
   }
 }
 
-// clone the ansible repo on the clone path.
+# clone the repo branch to the provided path
 resource "null_resource" "clone_repo_branch" {
   count = var.tag == null ? 1 : 0
   provisioner "local-exec" {
@@ -48,7 +42,7 @@ resource "null_resource" "clone_repo_branch" {
   depends_on = [null_resource.create_clone_path]
 }
 
-// if tag is not null then, clone the ansible git repo with tag
+# clone the appropriate tag to the provided path
 resource "null_resource" "clone_repo_tag" {
   count = var.tag != null ? 1 : 0
   provisioner "local-exec" {
@@ -58,16 +52,7 @@ resource "null_resource" "clone_repo_tag" {
   depends_on = [null_resource.create_clone_path]
 }
 
-// create directory ibm-spectrum-scale-install-infra/vars and copy required playbooks to ibm-spectrum-scale-install-infra directory.
-resource "null_resource" "prepare_ibm_spectrum_scale_install_infra" {
-  provisioner "local-exec" {
-    interpreter = ["/bin/bash", "-c"]
-    command     = "mkdir -p ${var.clone_path}/ibm-spectrum-scale-install-infra/vars; cp ${var.clone_path}/ibm-spectrum-scale-install-infra/samples/playbook_cloud.yml ${var.clone_path}/ibm-spectrum-scale-install-infra/cloud_playbook.yml; cp ${var.clone_path}/ibm-spectrum-scale-install-infra/samples/playbook_cloud_remote_mount.yml ${var.clone_path}/ibm-spectrum-scale-install-infra/playbook_cloud_remote_mount.yml; cp ${var.clone_path}/ibm-spectrum-scale-install-infra/samples/set_json_variables.yml ${var.clone_path}/ibm-spectrum-scale-install-infra/set_json_variables.yml;"
-  }
-  depends_on = [null_resource.clone_repo_branch, null_resource.clone_repo_tag]
-}
-
 output "clone_complete" {
   value      = true
-  depends_on = [null_resource.clone_repo_branch, null_resource.clone_repo_tag, null_resource.prepare_ibm_spectrum_scale_install_infra]
+  depends_on = [null_resource.clone_repo_branch, null_resource.clone_repo_tag]
 }

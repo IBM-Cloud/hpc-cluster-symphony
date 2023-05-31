@@ -1,5 +1,5 @@
 ###################################################
-# Copyright (C) IBM Corp. 2022 All Rights Reserved.
+# Copyright (C) IBM Corp. 2023 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 /*
@@ -28,7 +28,7 @@ resource "tls_private_key" "generate_ssh_key" {
 
 // resource to write generated ssh-key to a file with 0600 permission
 resource "local_file" "write_ssh_key" {
-  count           = var.invoke_count == 1 ? 1 : 0
+  #count           = var.invoke_count == 1 ? 1 : 0
   content         = tls_private_key.generate_ssh_key.private_key_pem
   filename        = format("%s/%s", pathexpand(var.tf_data_path), "id_rsa")
   file_permission = "0600"
