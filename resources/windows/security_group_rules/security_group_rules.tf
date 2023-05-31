@@ -1,3 +1,8 @@
+###################################################
+# Copyright (C) IBM Corp. 2023 All Rights Reserved.
+# Licensed under the Apache License v2.0
+###################################################
+
 /*
     This module used for creating security group rules for symphony windows
 */

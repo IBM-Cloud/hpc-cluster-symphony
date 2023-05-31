@@ -77,7 +77,7 @@ data "ibm_is_image" "stock_image" {
 }
 
 data "ibm_is_image" "baremetal_image" {
-  name = local.worker_bare_metal_server_osimage_name
+  name = local.bare_metal_server_osimage_name
 }
 
 data "ibm_is_image" "image" {
@@ -87,4 +87,35 @@ data "ibm_is_image" "image" {
 
 data "http" "fetch_myip"{
   url = "http://ipv4.icanhazip.com"
+}
+
+data "ibm_is_bare_metal_server_profile" "storage_bare_metal_server_profile" {
+  count = var.spectrum_scale_enabled && var.storage_type == "persistent" ? 1 : 0
+  name = var.scale_storage_node_instance_type
+}
+
+data "ibm_is_subnet" "subnet_id" {
+  for_each   = var.vpc_name == "" ? [] : toset(data.ibm_is_vpc.vpc.subnets[*].id)
+  identifier = each.value
+}
+
+data "ibm_is_image" "scale_image" {
+  name = var.scale_storage_image_name
+  count = local.scale_image_mapping_entry_found ? 0:1
+}
+
+
+data "ibm_is_instance_profile" "spectrum_scale_storage" {
+  count = var.spectrum_scale_enabled && var.storage_type == "scratch" ? 1 : 0
+  name = var.scale_storage_node_instance_type
+}
+
+data "ibm_is_subnet_reserved_ips" "dns_reserved_ips" {
+  for_each   = toset([for subnetsdetails in data.ibm_is_subnet.subnet_id: subnetsdetails.id])
+  subnet = each.value
+}
+
+data "ibm_dns_custom_resolvers" "dns_custom_resolver" {
+        count = local.dns_reserved_ip == "" ? 0 : 1
+        instance_id = local.dns_service_id
 }

@@ -1,3 +1,8 @@
+###################################################
+# Copyright (C) IBM Corp. 2023 All Rights Reserved.
+# Licensed under the Apache License v2.0
+###################################################
+
 terraform {
   required_providers {
     ibm = {
@@ -18,7 +23,6 @@ variable "resource_group" {}
 variable "tags" {}
 variable "subnet_id" {}
 variable "security_group" {}
-
 
 resource "ibm_is_instance" "login" {
   name           = var.vsi_name
@@ -45,4 +49,8 @@ output "primary_network_interface" {
 
 output "login_id" {
   value = ibm_is_instance.login.id
+}
+
+output "name" {
+  value = ibm_is_instance.login.name
 }

@@ -1,5 +1,5 @@
 ###################################################
-# Copyright (C) IBM Corp. 2021 All Rights Reserved.
+# Copyright (C) IBM Corp. 2023 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 
@@ -104,7 +104,7 @@ variable "vpc_cluster_login_private_subnets_cidr_blocks" {
 
 variable "image_name" {
   type        = string
-  default     = "hpcc-symp731-scale5151-rhel84-v1-4"
+  default     = "hpcc-symp732-scale5170-rhel86-v1-5"
   description = "Name of the custom image that you want to use to create virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the automation uses a base image with additional software packages mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you would like to include your application-specific binary files, follow the instructions in [ Planning for custom images ](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
 }
 
@@ -145,6 +145,13 @@ variable "worker_node_instance_type" {
     error_message = "The profile must be a valid profile name."
   }
 }
+
+variable "vpc_worker_dns_domain" {
+  type        = string
+  default     = "dnsworker.com"
+  description = "IBM Cloud DNS Services domain name to be used for the compute cluster, e.g., test.example.corp."
+}
+
 
 variable "login_node_instance_type" {
   type        = string
@@ -187,7 +194,6 @@ variable "worker_node_max_count" {
     error_message = "Input \"worker_node_max_count must\" be >= 1 and <= 500."
   }
 }
-
 
 variable "windows_worker_node" {
   type = bool
@@ -316,30 +322,28 @@ variable "spectrum_scale_enabled"{
   description = "Setting this to 'true' will enable Spectrum Scale integration with the cluster. Otherwise, Spectrum Scale integration will be disabled (default). By entering 'true' for the property you have also agreed to one of the two conditions. 1. You are using the software in production and confirm you have sufficient licenses to cover your use under the International Program License Agreement (IPLA). 2. You are evaluating the software and agree to abide by the International License Agreement for Evaluation of Programs (ILAE). NOTE: Failure to comply with licenses for production use of software is a violation of [IBM International Program License Agreement](https://www.ibm.com/software/passportadvantage/programlicense.html)."
 }
 
+variable "vpc_scale_storage_dns_domain" {
+  type        = string
+  default     = "dnsscale.com"
+  description = "IBM Cloud DNS Services domain name to be used for the Scale Storage cluster. Note: The domain name should not be the same as vpc_worker_dns_domain when spectrum_scale_enabled is set to true."
+}
+
 variable "scale_storage_image_name" {
   type        = string
-  default     = "hpcc-scale5151-rhel84"
+  default     = "hpcc-scale5170-rhel86"
   description = "Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy the Spectrum Scale storage cluster. By default, our automation uses a base image plus the Spectrum Scale software and any other software packages that it requires. If you'd like, you can follow the instructions for [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Scale storage cluster through this offering."
 }
 
 variable "scale_storage_node_count" {
   type        = number
-  default     = 4
-  description = "The number of Spectrum Scale storage nodes that are provisioned at the time the cluster is created. Enter a value in the range 2 - 18. It has to be divisible by 2."
-  validation {
-    condition     = (var.scale_storage_node_count == 0) || (var.scale_storage_node_count >= 2 && var.scale_storage_node_count <= 34 && var.scale_storage_node_count % 2 == 0)
-    error_message = "Input \"scale_storage_node_count\" must be >= 2 and <= 18 and has to be divisible by 2."
-  }
+  default     = 3
+  description = "Total number of storage cluster instances that you need to provision. A minimum of three nodes and a maximum of eighteen nodes are supported if the storage_type selected is scratch. A minimum of three nodes and a maximum of ten nodes are supported if the storage type selected is persistent."
 }
 
 variable "scale_storage_node_instance_type" {
   type        = string
   default     = "cx2d-8x16"
   description = "Specify the virtual server instance storage profile type name to be used to create the Spectrum Scale storage nodes for the Spectrum Symphony cluster. For more information, see [Instance profiles](https://cloud.ibm.com/docs/vpc?topic=vpc-profiles)."
-  validation {
-    condition     = can(regex("^[b|c|m]x[0-9]+d-[0-9]+x[0-9]+", var.scale_storage_node_instance_type))
-    error_message = "The profile must be a valid profile name."
-  }
 }
 
 
@@ -426,3 +430,12 @@ variable "TF_WAIT_DURATION" {
   description = "wait duration time set for the storage and worker node to complete the entire setup"
 }
 
+variable "storage_type" {
+  type        = string
+  default     = "scratch"
+  description = "Select the Spectrum Scale file system deployment method. Note: The Spectrum Scale scratch type deploys the Spectrum Scale file system on virtual server instances, and the persistent type deploys the Spectrum Scale file system on bare metal servers."
+  validation {
+    condition = can(regex("^(scratch|persistent)$", lower(var.storage_type)))
+    error_message = "The solution only support scratch and persistent. Provide any one of the value."
+  }
+}

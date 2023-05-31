@@ -1,3 +1,8 @@
+###################################################
+# Copyright (C) IBM Corp. 2023 All Rights Reserved.
+# Licensed under the Apache License v2.0
+################################################### 
+
  terraform {
   required_providers {
     ibm = {

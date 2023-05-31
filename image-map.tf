@@ -1,17 +1,20 @@
 # This mapping file has entries for symphony images which support both the scenarios (scale enabled or disabled)
 # These are images for computes nodes (primary, secondary, worker nodes etc)
+# The custom images are installed with Symphony 7.3.2 and scale 5.1.7.0 versions
+# These images has preconfiguration files to install the required packages on bare metal nodes, since baremetal server doesn't support custom images
+
 locals {
   image_region_map = {
-    "hpcc-symp731-scale5151-rhel84-v1-4" = {
-      "ca-tor"  = "r038-092885d7-2588-47f1-9005-9187a5c6d5f4"
-      "br-sao"  = "r042-a3198dad-1ff4-4b7a-adb1-a2da0df80e03"
-      "us-east" = "r014-a88acfc5-6196-4a4a-8bcb-a4e28251c6f6"
-      "us-south"= "r006-38dde0fe-b09c-4899-b269-a0e6f3814c7a"
-      "jp-osa"  = "r034-9d190fca-8320-4074-aa98-949e25825730"
-      "jp-tok"  = "r022-454c0eb2-1089-494f-86a9-d7d055c0879e"
-      "au-syd"  = "r026-f6a6734c-1182-4c8a-9f2e-90ebd4588e98"
-      "eu-de"   = "r010-be77876b-fef7-4977-ab06-c190f84bc691"
-      "eu-gb"   = "r018-cee3dfa2-811a-4fe7-bdf6-cf7b6d133db8"
+    "hpcc-symp732-scale5170-rhel86-v1-5" = {
+      "ca-tor"  = "r038-2f38af7d-fe95-47f6-9b74-fb3891976711"
+      "br-sao"  = "r042-549f1984-a34a-4cf8-a02b-e2bc84689d92"
+      "us-east" = "r014-7a55de08-6395-4a72-8676-7945047cda13"
+      "us-south"= "r006-bfaa25a3-43ed-4fba-8488-c9fcdc6d24a6"
+      "jp-osa"  = "r034-f96223fc-8d23-472e-a43e-51fb4c275c33"
+      "jp-tok"  = "r022-3f8eaf0d-1506-4c07-9191-dfb09c7f662e"
+      "au-syd"  = "r026-1aa3139a-c643-4bb1-a5e2-882e3a30b0c7"
+      "eu-de"   = "r010-fd217f16-3f74-4f29-b35f-71b2978e1bc3"
+      "eu-gb"   = "r018-e2869eb3-6b40-468f-b949-9b2da6bc53ac"
     },
     "hpcc-sym731-win2016-10oct22-v1" = {  
       "ca-tor"  = "r038-74251e18-0a8b-4eea-b4ab-f2a52d3d78c7"

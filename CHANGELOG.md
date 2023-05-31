@@ -1,5 +1,15 @@
 # **CHANGELOG**
 
+## **1.5.0**
+### ENHANCEMENTS
+- Support for persistent storage type for IBM Spectrum Scale deployment on bare metal servers.
+- Spectrum Symphony version has been updated from 7.3.1 to 7.3.2.
+- Spectrum Scale version has been updated from 5.1.5.1 to 5.1.7.0.
+- Support public gateway creation based on existing vpc functionality.
+- Support for DNS functionality.
+- Updated Symphony and Scale custom images to use RHEL 8.6 instead of RHEL 8.4.
+- Support custom image creation.
+
 ## **1.4.1**
 ### **BUG FIXES**
 - Fixed bug related to the creation of new subnets with custom cidr under the existing vpc range.

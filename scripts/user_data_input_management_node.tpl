@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 ###################################################
-# Copyright (C) IBM Corp. 2021 All Rights Reserved.
+# Copyright (C) IBM Corp. 2023 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 
@@ -22,6 +22,7 @@ hostPrefix="${host_prefix}"
 hf_cidr_block="${hf_cidr_block}"
 storage_ips="${storage_ips}"
 cluster_name="${cluster_id}"
+dns_domain_name="${dns_domain_name}"
 numExpectedManagementHosts="${mgmt_count}"
 egoHostRole="${ego_host_role}"
 cluster_cidr="${cluster_cidr}"
@@ -31,3 +32,4 @@ windows_worker_node="${windows_worker_node}"
 EgoUserName="${EgoUserName}"
 EgoPassword="${EgoPassword}"
 worker_node_type="${worker_node_type}"
+storage_type="${storage_type}"

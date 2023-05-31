@@ -35,7 +35,7 @@ locals {
     (local.validate_compute_gui_username_cnd? local.compute_gui_username_msg : ""))
 
   validate_scale_count_cnd =  !var.spectrum_scale_enabled || (var.spectrum_scale_enabled && (var.scale_storage_node_count > 1))
-  validate_scale_count_msg = "Input \"scale_storage_node_count\" must be >= 2 and <= 18 and has to be divisible by 2."
+  validate_scale_count_msg = "Input \"scale_storage_node_count\" must be >= 3 and <= 18 and has to be divisible by 2."
   validate_scale_count_chk = regex(
       "^${local.validate_scale_count_msg}$",
       ( local.validate_scale_count_cnd
@@ -59,8 +59,8 @@ locals {
         : ""))
 
   // Since bare metal server creation is supported only in few specific zone, the below validation ensure to return an error message if any other zone value are provided from variable file
-  validate_zone                  = var.worker_node_type == "baremetal" ? contains(["us-south-1", "us-south-3", "eu-de-1", "eu-de-2"], var.zone) : true
-  zone_msg                       = "The solution supports bare metal server creation in only given availability zones i.e. us-south-1, us-south-3, eu-de-1, and eu-de-2. To deploy bare metal compute server provide any one of the supported availability zones."
+  validate_zone                  = var.worker_node_type == "baremetal" || var.spectrum_scale_enabled && var.storage_type == "persistent"? contains(["us-south-1", "us-south-2","us-south-3", "eu-de-1", "eu-de-2","ca-tor-2", "ca-tor-3"], var.zone) : true
+  zone_msg                       = "The solution supports bare metal server creation in only given availability zones i.e. us-south-1, us-south-3, us-south-2, eu-de-1, eu-de-2, ca-tor-2 and ca-tor-3. To deploy bare metal server provide any one of the supported availability zones."
   validate_persistent_region_chk = regex("^${local.zone_msg}$", (local.validate_zone ? local.zone_msg : ""))
 
   // Validating the dedicated host creation only if the worker type is set as vsi. This function block works during the generate plan
@@ -74,9 +74,24 @@ locals {
   validate_worker_count_chk = regex("^${local.count_msg}$", (local.validate_worker_min_max_count ? local.count_msg : ""))
 
   // Validate baremetal profile
-  validate_bare_metal_profile = var.worker_node_type == "baremetal" ? can(regex("^[b|c|m]x[0-9]+d?-[a-z]+-[0-9]+x[0-9]+", var.worker_node_instance_type)) : true
-  bare_metal_profile_error = "Specified profile must be a valid baremetal profile type. For example cx2d-metal-96x192 , bx2d-metal-96x384. Refer worker_node_instance_type description for link."
+  validate_bare_metal_profile = var.worker_node_type == "baremetal" ? can(regex("^[b|c|m|v]x[0-9]+d?-[a-z]+-[0-9]+x[0-9]+", var.worker_node_instance_type)) : true
+  bare_metal_profile_error = "Specified profile must be a valid baremetal profile type. For example \"cx2d-metal-96x192 , bx2d-metal-96x384, vx2d-metal-96x1536\".Refer worker_node_instance_type description for link."
   validate_bare_metal_profile_chk = regex("^${local.bare_metal_profile_error}$", (local.validate_bare_metal_profile ? local.bare_metal_profile_error : ""))
+
+  // Validate Spectrum scale baremetal profile
+  validate_spectrum_scale_bare_metal_profile = var.spectrum_scale_enabled == true && var.storage_type == "persistent" ? can(regex("^[b|c|m|v]x[0-9]+d?-[a-z]+-[0-9]+x[0-9]+", var.scale_storage_node_instance_type)) : (var.spectrum_scale_enabled && var.storage_type == "scratch" ? can(regex("^[b|c|m]x[0-9]+d-[0-9]+x[0-9]+", var.scale_storage_node_instance_type)) : true )
+  spectrum_scale_bare_metal_profile_error = "Spectrum Scale nodes must be a valid baremetal profile type. For example if storage_type is baremetal then \"cx2d-metal-96x192 , bx2d-metal-96x384, vx2d-metal-96x1536\" and if storage_type is set as scratch \"cx2d-8x16, cx2d-4x16 \". Refer worker_node_instance_type description for link."
+  validate_spectrum_scale_bare_metal_profile_chk = regex("^${local.spectrum_scale_bare_metal_profile_error}$", (local.validate_spectrum_scale_bare_metal_profile ? local.spectrum_scale_bare_metal_profile_error : ""))
+
+  // validate Spectrum scale storage node count
+  validate_spectrum_scale_persistent_node = var.spectrum_scale_enabled && var.storage_type == "persistent" ? var.scale_storage_node_count >= 3 && var.scale_storage_node_count <=10 : ( var.spectrum_scale_enabled && var.storage_type == "scratch" ? var.scale_storage_node_count >= 3 && var.scale_storage_node_count <= 18 : true)
+  spectrum_scale_persistent_count_msg                       = "Specified input \"scale_storage_node_count\" must be in between the range of 3 and 10 while storage type is persistent. Otherwise it should be in range of 3 and 18 while storage type is scratch. Please provide the appropriate range of value."
+  validate_spectrum_scale_persistent_chk = regex("^${local.spectrum_scale_persistent_count_msg}$", (local.validate_spectrum_scale_persistent_node ? local.spectrum_scale_persistent_count_msg : ""))
+
+  //validate Spectrum scale dns domain, value for vpc_storage_cluster_dns_domain should not be same as other domain name
+  validate_spectrum_scale_dns_domain_name = var.spectrum_scale_enabled == true ? var.vpc_scale_storage_dns_domain != var.vpc_worker_dns_domain : true
+  spectrum_scale_dns_name_error = "The solution requires \"vpc_storage_cluster_dns_domain\" and \"vpc_worker_dns_domain\" to be with a different name when spectrum_scale_enabled is set as true."
+  validate_spectrum_scale_dns_domain_name_chk = regex("^${local.spectrum_scale_dns_name_error}$", (local.validate_spectrum_scale_dns_domain_name ? local.spectrum_scale_dns_name_error : ""))
 
   validate_windows_worker_node       = var.windows_worker_node ? var.worker_node_type == "vsi" : true
   windows_worker_node_error_message  = "When windows worker node is set as true, the worker_node_type should be set as vsi. Because windows worker node doesn't support baremetal servers."

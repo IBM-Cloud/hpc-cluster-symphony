@@ -1,3 +1,8 @@
+###################################################
+# Copyright (C) IBM Corp. 2023 All Rights Reserved.
+# Licensed under the Apache License v2.0
+###################################################
+
 #ps1_sysnative
 
 Function Write-Log {
@@ -30,52 +35,6 @@ Function Write-Log {
     Add-Content $LogFile -Value "$Stamp $LevelValue $Message"
 }
 
-Function Set-WindowsHostsFileWithNFSHostFilesContent {
-    <#
-    .SYNOPSIS
-        Set the Windows hosts file content with NFS Hosts File Content.
-    #>
-
-    [CmdletBinding()]
-        param(
-            [Parameter(Mandatory = $true)]
-            [System.IO.FileInfo]$NFSHostsFolderPath,
-
-            [Parameter(Mandatory = $true)]
-            [System.IO.FileInfo]$WindowsHostsFilePath,
-
-            [Parameter(Mandatory = $true)]
-            [string]$ComputerName
-        )
-
-    try {
-        Write-Log -Level Info "Setting Windows hosts file with NFS host files content"
-        Get-ChildItem $NFSHostsFolderPath | 
-        ForEach-Object {
-            $Content = Get-Content $NFSHostsFolderPath\$_
-            Add-Content -Path $WindowsHostsFilePath -Value $Content
-        }
-
-        $LocalIPV4Address = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias Ethernet).IPv4Address
-        
-        # Commenting the below line and not adding the IPV6 address to the hosts file as per the request and will be commented out when required
-        #$LocalIPV6Address = (Get-NetIPAddress -AddressFamily IPv6 -InterfaceAlias Ethernet).IPv6Address
-
-        $IPAddressArray = @($LocalIPV4Address, $LocalIPV6Address)
-
-        #Foreach ($IPAddress in $IPAddressArray) {
-            #Add-Content -Path $WindowsHostsFilePath -Value $IPAddress
-        #}
-        Add-Content -Path $WindowsHostsFilePath -Value "$($IPAddressArray[0]) `t $($ComputerName).ibm.com `t $($ComputerName)"
-       
-
-        Write-Log -Level Info "Write to hosts file is Successful, Hosts file path: $WindowsHostsFilePath"
-    } catch {
-        Write-Log -Level Error $_
-        throw $_
-    }
-}
-
 Function Edit-EgoConfigFile {
 
     <#
@@ -92,19 +51,27 @@ Function Edit-EgoConfigFile {
             [System.IO.FileInfo]$EgoConfigFilePath,
 
             [Parameter(Mandatory = $true)]
-            [string]$ContentToReplace
+            [string]$ContentToReplace,
+
+            [Parameter(Mandatory = $true)]
+            [string]$NumExpectedManagementHosts
         )
 
     try{
-        $ManagementNodeList = ""
-        Get-ChildItem $NFSHostsFolderPath |
-        ForEach-Object {
-            if ($ManagementNodeList -eq "") {
-                $ManagementNodeList = $_.Name
-            } else {
-                $ManagementNodeList = $ManagementNodeList + " " + $_.Name
+        Write-Log -Level Info "Source Folder: $NFSHostsFolderPath Config Path: $EgoConfigFilePath Management Nodes: $NumExpectedManagementHosts"
+        $ManagementNodes = @()
+        while ($ManagementNodes.count -ne $NumExpectedManagementHosts)
+        {
+            Write-Log -Level Info "Waiting for management node list to be available $($ManagementNodes.count)/$NumExpectedManagementHosts"
+            Start-Sleep 60
+            foreach($f in (Get-ChildItem $NFSHostsFolderPath)) {
+                if ($ManagementNodes -notcontains $f.Name) {
+                    $ManagementNodes += $f.Name
+                }
             }
         }
+
+        $ManagementNodeList = $ManagementNodes -join ' '
         Write-Log -Level Info "ManagementNodeList to write to Ego Config is $ManagementNodeList"
         Write-Log -Level Info "Getting Content of Ego Config file and replacing $ContentToReplace with $ManagementNodeList"
 
@@ -172,15 +139,20 @@ Function RegisterPasswordForWindowsExecutionUser {
 
         if ($LIMServiceStatus -eq "Stopped") {
             Start-Service -Name "LIM"
+            (Get-Service -Name "LIM").WaitForStatus("Running", $(New-TimeSpan -seconds 15))
         }
+
+        $LIMServiceStatus = (Get-Service -Name "LIM").Status
+        Write-Log -Level Info "LIM Status: $LIMServiceStatus"
 
         egosh user logon -u Admin -x Admin
 
         Write-Log -Level Info "Registering Password for windows execution user"
 
-        egosh ego execpasswd -u .\$EgoUserName -x $EgoPass -noverify
+        $result = egosh ego execpasswd -u .\$EgoUserName -x $EgoPass -noverify | Out-String
 
-        Write-Log -Level Info "Registered Password for windows execution user"
+        Write-Log -Level Info "Registered Password for windows execution user: $result"
+
     } catch {
         Write-Log -Level Error $_
     }
@@ -205,16 +177,22 @@ Function Restart-LIMService {
 Function ModifyComputerName {
     <#
     .SYNOPSIS
-        Since implementation uses custom images which comes with hostname, so changing the windows hostname to match cluster node's
+        Since implementation uses custom images which comes with hostname,
+        so changing the windows hostname to match cluster node's
+        Updating the ethernet adapter DNS domain name to the DNS domain name
     #>
     [CmdletBinding()]
         param(
             [Parameter(Mandatory = $true)]
-            [string]$ComputerName
+            [string]$ComputerName,
+
+            [Parameter(Mandatory = $true)]
+            [string]$DomainName
         )
     try {
         $CurrentComputerName = hostname
-        Write-Log -Level Info "Modifying the Computer Name to $ComputerName"
+        Write-Log -Level Info "Modifying the Computer Name from $CurrentComputerName to $ComputerName.$DomainName"
+        (Get-NetworkAdapterConfiguration).SetDNSDomain($DomainName)
         $Output = ECHO Y | NETDOM RENAMECOMPUTER $CurrentComputerName /NewName:$ComputerName
         $OutputString = Out-String -InputObject $Output
         Write-Log -Level Info $OutputString
@@ -223,33 +201,90 @@ Function ModifyComputerName {
     }
 }
 
+Function Get-NetworkAdapterConfiguration {
+    <#
+    .SYNOPSIS
+        Find and return the network adapter configuration
+    .DESCRIPTION
+        Find and return the ethernet network adapter configuration using WMI
+    #>
+
+    $AdapterName = "Red Hat VirtIO Ethernet Adapter"
+    $WmiParams = @{'class' = 'win32_networkadapterconfiguration'}
+    return  (Get-WmiObject @WmiParams | ? {$_.Description -like $AdapterName})
+}
+
+Function Test-RebootRequired {
+    <#
+    .SYNOPSIS
+        Checks to see if a reboot is required.
+    .DESCRIPTION
+        This function checks the registry to determine if a reboot is required before installation can occur.
+        If the "HKLM:\Software\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending"
+        registry key exists then a reboot is pending.
+    #>
+
+    return Test-Path -path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending"
+}
+
+Function Write-Environment {
+    <#
+    .SYNOPSIS
+        Writes header to the log file.
+    .DESCRIPTION
+        This function writes a header to the log file to capture general information about the
+        script execution environment.
+    #>
+    Write-Log -Level Info "----------------------------------------"
+    Write-Log -Level Info "Started executing $($MyInvocation.ScriptName)"
+    Write-Log -Level Info "----------------------------------------"
+    Write-Log -Level Info "Script Version: 2022.12.22"
+    Write-Log -Level Info "Current User: $env:username"
+    Write-Log -Level Info "Hostname: $env:computername"
+    Write-Log -Level Info "Domain Name: $((Get-NetworkAdapterConfiguration).DNSDomain)"
+    Write-Log -Level Info "DNS Search Order: $((Get-NetworkAdapterConfiguration).DNSServerSearchOrder)"
+    Write-Log -Level Info "The OS Version is $((Get-CimInstance Win32_OperatingSystem).version)"
+    Write-Log -Level Info "Host Version $($Host.Version)"
+    Write-Log -Level Info "PowerShell version/build $($PSVersionTable.PSVersion)/$($PSVersionTable.BuildVersion)"
+    $DotNet = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full"
+    Write-Log -Level Info ".NET version/release $($DotNet.version)/$($DotNet.release)"
+    if (Test-RebootRequired) {
+        Write-Log -Level Info "Reboot required"
+    }
+}
+
 $ShareName = "data"
 $MountPoint = "C:\NFSShare" 
 $StorageIP = "${storage_ip}"
 $cluster_id = "${cluster_id}"
 $NFSHostsFolderPath = "$MountPoint\$cluster_id\hosts" 
-$WindowsHostsFilePath = "$env:windir\system32\drivers\etc\hosts"
 $ComputerName = "${computer_name}"
+$DomainName = "${dns_domain_name}"
 $ContentToReplace = "hpcc-symphony-windows-primary-0 hpcc-symphony-windows-secondary-0"
 $EgoConfigFilePath = "C:\Program Files\IBM\SpectrumComputing\kernel\conf\ego.conf"
-$EgoUserName = ${EgoUserName}
-$EgoPass = ${EgoPassword}
+$EgoUserName = "${EgoUserName}"
+$EgoPass = "${EgoPassword}"
+$NumExpectedManagementHosts="${mgmt_count}"
 
+Write-Environment
 $HostName = hostname
 if ($HostName -ne $ComputerName) {
-    ModifyComputerName -ComputerName $ComputerName
-    Write-Log -Level Info "Modified the computer name, restart and execute the script again (exit 1003)"
+    ModifyComputerName -ComputerName $ComputerName -DomainName $DomainName
+    Write-Log -Level Info "Modified the computer name to $ComputerName.$DomainName, restart and execute the script again (exit 1003)"
     exit 1003
-} else {
-    Write-Log -Level Info "Computer Name is $ComputerName, executing the remaining logic after the reboot"
-
-    Mount-NFS -StorageIP $StorageIP -ShareName $ShareName -MountPoint $MountPoint
-
-    Set-WindowsHostsFileWithNFSHostFilesContent -NFSHostsFolderPath $NFSHostsFolderPath -WindowsHostsFilePath $WindowsHostsFilePath -ComputerName $ComputerName
-
-    Edit-EgoConfigFile -NFSHostsFolderPath $NFSHostsFolderPath -EgoConfigFilePath $EgoConfigFilePath -ContentToReplace $ContentToReplace 
-
-    RegisterPasswordForWindowsExecutionUser -EgoUserName $EgoUserName -EgoPass $EgoPass
-
-    Restart-LIMService
 }
+
+Write-Log -Level Info "Computer Name is $ComputerName, continuing configuration after reboot"
+
+Mount-NFS -StorageIP $StorageIP -ShareName $ShareName -MountPoint $MountPoint
+
+Edit-EgoConfigFile `
+    -NFSHostsFolderPath $NFSHostsFolderPath `
+    -EgoConfigFilePath $EgoConfigFilePath `
+    -ContentToReplace $ContentToReplace `
+    -NumExpectedManagementHosts $NumExpectedManagementHosts
+
+RegisterPasswordForWindowsExecutionUser -EgoUserName $EgoUserName -EgoPass $EgoPass
+
+Restart-LIMService
+

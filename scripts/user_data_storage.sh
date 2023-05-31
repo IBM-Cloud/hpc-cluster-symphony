@@ -1,5 +1,5 @@
 ###################################################
-# Copyright (C) IBM Corp. 2021 All Rights Reserved.
+# Copyright (C) IBM Corp. 2023 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 
@@ -11,11 +11,6 @@ env
 privateIP=$(ip addr show eth0 | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}')
 hostName=ibm-gen2host-${privateIP//./-}
 hostnamectl set-hostname ${hostName}
-
-# NOTE: On ibm gen2, the default DNS server do not have reverse hostname/IP resolution.
-# 1) put the management_node server hostname and ip into hosts.
-# 2) put all possible VMs' hostname and ip into hosts.
-python -c "import ipaddress; print('\n'.join([str(ip) + ' ibm-gen2host-' + str(ip).replace('.', '-') for ip in ipaddress.IPv4Network(bytearray('${hf_cidr_block}'))]))" >> /etc/hosts
 
 yum install -y nfs-utils
 found=0

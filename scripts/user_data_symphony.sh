@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ###################################################
-# Copyright (C) IBM Corp. 2021 All Rights Reserved.
+# Copyright (C) IBM Corp. 2023 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 
@@ -50,7 +50,7 @@ export enableSSL=N
 #cluster ID should be 39 characters alphanumeric no spaces, supports -_.
 # export clusterID=SunilSymphony731ClusterPOC
 export clusterID=${cluster_name}
-export domainName='.ibm.com'
+export domainName=".${dns_domain_name}"
 
 #nfs
 export nfsHostIP=$storage_ips
@@ -64,50 +64,32 @@ export CLUSTERADMIN=egoadmin
 export EGO_TOP=/opt/ibm/spectrumcomputing
 export SHARED_TOP=/data
 export SHARED_TOP_CLUSTERID=${SHARED_TOP}/${clusterID}
-export SHARED_TOP_SYM=${SHARED_TOP_CLUSTERID}/sym731
+export SHARED_TOP_SYM=${SHARED_TOP_CLUSTERID}/sym732
 export HOSTS_FILES=${SHARED_TOP_CLUSTERID}/hosts
 export LOCK_FILE=${SHARED_TOP_CLUSTERID}/lock
 #ensure DONE file does not exist before starting
 export DONE_FILE=${SHARED_TOP_CLUSTERID}/done
-export SHARED_HOSTS_FILE=${SHARED_TOP_CLUSTERID}/sharedhosts
-export HOST_NAME=`hostname`
-export export HOST_IP=$(hostname -I)
+export HOST_NAME=$(hostname)${domainName}
+export HOST_IP=$(hostname -I)
 export DELAY=15
 export STARTUP_DELAY=1
+export MAX_RETRIES=200
 export ENTITLEMENT_FILE=$EGO_TOP/kernel/conf/sym_adv_entitlement.dat
 export EGO_HOSTS_FILE=${SHARED_TOP_SYM}/kernel/conf/hosts
 export SHARED_EGO_CONF_FILE=${SHARED_TOP_SYM}/kernel/conf/ego.conf
-export IBM_CLOUD_PROVIDER_SCRIPTS=hostfactory/1.1/providerplugins/ibmcloudgen2/samplepostprovision/sym
+export IBM_CLOUD_PROVIDER_SCRIPTS=hostfactory/1.2/providerplugins/ibmcloudgen2/samplepostprovision/sym
 export IBM_CLOUD_PROVIDER_PP_SCRIPT=${EGO_TOP}/${IBM_CLOUD_PROVIDER_SCRIPTS}/post_installgen2.sh
 export IBM_CLOUD_PROVIDER_SHARED_PP_SCRIPT=${SHARED_TOP_SYM}/${IBM_CLOUD_PROVIDER_SCRIPTS}/post_installgen2.sh
 export IBM_CLOUD_PROVIDER_WORK=work/providers/ibmcloudgen2inst
-export LOCAL_HOST_IPV4="127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4"
-export LOCAL_HOST_IPV6="::1         localhost localhost.localdomain localhost6 localhost6.localdomain6"
 
 ##################################################################
 
 function scale_update_worker_hostname
 {
     if [ ${spectrum_scale} == true ]; then
-        TMP_HOST_NAME=$(grep -F "${HOST_IP}" ${SHARED_HOSTS_FILE} | awk '{ print $3 }')
-        if [ -n "${TMP_HOST_NAME}" ]; then
-            export HOST_NAME=${TMP_HOST_NAME}
-            hostnamectl set-hostname ${HOST_NAME}
-        fi
-    fi
-}
-
-function scale_create_shared_hosts_file
-{
-    if [ ${spectrum_scale} == true ]; then
-        python3 -c "import ipaddress; print('\n'.join([str(ip) +  ' ${hostPrefix}-' + str(ip).replace('.', '-') + '${domainName}' + ' ${hostPrefix}-' + str(ip).replace('.', '-') for ip in ipaddress.IPv4Network('${hf_cidr_block}')]))" >> ${SHARED_HOSTS_FILE}
-    fi
-}
-
-function scale_append_hosts_file
-{
-    if [ ${spectrum_scale} == true ]; then
-        cat ${SHARED_HOSTS_FILE} >> /etc/hosts
+        hostname
+        hostnamectl set-hostname ${HOST_NAME}
+        hostname
     fi
 }
 
@@ -145,14 +127,13 @@ function mount_nfs_readonly
 
 function wait_for_nfs
 {
-    MAX_LOOP=100
-    for (( i=1; i <= $MAX_LOOP; ++i ))
+    for (( i=1; i <= $MAX_RETRIES; ++i ))
     do
         if grep -qs "$SHARED_TOP " /proc/mounts; then
             echo "NFS Found"
             break;
         fi
-        echo "Waiting for mount point $SHARED_TOP to be created $I/$MAX_LOOP"
+        echo "Waiting for mount point $SHARED_TOP to be created $i/$MAX_RETRIES"
         sleep ${DELAY}
         mount $SHARED_TOP
     done
@@ -165,14 +146,13 @@ function wait_for_nfs
 function wait_for_primary_host
 {
     # wait for primary to be installed
-    MAX_LOOP=100
     if [ ! -f ${DONE_FILE} ]; then
-        for (( i=1; i <= $MAX_LOOP; ++i ))
+        for (( i=1; i <= $MAX_RETRIES; ++i ))
         do
             if [ -f ${DONE_FILE} ]; then
                 break;
             fi
-            echo "Waiting lock file ${DONE_FILE} to be created $I/$MAX_LOOP"
+            echo "Waiting lock file ${DONE_FILE} to be created $i/$MAX_RETRIES"
             sleep ${DELAY}
         done
         if [ ! -f ${DONE_FILE} ]; then
@@ -218,11 +198,33 @@ function push_bin_nfs
 
 function install_symp
 {
-    if ! rpm -q --quiet egocore ; then
-      echo "Symphony package not found"
-      /bin/bash ${SHARED_TOP}/symphony_cloud_packages/install_symphony.sh
-      echo "installed symphony"
+    if rpm -q --quiet egocore ; then
+        echo "IBM Spectrum Symphony already installed"
+        return
     fi
+
+    echo "IBM Spectrum Symphony package not found"
+    for (( i=1; i <= $MAX_RETRIES; ++i ))
+    do
+        if [ -f ${SHARED_TOP}/symphony_cloud_packages/install_symphony.sh ]; then
+            break;
+        fi
+        echo "Waiting for installation files to be copied ($i/$MAX_RETRIES)"
+        sleep ${DELAY}
+    done
+
+    if [ ! -f ${SHARED_TOP}/symphony_cloud_packages/install_symphony.sh ]; then
+        echo "Error - installation files not found"
+        exit 1
+    fi
+
+    if ! /bin/bash ${SHARED_TOP}/symphony_cloud_packages/install_symphony.sh; then
+        echo "Error - installation failed"
+        exit 1
+    fi
+
+    echo "Installed IBM Spectrum Symphony"
+
 }
 
 function install_scale
@@ -248,35 +250,43 @@ function mtu9000
     echo 'ip route replace '$CLUSTER_CIDR' dev eth0 proto kernel scope link src '$HOST_IP' mtu 9000' >> /etc/sysconfig/network-scripts/route-eth0
 }
 
+function is_ip_in_dns
+{
+    date
+    nslookup $1 | awk 'BEGIN{ xit=1; } {if ($2=="name"){xit=0;}} END {exit xit}'
+}
+
 function update_hosts
 {
+    echo "update_hosts ${HOST_IP}: ${HOST_NAME}"
+    date
+    nslookup -debug ibm.com
+    for (( i=1; i <= $MAX_RETRIES; ++i ))
+    do
+        
+        if is_ip_in_dns ${HOST_IP}; then
+             echo "ip address found: ${HOST_IP}"
+             break;
+        fi
+        echo "waiting for $HOST_IP to be in DNS $i/$MAX_RETRIES"
+        sleep ${DELAY}
+    done
+    nslookup -debug -querytype=hinfo ${HOST_IP}
+    hostnamectl
+    hostnamectl set-hostname ${HOST_NAME}
+    hostname
+
     #Fully qualified domain name of the management_node host
-    echo "${HOST_IP} ${HOST_NAME}${domainName} ${HOST_NAME}" > /tmp/hosts
+    echo "${HOST_IP} ${HOST_NAME}" > /tmp/hosts
     mkdir -p ${HOSTS_FILES} && cp /tmp/hosts ${HOSTS_FILES}/${HOST_NAME}
     touch ${EGO_HOSTS_FILE}
     cat /tmp/hosts >> ${EGO_HOSTS_FILE}
     chown ${CLUSTERADMIN} ${EGO_HOSTS_FILE}
     chmod 644 ${EGO_HOSTS_FILE}
-    cat ${HOSTS_FILES}/* > /tmp/hosts
-    cp /tmp/hosts /etc/hosts
-    echo "${LOCAL_HOST_IPV4}" >> /etc/hosts
-    echo "${LOCAL_HOST_IPV6}" >> /etc/hosts
-    chmod 644 /etc/hosts
     rm -f /tmp/hosts
 }
 
-function update_hosts_noshare
-{
-    #Fully qualified domain name of the management_node host
-    echo "${HOST_IP} ${HOST_NAME}${domainName} ${HOST_NAME}" > /tmp/hosts
-    cat ${HOSTS_FILES}/* >> /tmp/hosts
-    cp /tmp/hosts /etc/hosts
-    echo "${LOCAL_HOST_IPV4}" >> /etc/hosts
-    echo "${LOCAL_HOST_IPV6}" >> /etc/hosts
-    chmod 644 /etc/hosts
-    rm -f /tmp/hosts
-}
-
+# Symphony Version is updated to 7.3.2 but the file name is still IBMCloudSym731Cluster as the new binary is not updated
 function update_clusterid
 {
     #change cluster ID
@@ -389,17 +399,21 @@ function HF_provider_config
     IBM_CLOUD_TEMPLATE_FILE=${IBM_CLOUD_PROVIDER_CONF}/ibmcloudgen2instprov_templates.json
     IBM_CLOUD_REQUESTOR_CONF=${EGO_TOP}/hostfactory/conf/requestors
     IBM_CLOUD_REQUESTOR_CONF_FILE=${IBM_CLOUD_REQUESTOR_CONF}/hostRequestors.json
-
+    IBM_CLOUD_PROVIDER_PLUGINS_CONF_FILE=${EGO_TOP}/hostfactory/conf/providerplugins/hostProviderPlugins.json
     #enable HF
     [ -f ${EGO_TOP}/eservice/esc/conf/services/hostfactory.xml ] && sed -i -e "s|MANUAL|AUTOMATIC|g" ${EGO_TOP}/eservice/esc/conf/services/hostfactory.xml
 
     #update providers
-    sed -i -e "s|ibmcloud|ibmcloudgen2|g" $IBM_CLOUD_PROVIDERS_CONF_FILE
+    #sed -i -e "s|ibmcloud|ibmcloudgen2|g" $IBM_CLOUD_PROVIDERS_CONF_FILE
     #update requestors
     sed -i -e "s|\[\"awsinst\"\]|\[\"ibmcloudgen2inst\"\]|g" $IBM_CLOUD_REQUESTOR_CONF_FILE
-    sed -i -e "s|\"ibmcloudinst\"|\"ibmcloudgen2inst\"|g" $IBM_CLOUD_REQUESTOR_CONF_FILE
+    #sed -i -e "s|\"ibmcloudinst\"|\"ibmcloudgen2inst\"|g" $IBM_CLOUD_REQUESTOR_CONF_FILE
     #enable only symA requestor, which is first
     sed -i -e "0,/\"enabled\": 0,/s||\"enabled\": 1,|" $IBM_CLOUD_REQUESTOR_CONF_FILE
+    sed -i -e "s/\"enabled\": .*/\"enabled\": 1,/g"  $IBM_CLOUD_PROVIDERS_CONF_FILE
+    sed -i -e "s/\"enabled\": .*/\"enabled\": 1,/g"  $IBM_CLOUD_PROVIDER_PLUGINS_CONF_FILE
+    cat $IBM_CLOUD_PROVIDERS_CONF_FILE
+    cat $IBM_CLOUD_PROVIDER_PLUGINS_CONF_FILE
 
     #update IBM gen2 Credentials API keys
     sed -i -e "s|VPC_APIKEY=.*|VPC_APIKEY=${VPC_APIKEY_VALUE}|g" $IBM_CLOUD_CREDENTIALS_FILE
@@ -439,7 +453,7 @@ do
     if [ 'mountpoint -q $SHARED_TOP' ]; then
         break;
     fi
-    echo "Waiting for mount point $SHARED_TOP to be created $I/10"
+    echo "Waiting for mount point $SHARED_TOP to be created $i/10"
     sleep ${DELAY}
     mount $SHARED_TOP
 done
@@ -448,24 +462,6 @@ if [ ! 'mountpoint -q $SHARED_TOP' ]; then
     exit 1
 fi
 
-if [ ${spectrum_scale} == true ]; then
-    export TMP_HOST_NAME=\$(grep -F "\${HOST_IP} " ${SHARED_HOSTS_FILE} | awk '{ print \$3 }')
-    if [ -n "\${TMP_HOST_NAME}" ]; then
-        export HOST_NAME=\${TMP_HOST_NAME}
-        hostnamectl set-hostname \${HOST_NAME}
-    fi
-fi
-#Fully qualified domain name of the management_node host
-echo "\${HOST_IP} \${HOST_NAME}${domainName} \${HOST_NAME}" > /tmp/hosts
-cat ${HOSTS_FILES}/* >> /tmp/hosts
-cp /tmp/hosts /etc/hosts
-echo "${LOCAL_HOST_IPV4}" >> /etc/hosts
-echo "${LOCAL_HOST_IPV6}" >> /etc/hosts
-chmod 644 /etc/hosts
-rm -f /tmp/hosts
-if [ ${spectrum_scale} == true ]; then
-    cat ${SHARED_HOSTS_FILE} >> /etc/hosts
-fi
 # copy ssh key
 mkdir -p /root/.ssh
 cat ${SHARED_TOP_CLUSTERID}/root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
@@ -497,6 +493,7 @@ su ${CLUSTERADMIN} -c 'egoconfig addresourceattr "[resourcemap ibmcloud*cloudpro
 echo "source ${EGO_TOP}/profile.platform" >> /root/.bashrc
 sleep $STARTUP_DELAY
 systemctl start ego
+systemctl status ego
 echo END >> /var/log/postprovisionscripts.log 2>&1
 EOF
 
@@ -599,6 +596,7 @@ function config_symprimary
     egosetsudoers.sh
     egosetrc.sh
     su ${CLUSTERADMIN} -c 'egoconfig join ${HOST_NAME} -f'
+    su ${CLUSTERADMIN} -c 'egoconfig setpassword -x Admin -f'
     su ${CLUSTERADMIN} -c 'egoconfig setentitlement $ENTITLEMENT_FILE'
     su ${CLUSTERADMIN} -c 'egoconfig mghost ${SHARED_TOP_SYM} -f'
     source ${EGO_TOP}/profile.platform
@@ -675,13 +673,9 @@ function wait_for_management_hosts
         sleep $DELAY
         sleep $(($RANDOM%5))
         if [ "${egoHostRole}" == "compute" ]; then
-            echo "${HOST_IP} ${HOST_NAME}${domainName} ${HOST_NAME}" > /tmp/hosts
+            echo "${HOST_IP} ${HOST_NAME}" > /tmp/hosts
         fi
         cat ${HOSTS_FILES}/* >> /tmp/hosts
-        cat /tmp/hosts >> /etc/hosts
-        echo "${LOCAL_HOST_IPV4}" >> /etc/hosts
-        echo "${LOCAL_HOST_IPV6}" >> /etc/hosts
-        chmod 644 /etc/hosts
         CURRENT_HOSTS=`wc -l < /tmp/hosts`
         rm -f /tmp/hosts
     done
@@ -706,6 +700,7 @@ function wait_for_candidate_hosts
             echo "New candidate joined, need to restart ego"
             EGO_MANAGEMENT_NODES_LIST=${NEW_EGO_MANAGEMENT_NODES_LIST}
             systemctl restart ego
+            systemctl status ego
         fi
         words=( $EGO_MANAGEMENT_NODES_LIST )
         CURRENT_HOSTS=${#words[@]}
@@ -771,6 +766,7 @@ function start_ego
     echo "source ${EGO_TOP}/profile.platform" >> /root/.bashrc
     sleep $STARTUP_DELAY
     systemctl start ego
+    systemctl status ego
 }
 
 function set_ego_password
@@ -791,7 +787,7 @@ function set_ego_password
     sed -i -e "s|egoadmin|.\\\egoadmin|g" $EGO_CONFDIR/ConsumerTrees.xml
 
     # Re-register symping app
-    soamview app symping7.3.1 -p >sp.xml 
+    soamview app symping7.3.2 -p >sp.xml
     soamreg sp.xml -f
     #Restart ego process
     egosh ego restart -f
@@ -810,14 +806,13 @@ if [ "${egoHostRole}" == "primary" ]; then
     wait_for_nfs
     clean_shared
     mtu9000
+    create_sshkey
     update_hosts
     update_clusterid
-    create_sshkey
-    if [ ${worker_node_type} == "baremetal" ]; then
+    if [[ ${worker_node_type} == "baremetal"  || ${storage_type} == "persistent" ]]; then
       push_bin_nfs
     fi
     create_sslkey
-    scale_create_shared_hosts_file
     HF_provider_config
     disable_perf
     scale_disable_hf
@@ -825,10 +820,9 @@ if [ "${egoHostRole}" == "primary" ]; then
     enable_SSL_primary
     config_symprimary
     #unlock install
-    touch $DONE_FILE
+    nslookup ${HOST_IP} > $DONE_FILE
     start_ego
     wait_for_management_hosts
-    scale_append_hosts_file
     update_passwords
     wait_for_candidate_hosts
     if [ ${windows_worker_node} == true ]; then
@@ -846,8 +840,6 @@ elif [ "${egoHostRole}" == "secondary" ]; then
     patch_image
     config_symfailover
     start_ego
-    wait_for_management_hosts
-    scale_append_hosts_file
 elif [ "${egoHostRole}" == "management_node" ]; then
     mount_nfs
     wait_for_nfs
@@ -859,27 +851,25 @@ elif [ "${egoHostRole}" == "management_node" ]; then
     patch_image
     config_symmanagement
     start_ego
-    wait_for_management_hosts
-    scale_append_hosts_file
 elif [ "${egoHostRole}" == "scale_storage" ]; then
     config_hyperthreading
     mount_nfs
     wait_for_nfs
-    mtu9000
+    if [ ${storage_type} == "persistent" ]; then
+      install_scale
+      bare_metal_mtu9000
+    else
+      mtu9000
+    fi
     wait_for_candidate_hosts_norestart
     scale_update_worker_hostname
-    update_hosts_noshare
     copy_sshkey
-    wait_for_management_hosts
-    scale_append_hosts_file
 else
     config_hyperthreading
     mount_nfs_readonly
     wait_for_nfs
     copy_sshkey
     scale_update_worker_hostname
-    update_hosts_noshare
-    scale_append_hosts_file
     if [ ${worker_node_type} == "baremetal" ]; then
       install_scale
       bare_metal_mtu9000
@@ -888,10 +878,10 @@ else
     fi
     install_symp
     wait_for_candidate_hosts_norestart
+    update_hosts
     copy_sslkey
     patch_image
     enable_SSL_compute
     config_symcompute
     start_ego
-    wait_for_management_hosts
 fi
