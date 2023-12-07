@@ -881,7 +881,7 @@ locals {
   bastion_ssh_private_key     = null
 
   // scale version installed on custom images.
-  scale_version             = "5.1.7.0"
+  scale_version             = "5.1.9.0"
 
   // cloud platform as IBMCloud, required for ansible playbook.
   cloud_platform            = "IBMCloud"
@@ -911,7 +911,7 @@ locals {
   compute_vsi_by_ip = concat(module.primary_vsi[*].primary_network_interface, module.secondary_vsi[*].primary_network_interface, module.management_node_vsi[*].primary_network_interface, module.worker_vsi[*].primary_network_interface, module.bare_metal_server[*].primary_network_interface)
 
   // RHEL OS version used for the creation of Baremetal servers i.e.(Worker_node_type="baremetal" and storage_type="persistent")
-  bare_metal_server_osimage_name = "ibm-redhat-8-6-minimal-amd64-4"
+  bare_metal_server_osimage_name = "ibm-redhat-8-8-minimal-amd64-2"
 
 }
 

@@ -69,7 +69,7 @@
         },
         {
           "name": "image_name",
-          "value": "hpcc-symp732-scale5170-rhel86-v1-5",
+          "value": "hpcc-symp732-scale5190-rhel88-v1-6",
           "type": "string",
           "secure": false,
           "description": "Name of the custom image that you want to use to create virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the automation uses a base image with additional software packages mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you would like to include your application-specific binary files, follow the instructions in [ Planning for custom images ](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
@@ -228,7 +228,7 @@
         },
         {
           "name": "scale_storage_image_name",
-          "value": "hpcc-scale5170-rhel86",
+          "value": "hpcc-scale5190-rhel88",
           "type": "string",
           "secure": false,
           "description": "Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy the Spectrum Scale storage cluster. By default, our automation uses a base image plus the Spectrum Scale software and any other software packages that it requires. If you'd like, you can follow the instructions for [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Scale storage cluster through this offering."

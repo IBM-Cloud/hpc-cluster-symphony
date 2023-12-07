@@ -177,7 +177,10 @@ function push_bin_nfs
         echo "waiting for package decryption"
         count=$(find /opt/IBM/symphony_cloud_packages/*.gpg 2>/dev/null | wc -l)
         if [ $count == 0 ]; then
+            chmod 755 /opt/IBM/symphony_cloud_packages/*.sh
+            ls -ltr /opt/IBM/symphony_cloud_packages
             mv /opt/IBM/symphony_cloud_packages ${SHARED_TOP}
+            ls -ltr ${SHARED_TOP}/symphony_cloud_packages
             echo "symphony binary files moved"
         fi
     done
@@ -233,12 +236,6 @@ function install_scale
       echo "installed scale"
 }
 
-function bare_metal_mtu9000
-{
-  echo ${worker_node_type}
-  echo "MTU=9000" >> "/etc/sysconfig/network-scripts/ifcfg-ens1"
-  systemctl restart NetworkManager
-}
 
 function mtu9000
 {
@@ -248,6 +245,8 @@ function mtu9000
     #echo "PEERDNS=no" >> /etc/sysconfig/network-scripts/ifcfg-eth0
     ip route replace $CLUSTER_CIDR dev eth0 proto kernel scope link src $HOST_IP mtu 9000
     echo 'ip route replace '$CLUSTER_CIDR' dev eth0 proto kernel scope link src '$HOST_IP' mtu 9000' >> /etc/sysconfig/network-scripts/route-eth0
+    echo "MTU=9000" >> "/etc/sysconfig/network-scripts/ifcfg-eth0"
+    systemctl restart NetworkManager
 }
 
 function is_ip_in_dns
@@ -857,10 +856,8 @@ elif [ "${egoHostRole}" == "scale_storage" ]; then
     wait_for_nfs
     if [ ${storage_type} == "persistent" ]; then
       install_scale
-      bare_metal_mtu9000
-    else
-      mtu9000
     fi
+    mtu9000
     wait_for_candidate_hosts_norestart
     scale_update_worker_hostname
     copy_sshkey
@@ -872,10 +869,8 @@ else
     scale_update_worker_hostname
     if [ ${worker_node_type} == "baremetal" ]; then
       install_scale
-      bare_metal_mtu9000
-    else
-      mtu9000
     fi
+    mtu9000
     install_symp
     wait_for_candidate_hosts_norestart
     update_hosts

@@ -199,6 +199,12 @@
             "value": "dnsworker.com",
             "type": "string",
             "description": "IBM Cloud DNS Services domain name to be used for the compute cluster, e.g., test.example.corp."
+          },
+          {
+            "name": "windows_image_name",
+            "value": "hpcc-sym732-win2016-v1-1",
+            "type": "string",
+            "description": "Name of the custom image that you want to use to create Windows® virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the solution uses a base image with additional software packages, which are mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you want to include your application-specific binary files, follow the instructions in [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images&interface=ui) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
           }
         ]
       }
