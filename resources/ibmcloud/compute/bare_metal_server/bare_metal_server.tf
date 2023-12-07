@@ -39,7 +39,7 @@ resource "ibm_is_bare_metal_server" "bare_metal" {
   keys    = var.keys
   tags    = var.tags
   primary_network_interface {
-    name            = "ens1"
+    name            = "eth0"
     subnet          = var.subnet
     security_groups = var.security_group
   }

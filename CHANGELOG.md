@@ -1,5 +1,12 @@
 # **CHANGELOG**
 
+## **1.6.0**
+### ENHANCEMENTS
+- Support for Symphony Linux 7.3.2 Build601711 fix patch.
+- Symphony Windows has been updated from version 7.3.1 to 7.3.2 and also have Build601711 fix patch.
+- Spectrum Scale version has been updated from 5.1.7.0 to 5.1.9.0.
+- Symphony Linux OS upgraded from RHEL 8.6 to RHEL 8.8. 
+
 ## **1.5.0**
 ### ENHANCEMENTS
 - Support for persistent storage type for IBM Spectrum Scale deployment on bare metal servers.
