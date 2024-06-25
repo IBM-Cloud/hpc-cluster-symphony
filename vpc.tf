@@ -34,7 +34,7 @@ locals {
   remove_sg_rule_script_path = "${path.module}/resources/common/remove_security_rule.py"
 
   // Stock image is used for the creation of login and nfs_storage node.
-  stock_image_name = "ibm-redhat-8-6-minimal-amd64-1"
+  stock_image_name = "ibm-redhat-8-8-minimal-amd64-4"
 }
 
 locals {
@@ -553,7 +553,7 @@ resource "null_resource" "entitlement_check" {
 
   provisioner "remote-exec" {
     inline = [
-      "python3 /opt/IBM/cloud_entitlement/entitlement_check.py --products ${local.products} --icns ${var.ibm_customer_number}"
+      "python3.9 /opt/IBM/cloud_entitlement/entitlement_check.py --products ${local.products} --icns ${var.ibm_customer_number}"
     ]
   }
   depends_on = [module.primary_vsi, module.login_fip, module.login_vsi]
@@ -881,7 +881,7 @@ locals {
   bastion_ssh_private_key     = null
 
   // scale version installed on custom images.
-  scale_version             = "5.1.9.0"
+  scale_version             = "5.1.9.3"
 
   // cloud platform as IBMCloud, required for ansible playbook.
   cloud_platform            = "IBMCloud"

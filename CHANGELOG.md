@@ -1,4 +1,8 @@
 # **CHANGELOG**
+## **1.6.1**
+### ENHANCEMENTS
+- Support for Symphony Linux 7.3.2 Build601756, Build601774, Build601796, Build601822, Build601823, Build601827, Build601835, Build601838, Build601841, Build601929, Build601937, Build601948, Build601954, Build601974, Build602064, Build602058 fix patches.
+- Support for Symphony Windows 7.3.2 Build601860 fix patch.
 
 ## **1.6.0**
 ### ENHANCEMENTS

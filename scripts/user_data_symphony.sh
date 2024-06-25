@@ -399,13 +399,15 @@ function HF_provider_config
     IBM_CLOUD_REQUESTOR_CONF=${EGO_TOP}/hostfactory/conf/requestors
     IBM_CLOUD_REQUESTOR_CONF_FILE=${IBM_CLOUD_REQUESTOR_CONF}/hostRequestors.json
     IBM_CLOUD_PROVIDER_PLUGINS_CONF_FILE=${EGO_TOP}/hostfactory/conf/providerplugins/hostProviderPlugins.json
+    IBM_CLOUD_REQUESTOR_SYMA_CONF_FILE=${EGO_TOP}/hostfactory/conf/requestors/symAinst/symAinstreq_config.json
     #enable HF
     [ -f ${EGO_TOP}/eservice/esc/conf/services/hostfactory.xml ] && sed -i -e "s|MANUAL|AUTOMATIC|g" ${EGO_TOP}/eservice/esc/conf/services/hostfactory.xml
 
     #update providers
     #sed -i -e "s|ibmcloud|ibmcloudgen2|g" $IBM_CLOUD_PROVIDERS_CONF_FILE
     #update requestors
-    sed -i -e "s|\[\"awsinst\"\]|\[\"ibmcloudgen2inst\"\]|g" $IBM_CLOUD_REQUESTOR_CONF_FILE
+    sed -i -e 's/providers": \[\("[^"]*"\(,\)\?\)\+\],/providers": \["ibmcloudgen2inst"],/' $IBM_CLOUD_REQUESTOR_CONF_FILE
+    sed -i -e 's/\("resource_plans":\)\(\[[^]]*\]\)/\1[]/' -e 's/\("host_return_policy":\) ".*"/\1 "lazy"/' $IBM_CLOUD_REQUESTOR_SYMA_CONF_FILE
     #sed -i -e "s|\"ibmcloudinst\"|\"ibmcloudgen2inst\"|g" $IBM_CLOUD_REQUESTOR_CONF_FILE
     #enable only symA requestor, which is first
     sed -i -e "0,/\"enabled\": 0,/s||\"enabled\": 1,|" $IBM_CLOUD_REQUESTOR_CONF_FILE
@@ -582,7 +584,7 @@ function enable_SSL_compute
 
 function patch_image
 {
-    echo "Patching image config"
+    echo "Patching image config"    
     rm -f /root/preconfig*.sh
     if [ ! -f /usr/bin/python ]; then
         ln -s /usr/bin/python3 /usr/bin/python
@@ -815,7 +817,7 @@ if [ "${egoHostRole}" == "primary" ]; then
     HF_provider_config
     disable_perf
     scale_disable_hf
-    patch_image
+  #  patch_image
     enable_SSL_primary
     config_symprimary
     #unlock install
@@ -836,7 +838,7 @@ elif [ "${egoHostRole}" == "secondary" ]; then
     update_hosts
     copy_sshkey
     copy_sslkey
-    patch_image
+  #  patch_image
     config_symfailover
     start_ego
 elif [ "${egoHostRole}" == "management_node" ]; then
@@ -847,7 +849,7 @@ elif [ "${egoHostRole}" == "management_node" ]; then
     update_hosts
     copy_sshkey
     copy_sslkey
-    patch_image
+   # patch_image
     config_symmanagement
     start_ego
 elif [ "${egoHostRole}" == "scale_storage" ]; then
@@ -875,7 +877,7 @@ else
     wait_for_candidate_hosts_norestart
     update_hosts
     copy_sslkey
-    patch_image
+   # patch_image
     enable_SSL_compute
     config_symcompute
     start_ego

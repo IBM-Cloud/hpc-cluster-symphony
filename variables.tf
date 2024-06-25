@@ -104,13 +104,13 @@ variable "vpc_cluster_login_private_subnets_cidr_blocks" {
 
 variable "image_name" {
   type        = string
-  default     = "hpcc-symp732-scale5190-rhel88-v1-6"
+  default     = "hpcc-symp732-scale5193-rhel88-v1-7"
   description = "Name of the custom image that you want to use to create virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the automation uses a base image with additional software packages mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you would like to include your application-specific binary files, follow the instructions in [ Planning for custom images ](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
 }
 
 variable "windows_image_name" {
   type        = string
-  default     = "hpcc-sym732-win2016-v1-1"
+  default     = "hpcc-sym732-win2016-v1-2"
   description = "Name of the custom image that you want to use to create Windows® virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the solution uses a base image with additional software packages, which are mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you want to include your application-specific binary files, follow the instructions in [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images&interface=ui) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
 }
 
@@ -330,7 +330,7 @@ variable "vpc_scale_storage_dns_domain" {
 
 variable "scale_storage_image_name" {
   type        = string
-  default     = "hpcc-scale5190-rhel88"
+  default     = "hpcc-scale5193-rhel88"
   description = "Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy the Spectrum Scale storage cluster. By default, our automation uses a base image plus the Spectrum Scale software and any other software packages that it requires. If you'd like, you can follow the instructions for [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Scale storage cluster through this offering."
 }
 
