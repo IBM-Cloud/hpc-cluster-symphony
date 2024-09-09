@@ -22,7 +22,7 @@ data "ibm_is_zone" "zone" {
 
 data "ibm_is_vpc" "existing_vpc" {
   // Lookup for this VPC resource only if var.vpc_name is not empty
-  count = var.vpc_name != "" ? 1:0
+  count = var.vpc_name != "" ? 1 : 0
   name  = var.vpc_name
 }
 
@@ -43,7 +43,7 @@ data "ibm_is_instance_profile" "management_node" {
 
 data "ibm_is_instance_profile" "worker" {
   count = var.worker_node_type == "vsi" ? 1 : 0
-  name = var.worker_node_instance_type
+  name  = var.worker_node_instance_type
 }
 
 data "ibm_is_instance_profile" "login" {
@@ -56,11 +56,11 @@ data "ibm_is_instance_profile" "storage" {
 
 data "ibm_is_bare_metal_server_profile" "worker_bare_metal_server_profile" {
   count = var.worker_node_type == "baremetal" ? 1 : 0
-  name = var.worker_node_instance_type
+  name  = var.worker_node_instance_type
 }
 
 data "ibm_is_dedicated_host_profiles" "worker" {
-  count = var.dedicated_host_enabled ? 1: 0
+  count = var.dedicated_host_enabled ? 1 : 0
 }
 
 data "ibm_is_volume_profile" "nfs" {
@@ -81,17 +81,17 @@ data "ibm_is_image" "baremetal_image" {
 }
 
 data "ibm_is_image" "image" {
-  name = var.image_name
-  count = local.image_mapping_entry_found ? 0:1
+  name  = var.image_name
+  count = local.image_mapping_entry_found ? 0 : 1
 }
 
-data "http" "fetch_myip"{
+data "http" "fetch_myip" {
   url = "http://ipv4.icanhazip.com"
 }
 
 data "ibm_is_bare_metal_server_profile" "storage_bare_metal_server_profile" {
   count = var.spectrum_scale_enabled && var.storage_type == "persistent" ? 1 : 0
-  name = var.scale_storage_node_instance_type
+  name  = var.scale_storage_node_instance_type
 }
 
 data "ibm_is_subnet" "subnet_id" {
@@ -100,22 +100,22 @@ data "ibm_is_subnet" "subnet_id" {
 }
 
 data "ibm_is_image" "scale_image" {
-  name = var.scale_storage_image_name
-  count = local.scale_image_mapping_entry_found ? 0:1
+  name  = var.scale_storage_image_name
+  count = local.scale_image_mapping_entry_found ? 0 : 1
 }
 
 
 data "ibm_is_instance_profile" "spectrum_scale_storage" {
   count = var.spectrum_scale_enabled && var.storage_type == "scratch" ? 1 : 0
-  name = var.scale_storage_node_instance_type
+  name  = var.scale_storage_node_instance_type
 }
 
 data "ibm_is_subnet_reserved_ips" "dns_reserved_ips" {
-  for_each   = toset([for subnetsdetails in data.ibm_is_subnet.subnet_id: subnetsdetails.id])
-  subnet = each.value
+  for_each = toset([for subnetsdetails in data.ibm_is_subnet.subnet_id : subnetsdetails.id])
+  subnet   = each.value
 }
 
 data "ibm_dns_custom_resolvers" "dns_custom_resolver" {
-        count = local.dns_reserved_ip == "" ? 0 : 1
-        instance_id = local.dns_service_id
+  count       = local.dns_reserved_ip == "" ? 0 : 1
+  instance_id = local.dns_service_id
 }
