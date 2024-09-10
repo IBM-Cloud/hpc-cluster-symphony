@@ -12,11 +12,11 @@ output "vpc_name" {
 }
 
 output "vpn_config_info" {
-  value = var.vpn_enabled ? "IP : ${module.vpn[0].vpn_gateway_public_ip_address}, CIDR: ${module.login_subnet.ipv4_cidr_block}, UDP ports : 500, 4500 ": null
+  value = var.vpn_enabled ? "IP : ${module.vpn[0].vpn_gateway_public_ip_address}, CIDR: ${module.login_subnet.ipv4_cidr_block}, UDP ports : 500, 4500 " : null
 }
 
 output "spectrum_scale_storage_ssh_command" {
-  value = var.spectrum_scale_enabled ? var.storage_type == "scratch" ? "ssh -J root@${module.login_fip.floating_ip_address} root@${module.spectrum_scale_storage[0].primary_network_interface}" : "ssh -J root@${module.login_fip.floating_ip_address} root@${element(tolist(module.storage_bare_metal_server_cluster[0].primary_network_interface),0)}" : null
+  value = var.spectrum_scale_enabled ? var.storage_type == "scratch" ? "ssh -J root@${module.login_fip.floating_ip_address} root@${module.spectrum_scale_storage[0].primary_network_interface}" : "ssh -J root@${module.login_fip.floating_ip_address} root@${element(tolist(module.storage_bare_metal_server_cluster[0].primary_network_interface), 0)}" : null
 }
 
 output "region_name" {

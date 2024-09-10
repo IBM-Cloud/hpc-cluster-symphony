@@ -1,4 +1,12 @@
 # **CHANGELOG**
+## **1.6.2**
+### ENHANCEMENTS
+- Support for Symphony Linux 7.3.2 Build602125, Build602100, Build602094, Build602071, Build602061, Build602068, Build602039 fix patches.
+- Support for Symphony Windows 7.3.2 Build602052 fix patch.
+- Spectrum Scale version has been updated from 5.1.9.3 to 5.2.0.1.
+### **BUG FIXES**
+- Fixed bug related to the cluster name set incorrectly.
+
 ## **1.6.1**
 ### ENHANCEMENTS
 - Support for Symphony Linux 7.3.2 Build601756, Build601774, Build601796, Build601822, Build601823, Build601827, Build601835, Build601838, Build601841, Build601929, Build601937, Build601948, Build601954, Build601974, Build602064, Build602058 fix patches.

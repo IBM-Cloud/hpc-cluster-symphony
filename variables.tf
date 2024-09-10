@@ -58,7 +58,7 @@ variable "cluster_id" {
   default     = "HPCCluster"
   description = "Unique ID of the cluster used by Symphony for configuration of resources. This must be up to 39 alphanumeric characters including the underscore (_), the hyphen (-), and the period (.). Other special characters and spaces are not allowed. Do not use the name of any host or user as the name of your cluster. You cannot change it after installation."
   validation {
-    condition = 0 < length(var.cluster_id) && length(var.cluster_id) < 40 && can(regex("^[a-zA-Z0-9_.-]+$", var.cluster_id))
+    condition     = 0 < length(var.cluster_id) && length(var.cluster_id) < 40 && can(regex("^[a-zA-Z0-9_.-]+$", var.cluster_id))
     error_message = "The ID must be up to 39 alphanumeric characters including the underscore (_), the hyphen (-), and the period (.). Other special characters and spaces are not allowed."
   }
 }
@@ -97,20 +97,20 @@ variable "vpc_cluster_login_private_subnets_cidr_blocks" {
     error_message = "Our Automation supports only a single AZ to deploy resources. Provide one CIDR range of subnet creation."
   }
   validation {
-    condition     =  tonumber(regex("/(\\d+)", join(",",var.vpc_cluster_login_private_subnets_cidr_blocks))[0]) <= 28
+    condition     = tonumber(regex("/(\\d+)", join(",", var.vpc_cluster_login_private_subnets_cidr_blocks))[0]) <= 28
     error_message = "Our solution uses this subnet to create only a login virtual server instance, providing a bigger CIDR size will waste the usage of available IP. A CIDR range of /28 is sufficient for the creation of login subnet."
   }
 }
 
 variable "image_name" {
   type        = string
-  default     = "hpcc-symp732-scale5193-rhel88-v1-7"
+  default     = "hpcc-symp732-scale5201-rhel88-v2"
   description = "Name of the custom image that you want to use to create virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the automation uses a base image with additional software packages mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you would like to include your application-specific binary files, follow the instructions in [ Planning for custom images ](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
 }
 
 variable "windows_image_name" {
   type        = string
-  default     = "hpcc-sym732-win2016-v1-2"
+  default     = "hpcc-sym732-win2016-v1-3"
   description = "Name of the custom image that you want to use to create Windows® virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the solution uses a base image with additional software packages, which are mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you want to include your application-specific binary files, follow the instructions in [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images&interface=ui) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
 }
 
@@ -127,7 +127,7 @@ variable "management_node_instance_type" {
 
 variable "worker_node_type" {
   description = "The type of server that's used for the worker nodes: virtual server instance or bare metal server. If you choose vsi, the worker nodes are deployed on virtual server instances, or if you choose baremetal, the worker nodes are deployed on bare metal servers. Note: If baremetal is selected, only static worker nodes are supported; you will not be able to use the Spectrum Symphony Host Factory feature for auto-scaling on the cluster."
-  default = "vsi"
+  default     = "vsi"
   validation {
     condition = can(regex("^(vsi|baremetal)$", lower(var.worker_node_type)))
     #condition     = contains(["scratch", "persistent"], lower(var.storage_type))
@@ -196,8 +196,8 @@ variable "worker_node_max_count" {
 }
 
 variable "windows_worker_node" {
-  type = bool
-  default = false
+  type        = bool
+  default     = false
   description = "Set to true to deploy Windows® worker nodes in the cluster. By default, the cluster deploys Linux® worker nodes. If the variable is set to true, the values of both worker_node_min_count and worker_node_max_count should be equal because the current implementation doesn't support dynamic creation of worker nodes through Host Factory."
 }
 
@@ -232,52 +232,52 @@ variable "management_node_count" {
 }
 
 variable "hyperthreading_enabled" {
-  type = bool
-  default = true
+  type        = bool
+  default     = true
   description = "Setting this to true will enable hyper-threading in the worker nodes of the cluster(default). Otherwise, hyper-threading will be disabled."
 }
 
 variable "vpn_enabled" {
-  type = bool
-  default = false
+  type        = bool
+  default     = false
   description = "Set the value as true to deploy a VPN gateway for VPC in the cluster."
 }
 
 variable "vpn_peer_cidrs" {
-  type = string
-  default = ""
+  type        = string
+  default     = ""
   description = "Comma separated list of peer CIDRs (e.g., 192.168.0.0/24) to which the VPN will be connected."
 }
 
 variable "vpn_peer_address" {
-  type = string
-  default = ""
+  type        = string
+  default     = ""
   description = "The peer public IP address to which the VPN will be connected."
 }
 
 variable "vpn_preshared_key" {
-  type = string
-  default = ""
+  type        = string
+  default     = ""
   description = "The pre-shared key for the VPN."
 }
 
 variable "remote_allowed_ips" {
-	type        = list(string)
-	description = "Comma-separated list of IP addresses that can access the Spectrum Symphony instance through an SSH or RDP interface. For security purposes, provide the public IP addresses assigned to the devices that are authorized to establish SSH or RDP connections (for example, [\"169.45.117.34\"]). To fetch the IP address of the device, use [https://ipv4.icanhazip.com/](https://ipv4.icanhazip.com/)."
-	validation {
-    condition     = alltrue([
-            for o in var.remote_allowed_ips : !contains(["0.0.0.0/0", "0.0.0.0"], o)
-            ])
+  type        = list(string)
+  description = "Comma-separated list of IP addresses that can access the Spectrum Symphony instance through an SSH or RDP interface. For security purposes, provide the public IP addresses assigned to the devices that are authorized to establish SSH or RDP connections (for example, [\"169.45.117.34\"]). To fetch the IP address of the device, use [https://ipv4.icanhazip.com/](https://ipv4.icanhazip.com/)."
+  validation {
+    condition = alltrue([
+      for o in var.remote_allowed_ips : !contains(["0.0.0.0/0", "0.0.0.0"], o)
+    ])
     error_message = "For the purpose of security provide the public IP address(es) assigned to the device(s) authorized to establish SSH connections. Use https://ipv4.icanhazip.com/ to fetch the ip address of the device."
   }
   validation {
-	  condition = alltrue([
-		for a in var.remote_allowed_ips : can(regex("^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",a))
-	  ])
-	  error_message = "Provided IP address format is not valid. Check if Ip address format has comma instead of dot and there should be double quotes between each IP address range if using multiple ip ranges. For multiple IP address use format [\"169.45.117.34\",\"128.122.144.145\"]."
-	}
+    condition = alltrue([
+      for a in var.remote_allowed_ips : can(regex("^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$", a))
+    ])
+    error_message = "Provided IP address format is not valid. Check if Ip address format has comma instead of dot and there should be double quotes between each IP address range if using multiple ip ranges. For multiple IP address use format [\"169.45.117.34\",\"128.122.144.145\"]."
   }
-  
+}
+
 variable "volume_profile" {
   type        = string
   default     = "general-purpose"
@@ -302,7 +302,7 @@ variable "dedicated_host_placement" {
 
 variable "TF_VERSION" {
   type        = string
-  default     = "1.1"
+  default     = "1.5"
   description = "The version of the Terraform engine that's used in the Schematics workspace."
 }
 
@@ -316,9 +316,9 @@ variable "TF_PARALLELISM" {
   }
 }
 
-variable "spectrum_scale_enabled"{
-  type = bool
-  default = false
+variable "spectrum_scale_enabled" {
+  type        = bool
+  default     = false
   description = "Setting this to 'true' will enable Spectrum Scale integration with the cluster. Otherwise, Spectrum Scale integration will be disabled (default). By entering 'true' for the property you have also agreed to one of the two conditions. 1. You are using the software in production and confirm you have sufficient licenses to cover your use under the International Program License Agreement (IPLA). 2. You are evaluating the software and agree to abide by the International License Agreement for Evaluation of Programs (ILAE). NOTE: Failure to comply with licenses for production use of software is a violation of [IBM International Program License Agreement](https://www.ibm.com/software/passportadvantage/programlicense.html)."
 }
 
@@ -330,7 +330,7 @@ variable "vpc_scale_storage_dns_domain" {
 
 variable "scale_storage_image_name" {
   type        = string
-  default     = "hpcc-scale5193-rhel88"
+  default     = "hpcc-scale5201-rhel88"
   description = "Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy the Spectrum Scale storage cluster. By default, our automation uses a base image plus the Spectrum Scale software and any other software packages that it requires. If you'd like, you can follow the instructions for [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Scale storage cluster through this offering."
 }
 
@@ -372,10 +372,10 @@ variable "scale_filesystem_block_size" {
 variable "scale_storage_cluster_gui_username" {
   type        = string
   sensitive   = true
-  default = ""
+  default     = ""
   description = "GUI user to perform system management_node and monitoring tasks on storage cluster. Note: Username should be at least 4 characters, any combination of lowercase and uppercase letters."
   validation {
-    condition = var.scale_storage_cluster_gui_username == "" || (length(var.scale_storage_cluster_gui_username) >= 4 && length(var.scale_storage_cluster_gui_username) <= 32)
+    condition     = var.scale_storage_cluster_gui_username == "" || (length(var.scale_storage_cluster_gui_username) >= 4 && length(var.scale_storage_cluster_gui_username) <= 32)
     error_message = "Specified input for \"storage_cluster_gui_username\" is not valid. username should be greater or equal to 4 letters."
   }
 }
@@ -386,7 +386,7 @@ variable "scale_storage_cluster_gui_password" {
   default     = ""
   description = "Password for Spectrum Scale storage cluster GUI. Note: Password should be at least 8 characters, must have one number, one lowercase letter, one uppercase letter, and at least one unique character. Password should not contain username."
   validation {
-    condition = var.scale_storage_cluster_gui_password == "" || (length(var.scale_storage_cluster_gui_password) >= 8 && length(var.scale_storage_cluster_gui_password) <= 32)
+    condition     = var.scale_storage_cluster_gui_password == "" || (length(var.scale_storage_cluster_gui_password) >= 8 && length(var.scale_storage_cluster_gui_password) <= 32)
     error_message = "Password should be at least 8 characters, must have one number, one lowercase letter, and one uppercase letter, at least one unique character. Password Should not contain username."
   }
 }
@@ -397,7 +397,7 @@ variable "scale_compute_cluster_gui_username" {
   default     = ""
   description = "GUI user to perform system management_node and monitoring tasks on compute cluster. Note: Username should be at least 4 characters, any combination of lowercase and uppercase letters."
   validation {
-    condition = var.scale_compute_cluster_gui_username == "" || (length(var.scale_compute_cluster_gui_username) >= 4 && length(var.scale_compute_cluster_gui_username) <= 32)
+    condition     = var.scale_compute_cluster_gui_username == "" || (length(var.scale_compute_cluster_gui_username) >= 4 && length(var.scale_compute_cluster_gui_username) <= 32)
     error_message = "Specified input for \"storage_cluster_gui_username\" is not valid. username should be greater or equal to 4 letters."
   }
 }
@@ -408,7 +408,7 @@ variable "scale_compute_cluster_gui_password" {
   default     = ""
   description = "Password for compute cluster GUI. Note: Password should be at least 8 characters, must have one number, one lowercase letter, one uppercase letter, and at least one unique character. Password should not contain username."
   validation {
-    condition =  var.scale_compute_cluster_gui_password == "" || (length(var.scale_compute_cluster_gui_password) >= 8 && length(var.scale_compute_cluster_gui_password) <= 32)
+    condition     = var.scale_compute_cluster_gui_password == "" || (length(var.scale_compute_cluster_gui_password) >= 8 && length(var.scale_compute_cluster_gui_password) <= 32)
     error_message = "Password should be at least 8 characters, must have one number, one lowercase letter, and one uppercase letter, at least one unique character. Password Should not contain username."
   }
 }
@@ -425,8 +425,8 @@ variable "scale_compute_cluster_filesystem_mountpoint" {
 }
 
 variable "TF_WAIT_DURATION" {
-  type = string
-  default = "180s"
+  type        = string
+  default     = "180s"
   description = "wait duration time set for the storage and worker node to complete the entire setup"
 }
 
@@ -435,7 +435,7 @@ variable "storage_type" {
   default     = "scratch"
   description = "Select the Spectrum Scale file system deployment method. Note: The Spectrum Scale scratch type deploys the Spectrum Scale file system on virtual server instances, and the persistent type deploys the Spectrum Scale file system on bare metal servers."
   validation {
-    condition = can(regex("^(scratch|persistent)$", lower(var.storage_type)))
+    condition     = can(regex("^(scratch|persistent)$", lower(var.storage_type)))
     error_message = "The solution only support scratch and persistent. Provide any one of the value."
   }
 }

@@ -285,17 +285,16 @@ function update_hosts
     rm -f /tmp/hosts
 }
 
-# Symphony Version is updated to 7.3.2 but the file name is still IBMCloudSym731Cluster as the new binary is not updated
 function update_clusterid
 {
     #change cluster ID
     if [ "${clusterID}" != "" ]; then
         echo "Renaming cluster to ${clusterID}"
-        if [ -f ${EGO_TOP}/kernel/conf/ego.cluster.IBMCloudSym731Cluster ]; then
-            mv ${EGO_TOP}/kernel/conf/ego.cluster.IBMCloudSym731Cluster ${EGO_TOP}/kernel/conf/ego.cluster.${clusterID}
+        if [ -f ${EGO_TOP}/kernel/conf/ego.cluster.IBMCloudSym732Cluster ]; then
+            mv ${EGO_TOP}/kernel/conf/ego.cluster.IBMCloudSym732Cluster ${EGO_TOP}/kernel/conf/ego.cluster.${clusterID}
         fi
         if [ -f ${EGO_TOP}/kernel/conf/ego.shared ]; then
-            sed -i -e "s|IBMCloudSym731Cluster|${clusterID}|g" ${EGO_TOP}/kernel/conf/ego.shared
+            sed -i -e "s|IBMCloudSym732Cluster|${clusterID}|g" ${EGO_TOP}/kernel/conf/ego.shared
         fi
     fi
 }
@@ -770,6 +769,12 @@ function start_ego
     systemctl status ego
 }
 
+function stop_firewalld {
+  echo "Stopping firewalld"
+  sudo systemctl stop firewalld
+  sudo systemctl disable firewalld
+}
+
 function set_ego_password
 {
     for I in 1 2 3 4 5
@@ -803,6 +808,7 @@ fi
 echo "This host has EGO role ${egoHostRole}"
 
 if [ "${egoHostRole}" == "primary" ]; then
+    stop_firewalld
     mount_nfs
     wait_for_nfs
     clean_shared
@@ -831,6 +837,7 @@ if [ "${egoHostRole}" == "primary" ]; then
     fi
     rm -f $DONE_FILE
 elif [ "${egoHostRole}" == "secondary" ]; then
+    stop_firewalld
     mount_nfs
     wait_for_nfs
     mtu9000
@@ -842,6 +849,7 @@ elif [ "${egoHostRole}" == "secondary" ]; then
     config_symfailover
     start_ego
 elif [ "${egoHostRole}" == "management_node" ]; then
+    stop_firewalld
     mount_nfs
     wait_for_nfs
     mtu9000
@@ -853,6 +861,7 @@ elif [ "${egoHostRole}" == "management_node" ]; then
     config_symmanagement
     start_ego
 elif [ "${egoHostRole}" == "scale_storage" ]; then
+    stop_firewalld
     config_hyperthreading
     mount_nfs
     wait_for_nfs
@@ -864,6 +873,7 @@ elif [ "${egoHostRole}" == "scale_storage" ]; then
     scale_update_worker_hostname
     copy_sshkey
 else
+    stop_firewalld
     config_hyperthreading
     mount_nfs_readonly
     wait_for_nfs
