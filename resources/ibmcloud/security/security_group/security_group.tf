@@ -3,7 +3,7 @@
 # Licensed under the Apache License v2.0
 ###################################################
 
- terraform {
+terraform {
   required_providers {
     ibm = {
       source = "IBM-Cloud/ibm"

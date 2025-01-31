@@ -34,19 +34,17 @@ locals {
   remove_sg_rule_script_path = "${path.module}/resources/common/remove_security_rule.py"
 
   // Stock image is used for the creation of login and nfs_storage node.
-  stock_image_name = "ibm-redhat-8-8-minimal-amd64-4"
+  stock_image_name = "ibm-redhat-8-10-minimal-amd64-2"
 }
 
 locals {
   script_map = {
-    "storage"          = file("${path.module}/scripts/user_data_input_storage.tpl")
     "primary"          = file("${path.module}/scripts/user_data_input_primary.tpl")
     "management_node"  = file("${path.module}/scripts/user_data_input_management_node.tpl")
     "worker"           = file("${path.module}/scripts/user_data_input_worker.tpl")
     "spectrum_storage" = file("${path.module}/scripts/user_data_spectrum_storage.tpl")
     "windows"          = file("${path.module}/scripts/windows_worker_user_data.ps1")
   }
-  storage_template_file          = lookup(local.script_map, "storage")
   primary_template_file          = lookup(local.script_map, "primary")
   management_node_template_file  = lookup(local.script_map, "management_node")
   worker_template_file           = lookup(local.script_map, "worker")
@@ -69,15 +67,10 @@ locals {
   new_image_id              = local.image_mapping_entry_found ? lookup(lookup(local.image_region_map, var.image_name), local.region_name) : "Image not found with the given name"
 
   // Use existing VPC if var.vpc_name is not empty
-  vpc_name = var.vpc_name == "" ? module.vpc.*.name[0] : data.ibm_is_vpc.existing_vpc.*.name[0]
-}
-
-data "template_file" "storage_user_data" {
-  template = local.storage_template_file
-  vars = {
-    hf_cidr_block  = module.subnet.ipv4_cidr_block
-    spectrum_scale = var.spectrum_scale_enabled
-  }
+  vpc_name                = var.vpc_name == "" ? module.vpc.*.name[0] : data.ibm_is_vpc.existing_vpc.*.name[0]
+  cluster_file_share_size = 10
+  cluster_file_share_iops = 1000
+  cluster_file_mount_path = "/mnt/symphony"
 }
 
 data "template_file" "primary_user_data" {
@@ -98,7 +91,9 @@ data "template_file" "primary_user_data" {
     hf_ncores           = local.hf_ncores
     hf_mem_in_mb        = local.mem_in_mb
     hf_max_num          = local.hf_max_num
-    storage_ips         = join(" ", local.storage_ips)
+    client_mount_path   = module.cluster_file_share.mount_path
+    custom_storage_ips  = join(" ", [for file_share in module.custom_file_share[*].mount_path : file_share])
+    custom_mount_paths  = join(" ", [for mount_path in var.custom_file_shares[*]["mount_path"] : mount_path])
     cluster_id          = local.cluster_name
     host_prefix         = var.cluster_prefix
     mgmt_count          = var.management_node_count
@@ -112,6 +107,8 @@ data "template_file" "primary_user_data" {
     EgoPassword         = local.EgoPassword
     worker_node_type    = var.worker_node_type
     storage_type        = var.storage_type
+    windows_fs_bucket   = "${var.cluster_prefix}-win-fileshare"
+    mount_path          = local.cluster_file_mount_path
   }
 }
 
@@ -120,7 +117,9 @@ data "template_file" "secondary_user_data" {
   vars = {
     vpc_apikey_value    = var.api_key
     hf_cidr_block       = module.subnet.ipv4_cidr_block
-    storage_ips         = join(" ", local.storage_ips)
+    client_mount_path   = module.cluster_file_share.mount_path
+    custom_storage_ips  = join(" ", [for file_share in module.custom_file_share[*].mount_path : file_share])
+    custom_mount_paths  = join(" ", [for mount_path in var.custom_file_shares[*]["mount_path"] : mount_path])
     cluster_id          = local.cluster_name
     host_prefix         = var.cluster_prefix
     mgmt_count          = var.management_node_count
@@ -134,6 +133,8 @@ data "template_file" "secondary_user_data" {
     EgoPassword         = local.EgoPassword
     worker_node_type    = var.worker_node_type
     storage_type        = var.storage_type
+    windows_fs_bucket   = local.windows_fs_bucket
+    mount_path          = local.cluster_file_mount_path
   }
 }
 
@@ -142,7 +143,9 @@ data "template_file" "management_node_user_data" {
   vars = {
     vpc_apikey_value    = var.api_key
     hf_cidr_block       = module.subnet.ipv4_cidr_block
-    storage_ips         = join(" ", local.storage_ips)
+    client_mount_path   = module.cluster_file_share.mount_path
+    custom_storage_ips  = join(" ", [for file_share in module.custom_file_share[*].mount_path : file_share])
+    custom_mount_paths  = join(" ", [for mount_path in var.custom_file_shares[*]["mount_path"] : mount_path])
     cluster_id          = local.cluster_name
     host_prefix         = var.cluster_prefix
     mgmt_count          = var.management_node_count
@@ -156,13 +159,17 @@ data "template_file" "management_node_user_data" {
     EgoPassword         = local.EgoPassword
     worker_node_type    = var.worker_node_type
     storage_type        = var.storage_type
+    windows_fs_bucket   = local.windows_fs_bucket
+    mount_path          = local.cluster_file_mount_path
   }
 }
 
 data "template_file" "worker_user_data" {
   template = local.worker_template_file
   vars = {
-    storage_ips         = join(" ", local.storage_ips)
+    client_mount_path   = module.cluster_file_share.mount_path
+    custom_storage_ips  = join(" ", [for file_share in module.custom_file_share[*].mount_path : file_share])
+    custom_mount_paths  = join(" ", [for mount_path in var.custom_file_shares[*]["mount_path"] : mount_path])
     cluster_id          = local.cluster_name
     mgmt_count          = var.management_node_count
     dns_domain_name     = var.vpc_worker_dns_domain
@@ -175,6 +182,8 @@ data "template_file" "worker_user_data" {
     EgoPassword         = local.EgoPassword
     worker_node_type    = var.worker_node_type
     storage_type        = var.storage_type
+    windows_fs_bucket   = local.windows_fs_bucket
+    mount_path          = local.cluster_file_mount_path
   }
 }
 
@@ -182,18 +191,20 @@ data "template_file" "worker_user_data" {
 data "template_file" "scale_storage_user_data" {
   template = local.spectrum_storage_template_file
   vars = {
-    ego_host_role    = "scale_storage"
-    storage_ips      = join(" ", local.storage_ips)
-    cluster_id       = local.cluster_name
-    dns_domain_name  = var.vpc_scale_storage_dns_domain
-    mgmt_count       = var.management_node_count
-    hyperthreading   = var.hyperthreading_enabled
-    cluster_cidr     = module.subnet.ipv4_cidr_block
-    spectrum_scale   = var.spectrum_scale_enabled
-    temp_public_key  = local.vsi_login_temp_public_key
-    worker_node_type = var.worker_node_type
-    storage_type     = var.storage_type
-
+    ego_host_role      = "scale_storage"
+    client_mount_path  = module.cluster_file_share.mount_path
+    custom_storage_ips = join(" ", [for file_share in module.custom_file_share[*].mount_path : file_share])
+    custom_mount_paths = join(" ", [for mount_path in var.custom_file_shares[*]["mount_path"] : mount_path])
+    cluster_id         = local.cluster_name
+    dns_domain_name    = var.vpc_scale_storage_dns_domain
+    mgmt_count         = var.management_node_count
+    hyperthreading     = var.hyperthreading_enabled
+    cluster_cidr       = module.subnet.ipv4_cidr_block
+    spectrum_scale     = var.spectrum_scale_enabled
+    temp_public_key    = local.vsi_login_temp_public_key
+    worker_node_type   = var.worker_node_type
+    storage_type       = var.storage_type
+    mount_path         = local.cluster_file_mount_path
   }
 }
 
@@ -449,23 +460,23 @@ locals {
   custom_ipv4_subnet_node_count = join(",", var.vpc_cluster_private_subnets_cidr_blocks) != "" ? parseint(regex("/(\\d+)$", join(",", var.vpc_cluster_private_subnets_cidr_blocks))[0], 10) : 0
   total_custom_ipv4_node_count  = pow(2, 32 - local.custom_ipv4_subnet_node_count)
 
-  storage_ips = [
-    for idx in range(1) :
+  client_mount_path = [
+    for idx in range(4) :
     cidrhost(module.subnet.ipv4_cidr_block, idx + local.first_ip_idx)
   ]
   spectrum_storage_node_count = var.spectrum_scale_enabled ? var.scale_storage_node_count : 0
   spectrum_storage_ips = [
     for idx in range(local.spectrum_storage_node_count) :
-    cidrhost(module.subnet.ipv4_cidr_block, idx + local.first_ip_idx + length(local.storage_ips))
+    cidrhost(module.subnet.ipv4_cidr_block, idx + local.first_ip_idx + length(local.client_mount_path))
   ]
   management_node_ips = [
     for idx in range(var.management_node_count) :
-    cidrhost(module.subnet.ipv4_cidr_block, idx + local.first_ip_idx + length(local.storage_ips) + length(local.spectrum_storage_ips))
+    cidrhost(module.subnet.ipv4_cidr_block, idx + local.first_ip_idx + length(local.client_mount_path) + length(local.spectrum_storage_ips))
   ]
 
   worker_ips = [
     for idx in range(var.worker_node_min_count) :
-    cidrhost(module.subnet.ipv4_cidr_block, idx + local.first_ip_idx + length(local.storage_ips) + length(local.spectrum_storage_ips) + length(local.management_node_ips))
+    cidrhost(module.subnet.ipv4_cidr_block, idx + local.first_ip_idx + length(local.client_mount_path) + length(local.spectrum_storage_ips) + length(local.management_node_ips))
   ]
 
   vsi_login_private_key     = module.login_ssh_key.private_key
@@ -479,32 +490,8 @@ locals {
   dns_reserved_ip = join("", flatten(toset([for details in data.ibm_is_subnet_reserved_ips.dns_reserved_ips : flatten(details[*].reserved_ips[*].target_crn)])))
   dns_service_id  = local.dns_reserved_ip == "" ? "" : split(":", local.dns_reserved_ip)[7]
   dns_instance_id = local.dns_reserved_ip == "" ? module.dns_service[0].resource_guid : local.dns_service_id
-}
 
-module "nfs_storage" {
-  source               = "./resources/ibmcloud/compute/nfs_storage_vsi"
-  count                = 1
-  vsi_name             = "${var.cluster_prefix}-storage-${count.index}"
-  image                = data.ibm_is_image.stock_image.id
-  profile              = data.ibm_is_instance_profile.storage.name
-  vpc                  = data.ibm_is_vpc.vpc.id
-  zone                 = data.ibm_is_zone.zone.name
-  keys                 = local.ssh_key_id_list
-  resource_group       = data.ibm_resource_group.rg.id
-  user_data            = "${data.template_file.storage_user_data.rendered} ${file("${path.module}/scripts/user_data_storage.sh")}"
-  subnet_id            = module.subnet.subnet_id
-  security_group       = [module.sg.sg_id]
-  volumes              = [module.nfs_volume.nfs_volume_id]
-  primary_ipv4_address = local.storage_ips[count.index]
-  tags                 = local.tags
-  instance_id          = local.dns_instance_id
-  zone_id              = module.worker_zone.dns_zone_id
-  dns_domain           = var.vpc_worker_dns_domain
-  depends_on = [
-    module.inbound_sg_ingress_all_local_rule,
-    module.inbound_sg_ingress_all_local_rule,
-    module.outbound_sg_rule
-  ]
+  windows_fs_bucket = "${var.cluster_prefix}-win-fileshare"
 }
 
 module "primary_vsi" {
@@ -527,7 +514,7 @@ module "primary_vsi" {
   dns_domain           = var.vpc_worker_dns_domain
   depends_on = [
     module.login_ssh_key,
-    module.nfs_storage,
+    module.cluster_file_share,
     module.inbound_sg_rule,
     module.inbound_sg_ingress_all_local_rule,
     module.outbound_sg_rule
@@ -578,7 +565,7 @@ module "secondary_vsi" {
   zone_id              = module.worker_zone.dns_zone_id
   dns_domain           = var.vpc_worker_dns_domain
   depends_on = [
-    module.nfs_storage,
+    module.cluster_file_share,
     module.primary_vsi,
     module.inbound_sg_ingress_all_local_rule,
     module.inbound_sg_rule,
@@ -606,7 +593,7 @@ module "management_node_vsi" {
   zone_id              = module.worker_zone.dns_zone_id
   dns_domain           = var.vpc_worker_dns_domain
   depends_on = [
-    module.nfs_storage,
+    module.cluster_file_share,
     module.primary_vsi,
     module.secondary_vsi,
     module.inbound_sg_ingress_all_local_rule,
@@ -635,7 +622,7 @@ module "spectrum_scale_storage" {
   instance_id          = local.dns_instance_id
   zone_id              = module.storage_zone[0].dns_zone_id
   dns_domain           = var.vpc_scale_storage_dns_domain
-  depends_on           = [module.login_vsi, module.nfs_storage, module.primary_vsi, module.management_node_vsi, module.inbound_sg_rule, module.inbound_sg_ingress_all_local_rule, module.outbound_sg_rule]
+  depends_on           = [module.login_vsi, module.cluster_file_share, module.primary_vsi, module.management_node_vsi, module.inbound_sg_rule, module.inbound_sg_ingress_all_local_rule, module.outbound_sg_rule]
 }
 
 // The module is used to create the compute vsi instance based on the type of node_type required for deployment
@@ -659,7 +646,7 @@ module "worker_vsi" {
   zone_id              = module.worker_zone.dns_zone_id
   dns_domain           = var.vpc_worker_dns_domain
   depends_on = [
-    module.nfs_storage,
+    module.cluster_file_share,
     module.primary_vsi,
     module.secondary_vsi,
     module.management_node_vsi,
@@ -711,17 +698,6 @@ module "storage_bare_metal_server_cluster" {
   zone_id        = module.storage_zone[0].dns_zone_id
   dns_domain     = var.vpc_scale_storage_dns_domain
   depends_on     = [module.primary_vsi, module.secondary_vsi, module.management_node_vsi, module.inbound_sg_ingress_all_local_rule, module.inbound_sg_rule, module.outbound_sg_rule, module.spectrum_scale_storage]
-}
-
-module "nfs_volume" {
-  source         = "./resources/ibmcloud/network/nfs_volume"
-  nfs_name       = "${var.cluster_prefix}-vm-nfs-volume"
-  profile        = data.ibm_is_volume_profile.nfs.name
-  iops           = data.ibm_is_volume_profile.nfs.name == "custom" ? var.volume_iops : null
-  capacity       = var.volume_capacity
-  zone           = data.ibm_is_zone.zone.name
-  resource_group = data.ibm_resource_group.rg.id
-  tags           = local.tags
 }
 
 module "login_fip" {
@@ -787,12 +763,10 @@ Symphony Windows related steps
 
 locals {
 
-  EgoUserName = "egoadmin"
-  EgoPassword = "Symphony@123"
-
+  EgoUserName                = "egoadmin"
+  EgoPassword                = "Symphony@123" // pragma: allowlist secret
   windows_worker_node_prefix = "-w"
-
-  windows_template_file = lookup(local.script_map, "windows")
+  windows_template_file      = lookup(local.script_map, "windows")
   // Check whether an entry is found in the mapping file for the given symphony compute node image for windows
   windows_image_mapping_entry_found = contains(keys(local.image_region_map), var.windows_image_name)
   new_windows_image_id              = local.windows_image_mapping_entry_found ? lookup(lookup(local.image_region_map, var.windows_image_name), local.region_name) : "Image not found with the given name"
@@ -803,13 +777,18 @@ data "template_file" "windows_worker_user_data" {
   count    = var.windows_worker_node ? var.worker_node_min_count : 0
   template = local.windows_template_file
   vars = {
-    storage_ip      = join(" ", local.storage_ips)
-    EgoUserName     = local.EgoUserName
-    EgoPassword     = local.EgoPassword
-    computer_name   = "${var.cluster_prefix}${local.windows_worker_node_prefix}${count.index}"
-    cluster_id      = local.cluster_name
-    mgmt_count      = var.management_node_count
-    dns_domain_name = var.vpc_worker_dns_domain
+    storage_ip          = module.cluster_file_share.mount_path
+    EgoUserName         = local.EgoUserName
+    EgoPassword         = local.EgoPassword
+    computer_name       = "${var.cluster_prefix}${local.windows_worker_node_prefix}${count.index}"
+    cluster_id          = local.cluster_name
+    mgmt_count          = var.management_node_count
+    dns_domain_name     = var.vpc_worker_dns_domain
+    bucket_name         = local.windows_fs_bucket
+    access_key_id       = module.windows_cos_fs[0].resourcekey.credentials["cos_hmac_keys.access_key_id"]
+    secret_access_key   = module.windows_cos_fs[0].resourcekey.credentials["cos_hmac_keys.secret_access_key"]
+    endpoint            = "s3.${local.region_name}.cloud-object-storage.appdomain.cloud"
+    location_constraint = "${local.region_name}-standard"
   }
 }
 
@@ -881,7 +860,7 @@ locals {
   bastion_ssh_private_key     = null
 
   // scale version installed on custom images.
-  scale_version = "5.2.0.1"
+  scale_version = "5.2.1.1"
 
   // cloud platform as IBMCloud, required for ansible playbook.
   cloud_platform = "IBMCloud"
@@ -911,7 +890,7 @@ locals {
   compute_vsi_by_ip = concat(module.primary_vsi[*].primary_network_interface, module.secondary_vsi[*].primary_network_interface, module.management_node_vsi[*].primary_network_interface, module.worker_vsi[*].primary_network_interface, module.bare_metal_server[*].primary_network_interface)
 
   // RHEL OS version used for the creation of Baremetal servers i.e.(Worker_node_type="baremetal" and storage_type="persistent")
-  bare_metal_server_osimage_name = "ibm-redhat-8-8-minimal-amd64-2"
+  bare_metal_server_osimage_name = "ibm-redhat-8-10-minimal-amd64-2"
 
 }
 
@@ -1217,4 +1196,41 @@ resource "null_resource" "delete_schematics_ingress_security_rule" { # This code
         EOT
   }
   depends_on = [module.remove_ssh_key, module.schematics_sg_tcp_rule, null_resource.entitlement_check]
+}
+
+module "cluster_file_share" {
+  source          = "./resources/ibmcloud/storage/file_share/"
+  name            = "${var.cluster_prefix}-cluster-share"
+  resource_group  = data.ibm_resource_group.rg.id
+  size            = local.cluster_file_share_size
+  iops            = local.cluster_file_share_iops
+  zone            = data.ibm_is_zone.zone.name
+  subnet_id       = module.subnet.subnet_id
+  security_groups = [module.sg.sg_id]
+  tags            = local.tags
+  vpcid           = data.ibm_is_vpc.vpc.id
+}
+
+module "custom_file_share" {
+  source         = "./resources/ibmcloud/storage/file_share/"
+  count          = length(var.custom_file_shares)
+  name           = "${var.cluster_prefix}-custom-share-${count.index + 1}"
+  resource_group = data.ibm_resource_group.rg.id
+  size           = var.custom_file_shares[count.index]["size"]
+  iops           = var.custom_file_shares[count.index]["iops"]
+
+  zone            = data.ibm_is_zone.zone.name
+  subnet_id       = module.subnet.subnet_id
+  security_groups = [module.sg.sg_id]
+  tags            = local.tags
+  vpcid           = data.ibm_is_vpc.vpc.id
+}
+
+### creating COS bucket for file share
+module "windows_cos_fs" {
+  count             = var.windows_worker_node ? 1 : 0
+  source            = "./resources/ibmcloud/storage/windows_cos_fs/"
+  resource_group_id = data.ibm_resource_group.rg.id
+  region_location   = "us-south"
+  cluster_prefix    = var.cluster_prefix
 }

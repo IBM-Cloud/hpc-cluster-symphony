@@ -52,13 +52,13 @@ resource "ibm_is_bare_metal_server" "bare_metal" {
 }
 
 locals {
-  instance = [ {
-      name = ibm_is_bare_metal_server.bare_metal.name
-      primary_network_interface = ibm_is_bare_metal_server.bare_metal.primary_network_interface[0].primary_ip.0.address
+  instance = [{
+    name                      = ibm_is_bare_metal_server.bare_metal.name
+    primary_network_interface = ibm_is_bare_metal_server.bare_metal.primary_network_interface[0].primary_ip.0.address
     }
   ]
   dns_record_ttl = 300
-  instances = flatten(local.instance)
+  instances      = flatten(local.instance)
 }
 
 // Support lookup by fully qualified domain name
@@ -92,16 +92,16 @@ resource "ibm_dns_resource_record" "dns_resource_record_ptr" {
 
 
 output "bare_metal_server_id" {
-  value = ibm_is_bare_metal_server.bare_metal.id
+  value      = ibm_is_bare_metal_server.bare_metal.id
   depends_on = [ibm_dns_resource_record.dns_record_record_a, ibm_dns_resource_record.dns_resource_record_ptr]
 }
 
 output "primary_network_interface" {
-  value = ibm_is_bare_metal_server.bare_metal.primary_network_interface[0].primary_ip.0.address
+  value      = ibm_is_bare_metal_server.bare_metal.primary_network_interface[0].primary_ip.0.address
   depends_on = [ibm_dns_resource_record.dns_record_record_a, ibm_dns_resource_record.dns_resource_record_ptr]
 }
 
 output "name" {
-  value = ibm_is_bare_metal_server.bare_metal.name
+  value      = ibm_is_bare_metal_server.bare_metal.name
   depends_on = [ibm_dns_resource_record.dns_record_record_a, ibm_dns_resource_record.dns_resource_record_ptr]
 }

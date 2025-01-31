@@ -38,7 +38,7 @@ resource "null_resource" "call_scale_install_playbook" {
         "scale_version" : var.scale_version,
         "ansible_python_interpreter" : "auto",
         "scale_install_directory_pkg_path" : var.gpfs_rpm_path,
-        "scale_install_prereqs_packages": true
+        "scale_install_prereqs_packages" : true
       }
     }
     ansible_ssh_settings {

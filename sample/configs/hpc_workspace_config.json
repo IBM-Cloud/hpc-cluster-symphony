@@ -15,10 +15,10 @@
       "folder": ".",
       "type": "terraform_v1.5",
       "env_values":[
-        { 
+        {
           "TF_CLI_ARGS_apply": "-parallelism=250"
         },
-        { 
+        {
           "TF_CLI_ARGS_plan": "-parallelism=250"
         },
         {
@@ -29,7 +29,7 @@
         },
         {
           "VAR2":"<val2>"
-        } 
+        }
       ],
       "variablestore": [
         {
@@ -69,7 +69,7 @@
         },
         {
           "name": "image_name",
-          "value": "hpcc-symp732-scale5201-rhel88-v2",
+          "value": "hpcc-symp732-scale5211-rhel810-v1",
           "type": "string",
           "secure": false,
           "description": "Name of the custom image that you want to use to create virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the automation uses a base image with additional software packages mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you would like to include your application-specific binary files, follow the instructions in [ Planning for custom images ](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
@@ -228,7 +228,7 @@
         },
         {
           "name": "scale_storage_image_name",
-          "value": "hpcc-scale5201-rhel88",
+          "value": "hpcc-scale5211-rhel810",
           "type": "string",
           "secure": false,
           "description": "Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy the Spectrum Scale storage cluster. By default, our automation uses a base image plus the Spectrum Scale software and any other software packages that it requires. If you'd like, you can follow the instructions for [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Scale storage cluster through this offering."
@@ -343,6 +343,13 @@
           "value": "scratch",
           "type": "string",
           "description": "Select the Spectrum Scale file system deployment method. Note: The Spectrum Scale scratch type deploys the Spectrum Scale file system on virtual server instances, and the persistent type deploys the Spectrum Scale file system on bare metal servers."
+        },
+        {
+          "name": "custom_file_shares",
+          "value": "[{ mount_path = \"/mnt/vpcstorage/tools\", size = 100, iops = 2000 }, { mount_path = \"/mnt/vpcstorage/data\", size = 100, iops = 6000 }]",
+          "type": "list(object({mount_path = string,size = number,iops = number}))",
+          "secure": false,
+          "description": "Mount points and sizes in GB and IOPS range of file shares that can be used to customize shared file storage layout. Provide the details for up to 5 shares. Each file share size in GB supports different range of IOPS. For more information, see [file share IOPS value](https://cloud.ibm.com/docs/vpc?topic=vpc-file-storage-profiles&interface=ui)"
         }
       ]
     }

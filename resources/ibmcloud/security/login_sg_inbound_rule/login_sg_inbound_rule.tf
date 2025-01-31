@@ -16,7 +16,7 @@ variable "remote_allowed_ips" {}
 
 
 resource "ibm_is_security_group_rule" "login_ingress_tcp" {
-  count = length(var.remote_allowed_ips)
+  count     = length(var.remote_allowed_ips)
   group     = var.group
   direction = "inbound"
   remote    = var.remote_allowed_ips[count.index]

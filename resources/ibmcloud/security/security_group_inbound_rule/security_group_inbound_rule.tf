@@ -24,14 +24,3 @@ resource "ibm_is_security_group_rule" "ingress_tcp" {
     port_max = 22
   }
 }
-
-
-resource "ibm_is_security_group_rule" "ingress_icmp" {
-  group     = var.group
-  direction = "inbound"
-  remote    = "0.0.0.0/0"
-  icmp {
-    code = 0
-    type = 8
-  }
-}

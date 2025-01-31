@@ -50,13 +50,13 @@ resource "ibm_is_instance" "windows_worker" {
 }
 
 locals {
-  instance = [ {
-      name = var.vsi_name
-      primary_network_interface = var.primary_ipv4_address
+  instance = [{
+    name                      = var.vsi_name
+    primary_network_interface = var.primary_ipv4_address
     }
   ]
   dns_record_ttl = 300
-  instances = flatten(local.instance)
+  instances      = flatten(local.instance)
 }
 
 // Support lookup by fully qualified domain name
@@ -88,6 +88,6 @@ resource "ibm_dns_resource_record" "dns_resource_record_ptr" {
   depends_on  = [ibm_dns_resource_record.dns_record_record_a]
 }
 output "windows_worker_id" {
-  value = ibm_is_instance.windows_worker.id
+  value      = ibm_is_instance.windows_worker.id
   depends_on = [ibm_dns_resource_record.dns_record_record_a, ibm_dns_resource_record.dns_resource_record_ptr]
 }

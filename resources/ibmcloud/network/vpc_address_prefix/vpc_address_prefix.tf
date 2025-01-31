@@ -27,12 +27,12 @@ variable "zones" {}
 variable "cidr_block" {}
 
 resource "ibm_is_vpc_address_prefix" "itself" {
-  count = length(var.cidr_block)
-  name  = var.address_name
-  zone  = var.zones
-  vpc   = var.vpc_id
+  count      = length(var.cidr_block)
+  name       = var.address_name
+  zone       = var.zones
+  vpc        = var.vpc_id
   is_default = true
-  cidr  = element(var.cidr_block, count.index)
+  cidr       = element(var.cidr_block, count.index)
 }
 #Expose the VPC address prefix id to the parent module
 output "vpc_addr_prefix_id" {

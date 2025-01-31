@@ -7,11 +7,11 @@
 
 
 3. The source image should be able to install the [prerequisites](https://www.ibm.com/docs/en/spectrum-scale/5.1.5?topic=gpfs-software-requirements) for Spectrum Scale.
-   
-   **Note**: The `kernel-devel` package should have same version as `kernel` package. 
+
+   **Note**: The `kernel-devel` package should have same version as `kernel` package.
 
 
-4. Download the IBM Spectrum Scale Data Management Edition install package (from [Fix Central](https://www.ibm.com/support/fixcentral)). 
+4. Download the IBM Spectrum Scale Data Management Edition install package (from [Fix Central](https://www.ibm.com/support/fixcentral)).
    1. On the **Find product** tab, enter _IBM Spectrum Scale (Software defined storage)_ in the **Product selector** field.
    2. For **Installed Version**, select the version for your custom image creation.
    3. For **Platform**, select Linux 64-bit,x86_64.
@@ -41,7 +41,7 @@
    gpfs.license.dm-5.1.7-0.x86_64.rpm
    gpfs.msg.en_US-5.1.7-0.noarch.rpm
     ```
-   
+
    **Note**: Ensure that you use the same Spectrum Scale packages for the worker custom image.
 
 
@@ -58,14 +58,14 @@ The following steps provision the IBM Cloud VSI, install IBM Spectrum Scale RPM'
    ```
 
 2. Create packer variable definitions file (`inputs.auto.pkrvars.hcl`) and provide infrastructure inputs.
-    
-   **Note**: The `vpc_subnet_id` and `source_image_name` should belong to `vpc_region` variable value. 
+
+   **Note**: The `vpc_subnet_id` and `source_image_name` should belong to `vpc_region` variable value.
 
    Minimal Example:
 
    ```jsonc
    $ cat inputs.auto.pkrvars.hcl
-   ibm_api_key = "<IBMCloud_api_key>"
+   ibm_api_key = "<IBMCloud_api_key>" // pragma: allowlist secret
    vpc_region = "<IBMCloud_supported_region_name>"
    resource_group_id = "<Existing_resource_group_id>"
    vpc_subnet_id = "<Existing_subnet_id_from_provided_vpc_region>"
@@ -100,4 +100,3 @@ The following steps provision the IBM Cloud VSI, install IBM Spectrum Scale RPM'
 | <a name="input_vpc_region"></a> [vpc\_region](#input\_vpc\_region) | The region where IBM Cloud operations takes place (for example, us-east, us-south, etc.) | `string` | n/a | yes |
 | <a name="input_vpc_subnet_id"></a> [vpc\_subnet\_id](#input\_vpc\_subnet\_id) | The subnet ID to use for the instance. | `string` | n/a | yes |
 | <a name="input_vsi_profile"></a> [vsi\_profile](#input\_vsi\_profile) | The IBM Cloud VSI type to use while building the custom image. | `string` | `"bx2d-2x8"` | no |
-
