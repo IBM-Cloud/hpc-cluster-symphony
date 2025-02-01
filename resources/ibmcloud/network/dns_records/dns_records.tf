@@ -12,13 +12,13 @@ terraform {
 }
 
 variable "instances" {}
-variable "instance_id"{}
+variable "instance_id" {}
 variable "zone_id" {}
 variable "dns_domain" {}
 
 locals {
-    dns_record_ttl = 300
-    instances = flatten(var.instances)
+  dns_record_ttl = 300
+  instances      = flatten(var.instances)
 }
 
 // Support lookup by fully qualified domain name

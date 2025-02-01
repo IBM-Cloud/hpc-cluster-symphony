@@ -1,4 +1,10 @@
 # **CHANGELOG**
+## **1.7.0**
+### ENHANCEMENTS
+- Support for Symphony Linux 7.3.2 Build601706, Build602082, Build602143, Build602148, Build602149, Build602158, Build602161, Build602162, Build602163, Build602185, Build602225 fix patches.
+- Support for Symphony Windows 7.3.2 Build602163, Build602210 fix patches.
+- Spectrum Scale version has been updated from 5.2.0.1 to 5.2.1.1.
+- Support for vpc fileshare for rhel and Cos fileshare for windows.
 ## **1.6.2**
 ### ENHANCEMENTS
 - Support for Symphony Linux 7.3.2 Build602125, Build602100, Build602094, Build602071, Build602061, Build602068, Build602039 fix patches.
@@ -17,7 +23,7 @@
 - Support for Symphony Linux 7.3.2 Build601711 fix patch.
 - Symphony Windows has been updated from version 7.3.1 to 7.3.2 and also have Build601711 fix patch.
 - Spectrum Scale version has been updated from 5.1.7.0 to 5.1.9.0.
-- Symphony Linux OS upgraded from RHEL 8.6 to RHEL 8.8. 
+- Symphony Linux OS upgraded from RHEL 8.6 to RHEL 8.8.
 
 ## **1.5.0**
 ### ENHANCEMENTS
@@ -62,7 +68,7 @@
 ## **1.2.2**
 ### **CHANGES**
 - RHEL 8.4 Custom image updated with polkit vulnerability fix.
-- Fixed bug to use users custom image for scale storage nodes. 
+- Fixed bug to use users custom image for scale storage nodes.
 - Fixed bug to create dynamic host with different resource group.
 - Fixed fip issue with ssh allowed ips provided.
 - Scale version has been updated from 5.1.2 to 5.1.3.1.

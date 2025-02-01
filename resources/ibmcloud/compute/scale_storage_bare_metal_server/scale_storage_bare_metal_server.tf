@@ -66,7 +66,7 @@ locals {
 
 // Support lookup by fully qualified domain name
 resource "ibm_dns_resource_record" "dns_record_record_a" {
-   for_each = {
+  for_each = {
     for idx, count_number in range(1, var.total_vsis + 1) : idx => {
       name       = element(tolist([for name_details in ibm_is_bare_metal_server.itself : name_details.name]), idx)
       network_ip = element(tolist([for ip_details in ibm_is_bare_metal_server.itself : ip_details.primary_network_interface[0]["primary_ip"][0]["address"]]), idx)
@@ -83,7 +83,7 @@ resource "ibm_dns_resource_record" "dns_record_record_a" {
 
 // Support lookup by ip address returning fully qualified domain name
 resource "ibm_dns_resource_record" "dns_resource_record_ptr" {
-   for_each = {
+  for_each = {
     for idx, count_number in range(1, var.total_vsis + 1) : idx => {
       name       = element(tolist([for name_details in ibm_is_bare_metal_server.itself : name_details.name]), idx)
       network_ip = element(tolist([for ip_details in ibm_is_bare_metal_server.itself : ip_details.primary_network_interface[0]["primary_ip"][0]["address"]]), idx)
@@ -117,7 +117,7 @@ output "instance_ips_with_vol_mapping" {
 }
 
 output "instance_private_dns_ip_map" {
-  value = try({ for instance_details in ibm_is_bare_metal_server.itself : instance_details.primary_network_interface[0]["primary_ip"][0]["address"] => instance_details.private_dns }, {})
+  value      = try({ for instance_details in ibm_is_bare_metal_server.itself : instance_details.primary_network_interface[0]["primary_ip"][0]["address"] => instance_details.private_dns }, {})
   depends_on = [ibm_is_bare_metal_server.itself, ibm_dns_resource_record.dns_record_record_a, ibm_dns_resource_record.dns_resource_record_ptr]
 
 }

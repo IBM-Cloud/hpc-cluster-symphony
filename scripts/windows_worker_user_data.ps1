@@ -83,42 +83,126 @@ Function Edit-EgoConfigFile {
     }
 }
 
-Function Mount-NFS {
+
+
+Function sync-cos {
     <#
     .SYNOPSIS
-        Create SymbolicLink to NFS.
+        sync cos bucket to local
     #>
 
     [CmdletBinding()]
         param(
             [Parameter(Mandatory = $true)]
-            [string]$StorageIP,
-            
-            [Parameter(Mandatory = $true)]
-            [string]$ShareName,
+            [string]$access_key_id,
 
             [Parameter(Mandatory = $true)]
-            [string]$MountPoint
+            [string]$secret_access_key,
+
+            [Parameter(Mandatory = $true)]
+            [string]$endpoint,
+
+            [Parameter(Mandatory = $true)]
+            [string]$location_constraint,
+
+            [Parameter(Mandatory = $true)]
+            [string]$bucket_name
         )
 
     try {
 
-        #Install NFS-Client to Mount NFS
-        Write-Log -Level Info "Installing Windows Feature - NFS-Client"
-        Install-WindowsFeature NFS-Client
-        Write-Log -Level Info "Windows Feature - NFS-Client Installed successfully"
-        Write-Log -Level Info "Creating SymbolicLink for NFS with IP $StorageIP to this Server"
-        New-Item -Path $MountPoint -ItemType SymbolicLink -Target \\$StorageIP\$ShareName 
-        if ($lastExitCode -eq 0) { 
-            Write-Log -Level Info "Created SymbolicLink for NFS mount Successful"
-        } else {
-            Write-Log -Level Error "SymbolicLink creation for NFS failed, ExitCode: $lastExitCode"
-        } 
-    } catch {
+# Install rconfig
+# Set variables
+# Set TLS to use version 1.2
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$downloadUrl = "https://downloads.rclone.org/v1.68.1/rclone-v1.68.1-windows-amd64.zip"
+$zipFilePath = "$env:TEMP\rclone-v1.68.1-windows-amd64.zip"
+$extractPath = "$env:TEMP\rclone-extract"
+$destinationPath = "C:\rclone"
+
+# Create destination directory if it doesn't exist
+if (-Not (Test-Path -Path $destinationPath)) {
+    New-Item -ItemType Directory -Path $destinationPath
+
+}
+
+# Download the zip file
+Write-Host "Downloading rclone..."
+Invoke-WebRequest -Uri $downloadUrl -OutFile $zipFilePath -TimeoutSec 360
+
+# Extract the zip file
+Write-Host "Extracting rclone..."
+Expand-Archive -Path $zipFilePath -DestinationPath $extractPath -Force
+
+# Copy the rclone.exe to the destination folder
+Write-Host "Copying rclone.exe to destination folder..."
+Copy-Item -Path "$extractPath\rclone-v1.68.1-windows-amd64\rclone.exe" -Destination $destinationPath
+
+# Clean up (optional)
+Remove-Item -Path $zipFilePath
+Remove-Item -Path $extractPath -Recurse
+
+Write-Host "rclone setup complete!"
+
+# Define the config file path
+$configFilePath = "C:\Users\Administrator.HPCC-SYMPHONY-W\AppData\Roaming\rclone\rclone.conf"
+$configFilePath_egouser = "C:\Users\egoadmin\AppData\Roaming\rclone\rclone.conf"
+
+# Check if the folder exists, if not, create it
+$folderPath = "C:\Users\Administrator.HPCC-SYMPHONY-W\AppData\Roaming\rclone"
+$folderPath_egouser = "C:\Users\egoadmin\AppData\Roaming\rclone"
+if (-not (Test-Path -Path $folderPath)) {
+    New-Item -Path $folderPath -ItemType Directory
+    Write-Host "Folder created at: $folderPath"
+} else {
+    Write-Host "Folder already exists: $folderPath"
+}
+
+if (-not (Test-Path -Path $folderPath_egouser)) {
+    New-Item -Path $folderPath_egouser -ItemType Directory
+    Write-Host "Folder created at: $folderPath_egouser"
+} else {
+    Write-Host "Folder already exists: $folderPath_egouser"
+}
+
+
+# Define the content of the config file with variables
+$configContent = @"
+[Symphony-windows]
+type = s3
+provider = IBMCOS
+env_auth = true
+access_key_id = $access_key_id
+secret_access_key = $secret_access_key
+region = other-v2-signature
+endpoint = $endpoint
+location_constraint = $location_constraint
+acl = public-read
+"@
+
+# Create the config file with the defined content
+$configContent | Out-File -FilePath $configFilePath -Encoding UTF8
+# Create the config file with the defined content
+$configContent | Out-File -FilePath $configFilePath_egouser -Encoding UTF8
+# Output the result
+$configContent | Out-File -FilePath "C:\rclone\rclone.conf" -Encoding UTF8
+
+Write-Host "Config file generated at: $configFilePath"
+
+##Sync the contents
+New-Item -Path C:\NFSShare -ItemType Directory
+Start-Sleep -Seconds 10
+Set-Location -Path C:\rclone\
+Invoke-Expression "C:\rclone\rclone sync Symphony-windows:$bucket_name C:\NFSShare"
+
+} catch {
         Write-Log -Level Error $_
         throw $_
     }
 }
+
+
+
 
 Function RegisterPasswordForWindowsExecutionUser {
     <#
@@ -254,10 +338,10 @@ Function Write-Environment {
 }
 
 $ShareName = "data"
-$MountPoint = "C:\NFSShare" 
+$MountPoint = "C:\NFSShare"
 $StorageIP = "${storage_ip}"
 $cluster_id = "${cluster_id}"
-$NFSHostsFolderPath = "$MountPoint\$cluster_id\hosts" 
+$NFSHostsFolderPath = "$MountPoint\$cluster_id\hosts"
 $ComputerName = "${computer_name}"
 $DomainName = "${dns_domain_name}"
 $ContentToReplace = "hpcc-symphony-windows-primary-0 hpcc-symphony-windows-secondary-0"
@@ -265,6 +349,11 @@ $EgoConfigFilePath = "C:\Program Files\IBM\SpectrumComputing\kernel\conf\ego.con
 $EgoUserName = "${EgoUserName}"
 $EgoPass = "${EgoPassword}"
 $NumExpectedManagementHosts="${mgmt_count}"
+$bucket_name="${bucket_name}"
+$access_key_id="${access_key_id}"
+$secret_access_key="${secret_access_key}"
+$endpoint="${endpoint}"
+$location_constraint="${location_constraint}"
 
 Write-Environment
 $HostName = hostname
@@ -276,7 +365,20 @@ if ($HostName -ne $ComputerName) {
 
 Write-Log -Level Info "Computer Name is $ComputerName, continuing configuration after reboot"
 
-Mount-NFS -StorageIP $StorageIP -ShareName $ShareName -MountPoint $MountPoint
+
+#Mount-NFS -StorageIP $StorageIP -ShareName $ShareName -MountPoint $MountPoint
+sync-cos  -bucket_name $bucket_name  -access_key_id $access_key_id -secret_access_key $secret_access_key  -endpoint $endpoint -location_constraint  $location_constraint
+##schedule job
+# Define the action to run the rclone command in PowerShell
+$action = New-ScheduledTaskAction -Execute "C:\rclone\rclone.exe" -Argument "sync Symphony-windows:$bucket_name C:\\NFSShare"
+# Define the trigger to run every minute
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 1)
+# Define the principal to run the task as an Administrator user (replace with actual username)
+$principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+# Register the task in Task Scheduler (you will be prompted for the Administrator password)
+Register-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -TaskName "RcloneSyncEveryMinuteAsSystem" -Description "Runs rclone sync every minute as SYSTEM to sync with Symphony-windows"
+
+
 
 Edit-EgoConfigFile `
     -NFSHostsFolderPath $NFSHostsFolderPath `
@@ -287,4 +389,3 @@ Edit-EgoConfigFile `
 RegisterPasswordForWindowsExecutionUser -EgoUserName $EgoUserName -EgoPass $EgoPass
 
 Restart-LIMService
-

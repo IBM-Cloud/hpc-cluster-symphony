@@ -1,7 +1,7 @@
 
 
 source "ibmcloud-vpc" "itself" {
-  api_key             = var.ibm_api_key
+  api_key             = var.ibm_api_key // pragma: allowlist secret
   region              = var.vpc_region
   subnet_id           = var.vpc_subnet_id
   resource_group_id   = var.resource_group_id

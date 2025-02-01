@@ -19,9 +19,9 @@ variable "resource_group" {}
 
 resource "ibm_is_dedicated_host" "worker" {
 
-  name       = var.name
-  profile    = var.profile
-  host_group = var.host_group
+  name           = var.name
+  profile        = var.profile
+  host_group     = var.host_group
   resource_group = var.resource_group
 }
 

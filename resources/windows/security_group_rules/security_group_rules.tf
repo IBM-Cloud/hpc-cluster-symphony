@@ -15,12 +15,12 @@ terraform {
   }
 }
 
-variable "remote_allowed_ips"{}
-variable "security_group" {}  
+variable "remote_allowed_ips" {}
+variable "security_group" {}
 
 #Enable below security group to allow RDP to windows worker nodes
 resource "ibm_is_security_group_rule" "ingress_tcp_windows_rdp" {
-  count = length(var.remote_allowed_ips)
+  count     = length(var.remote_allowed_ips)
   group     = var.security_group
   direction = "inbound"
   remote    = var.remote_allowed_ips[count.index]
@@ -31,7 +31,7 @@ resource "ibm_is_security_group_rule" "ingress_tcp_windows_rdp" {
 }
 
 resource "ibm_is_security_group_rule" "ingress_udp_windows_rdp" {
-  count = length(var.remote_allowed_ips)
+  count     = length(var.remote_allowed_ips)
   group     = var.security_group
   direction = "inbound"
   remote    = var.remote_allowed_ips[count.index]

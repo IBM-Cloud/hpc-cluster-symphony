@@ -202,12 +202,19 @@
           },
           {
             "name": "windows_image_name",
-            "value": "hpcc-sym732-win2016-v1-3",
+            "value": "hpcc-sym732-win2022-v1",
             "type": "string",
             "description": "Name of the custom image that you want to use to create Windows® virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the solution uses a base image with additional software packages, which are mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you want to include your application-specific binary files, follow the instructions in [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images&interface=ui) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
+          },
+          {
+            "name": "custom_file_shares",
+            "value": "[{ mount_path = \"/mnt/vpcstorage/tools\", size = 100, iops = 2000 }, { mount_path = \"/mnt/vpcstorage/data\", size = 100, iops = 6000 }]",
+            "type": "list(object({mount_path = string,size = number,iops = number}))",
+            "secure": false,
+            "description": "Mount points and sizes in GB and IOPS range of file shares that can be used to customize shared file storage layout. Provide the details for up to 5 shares. Each file share size in GB supports different range of IOPS. For more information, see [file share IOPS value](https://cloud.ibm.com/docs/vpc?topic=vpc-file-storage-profiles&interface=ui)"
           }
+
         ]
       }
     ]
   }
-  

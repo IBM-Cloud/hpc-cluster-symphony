@@ -104,14 +104,14 @@ variable "vpc_cluster_login_private_subnets_cidr_blocks" {
 
 variable "image_name" {
   type        = string
-  default     = "hpcc-symp732-scale5201-rhel88-v2"
+  default     = "hpcc-symp732-scale5211-rhel810-v1"
   description = "Name of the custom image that you want to use to create virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the automation uses a base image with additional software packages mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you would like to include your application-specific binary files, follow the instructions in [ Planning for custom images ](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
 }
 
 variable "windows_image_name" {
   type        = string
-  default     = "hpcc-sym732-win2016-v1-3"
-  description = "Name of the custom image that you want to use to create Windows® virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the solution uses a base image with additional software packages, which are mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you want to include your application-specific binary files, follow the instructions in [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images&interface=ui) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
+  default     = "hpcc-sym732-win2022-v1"
+  description = "Name of the custom image that you want to use to create Windows® virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the solution uses a base image with additional software packages, which are mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). Windows 2016version custom image hpcc-sym732-win2016-v1-4 is also supported. If you want to include your application-specific binary files, follow the instructions in [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images&interface=ui) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
 }
 
 variable "management_node_instance_type" {
@@ -201,26 +201,6 @@ variable "windows_worker_node" {
   description = "Set to true to deploy Windows® worker nodes in the cluster. By default, the cluster deploys Linux® worker nodes. If the variable is set to true, the values of both worker_node_min_count and worker_node_max_count should be equal because the current implementation doesn't support dynamic creation of worker nodes through Host Factory."
 }
 
-variable "volume_capacity" {
-  type        = number
-  default     = 100
-  description = "Size in GB for the block storage that would be used to build the NFS instance and would be available as a mount on Spectrum Symphony primary node. Enter a value in the range 10 - 16000."
-  validation {
-    condition     = 10 <= var.volume_capacity && var.volume_capacity <= 16000
-    error_message = "Input \"volume_capacity\" must be >= 10 and <= 16000."
-  }
-}
-
-variable "volume_iops" {
-  type        = number
-  default     = 300
-  description = "Number to represent the IOPS configuration for block storage to be used for NFS instance (valid only for volume_profile=custom, dependent on volume_capacity). Enter a value in the range 100 - 48000. For possible options of IOPS, see [Custom IOPS profile](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles#custom)."
-  validation {
-    condition     = 100 <= var.volume_iops && var.volume_iops <= 48000
-    error_message = "Input \"volume_iops\" must be >= 100 and <= 48000."
-  }
-}
-
 variable "management_node_count" {
   type        = number
   default     = 3
@@ -278,12 +258,6 @@ variable "remote_allowed_ips" {
   }
 }
 
-variable "volume_profile" {
-  type        = string
-  default     = "general-purpose"
-  description = "Name of the block storage volume type to be used for NFS instance. For possible options, see[Block storage profiles](https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles)."
-}
-
 variable "dedicated_host_enabled" {
   type        = bool
   default     = false
@@ -330,7 +304,7 @@ variable "vpc_scale_storage_dns_domain" {
 
 variable "scale_storage_image_name" {
   type        = string
-  default     = "hpcc-scale5201-rhel88"
+  default     = "hpcc-scale5211-rhel810"
   description = "Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy the Spectrum Scale storage cluster. By default, our automation uses a base image plus the Spectrum Scale software and any other software packages that it requires. If you'd like, you can follow the instructions for [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Scale storage cluster through this offering."
 }
 
@@ -437,5 +411,31 @@ variable "storage_type" {
   validation {
     condition     = can(regex("^(scratch|persistent)$", lower(var.storage_type)))
     error_message = "The solution only support scratch and persistent. Provide any one of the value."
+  }
+}
+
+variable "custom_file_shares" {
+  type = list(object({
+    mount_path = string,
+    size       = number,
+    iops       = number
+  }))
+  default     = [{ mount_path = "/mnt/vpcstorage/tools", size = 100, iops = 2000 }, { mount_path = "/mnt/vpcstorage/data", size = 100, iops = 6000 }]
+  description = "Mount points and sizes in GB and IOPS range of file shares that can be used to customize shared file storage layout. Provide the details for up to 5 shares. Each file share size in GB supports different range of IOPS. For more information, see [file share IOPS value](https://cloud.ibm.com/docs/vpc?topic=vpc-file-storage-profiles&interface=ui)."
+  validation {
+    condition     = length(var.custom_file_shares) <= 5
+    error_message = "The custom file share count \"custom_file_shares\" must be less than or equal to 5."
+  }
+  validation {
+    condition     = !anytrue([for mounts in var.custom_file_shares : mounts.mount_path == "/mnt/symphony"])
+    error_message = "The mount path /mnt/data is reserved for internal usage and can't be used as file share mount_path."
+  }
+  validation {
+    condition     = length([for mounts in var.custom_file_shares : mounts.mount_path]) == length(toset([for mounts in var.custom_file_shares : mounts.mount_path]))
+    error_message = "Mount path values should not be duplicated."
+  }
+  validation {
+    condition     = alltrue([for mounts in var.custom_file_shares : (10 <= mounts.size && mounts.size <= 32000)])
+    error_message = "The custom_file_share size must be greater than or equal to 10 and less than or equal to 32000."
   }
 }

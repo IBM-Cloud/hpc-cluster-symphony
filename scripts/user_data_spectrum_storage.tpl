@@ -15,7 +15,7 @@ echo START `date '+%Y-%m-%d %H:%M:%S'`
 %EXPORT_USER_DATA%
 
 #input parameters
-storage_ips="${storage_ips}"
+client_mount_path="${client_mount_path}"
 cluster_name="${cluster_id}"
 dns_domain_name="${dns_domain_name}"
 numExpectedManagementHosts="${mgmt_count}"
@@ -26,3 +26,4 @@ spectrum_scale="${spectrum_scale}"
 temp_public_key="${temp_public_key}"
 worker_node_type="${worker_node_type}"
 storage_type="${storage_type}"
+mount_path="${mount_path}"

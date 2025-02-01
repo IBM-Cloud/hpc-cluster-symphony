@@ -43,23 +43,23 @@ resource "ibm_is_instance" "spectrum_scale_storage" {
   user_data      = var.user_data
   tags           = var.tags
   primary_network_interface {
-    name                 = "eth0"
-    subnet               = var.subnet_id
-    security_groups      = var.security_group
+    name            = "eth0"
+    subnet          = var.subnet_id
+    security_groups = var.security_group
     primary_ip {
-      address            = var.primary_ipv4_address
+      address = var.primary_ipv4_address
     }
   }
 }
 
 locals {
-  instance = [ {
-      name = var.vsi_name
-      primary_network_interface = var.primary_ipv4_address
+  instance = [{
+    name                      = var.vsi_name
+    primary_network_interface = var.primary_ipv4_address
     }
   ]
   dns_record_ttl = 300
-  instances = flatten(local.instance)
+  instances      = flatten(local.instance)
 }
 
 // Support lookup by fully qualified domain name
@@ -92,22 +92,22 @@ resource "ibm_dns_resource_record" "dns_resource_record_ptr" {
 }
 
 output "spectrum_scale_storage_id" {
-  value = ibm_is_instance.spectrum_scale_storage.id
+  value      = ibm_is_instance.spectrum_scale_storage.id
   depends_on = [ibm_dns_resource_record.dns_record_record_a, ibm_dns_resource_record.dns_resource_record_ptr]
 }
 
 output "primary_network_interface" {
-  value = ibm_is_instance.spectrum_scale_storage.primary_network_interface[0].primary_ip.0.address
+  value      = ibm_is_instance.spectrum_scale_storage.primary_network_interface[0].primary_ip.0.address
   depends_on = [ibm_dns_resource_record.dns_record_record_a, ibm_dns_resource_record.dns_resource_record_ptr]
 }
 
 output "name" {
-  value = ibm_is_instance.spectrum_scale_storage.name
+  value      = ibm_is_instance.spectrum_scale_storage.name
   depends_on = [ibm_dns_resource_record.dns_record_record_a, ibm_dns_resource_record.dns_resource_record_ptr]
 }
 
 output "instance_ips_with_vol_mapping" {
   value = try(toset({ for instance_details in ibm_is_instance.spectrum_scale_storage : instance_details.primary_network_interface.0.primary_ip.0.address =>
-  data.ibm_is_instance_profile.itself.disks[0].quantity[0].value == 1 ? ["/dev/vdb"] : ["/dev/vdb", "/dev/vdc"]}), [])
+  data.ibm_is_instance_profile.itself.disks[0].quantity[0].value == 1 ? ["/dev/vdb"] : ["/dev/vdb", "/dev/vdc"] }), [])
   depends_on = [ibm_dns_resource_record.dns_record_record_a, ibm_dns_resource_record.dns_resource_record_ptr]
 }

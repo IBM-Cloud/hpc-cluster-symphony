@@ -63,10 +63,6 @@ data "ibm_is_dedicated_host_profiles" "worker" {
   count = var.dedicated_host_enabled ? 1 : 0
 }
 
-data "ibm_is_volume_profile" "nfs" {
-  name = var.volume_profile
-}
-
 data "ibm_is_ssh_key" "ssh_key" {
   for_each = toset(split(",", var.ssh_key_name))
   name     = each.value
