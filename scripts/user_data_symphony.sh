@@ -5,6 +5,7 @@
 # Licensed under the Apache License v2.0
 ###################################################
 
+# shellcheck disable=SC2154
 set -x
 ##################################################################
 #args
@@ -18,7 +19,7 @@ export adminPswd=Admin
 export guestPswd=Guest
 
 #Host Factory
-export VPC_APIKEY_VALUE=${vpcAPIKeyValue:?}
+export VPC_APIKEY_VALUE=${vpcAPIKeyValue}
 
 export hf_maxNum=${hf_maxNum}
 export hf_ncores=${hf_ncores}
@@ -49,20 +50,20 @@ export windows_worker_node=${windows_worker_node}
 export enableSSL=N
 #cluster ID should be 39 characters alphanumeric no spaces, supports -_.
 # export clusterID=SunilSymphony731ClusterPOC
-export clusterID=${cluster_name:?}
-export domainName=".${dns_domain_name:?}"
+export clusterID=${cluster_name}
+export domainName=".${dns_domain_name}"
 
 #nfs
-export nfsHostIP=${client_mount_path:?}
+export nfsHostIP=${client_mount_path}
 
 #vpn
-export CLUSTER_CIDR=${cluster_cidr:?}
+export CLUSTER_CIDR=$cluster_cidr
 ##################################################################
 
 #internal
 export CLUSTERADMIN=egoadmin
 export EGO_TOP=/opt/ibm/spectrumcomputing
-export SHARED_TOP=${mount_path:?}
+export SHARED_TOP=${mount_path}
 export SHARED_TOP_CLUSTERID=${SHARED_TOP}/${clusterID}
 export SHARED_TOP_SYM=${SHARED_TOP_CLUSTERID}/sym732
 export HOSTS_FILES=${SHARED_TOP_CLUSTERID}/hosts
@@ -88,7 +89,7 @@ export IBM_CLOUD_PROVIDER_WORK=work/providers/ibmcloudgen2inst
 
 function scale_update_worker_hostname
 {
-    if [ "${spectrum_scale:?}" == true ]; then
+    if [ "${spectrum_scale}" == true ]; then
         hostname
         hostnamectl set-hostname "${HOST_NAME}"
         hostname
@@ -104,7 +105,7 @@ function scale_disable_hf
 
 function config_hyperthreading
 {
-    if ! "${hyperthreading:?}"; then
+    if ! $hyperthreading; then
     for vcpu in $(cat /sys/devices/system/cpu/cpu*/topology/thread_siblings_list | cut -s -d- -f2 | cut -d- -f2 | uniq); do
         echo 0 > /sys/devices/system/cpu/cpu"$vcpu"/online
     done
@@ -351,7 +352,7 @@ function create_sshkey
     mkdir -p /root/.ssh
     cat "${SHARED_TOP_CLUSTERID}"/root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
     cp "${SHARED_TOP_CLUSTERID}"/root/.ssh/id_rsa /root/.ssh/.
-    echo "${temp_public_key:?}" >> /root/.ssh/authorized_keys
+    echo "${temp_public_key}" >> /root/.ssh/authorized_keys
     echo "StrictHostKeyChecking no" >> ~/.ssh/config
 }
 
@@ -693,7 +694,6 @@ function config_symmanagement
     egosetsudoers.sh
     egosetrc.sh
     #short cut to avoid locking
-    : "${numExpectedManagementHosts:?}"
     if (( numExpectedManagementHosts > 3 )); then
         sleep $((RANDOM%15))
     fi
@@ -757,7 +757,7 @@ function wait_for_candidate_hosts
             systemctl restart ego
             systemctl status ego
         fi
-        read -a -r words <<< "$EGO_MANAGEMENT_NODES_LIST"
+        IFS=' ' read -ra words <<< "$EGO_MANAGEMENT_NODES_LIST"
         CURRENT_HOSTS=${#words[@]}
     done
 }
@@ -783,7 +783,7 @@ function wait_for_candidate_hosts_norestart
             echo "New candidate joined"
             EGO_MANAGEMENT_NODES_LIST=${NEW_EGO_MANAGEMENT_NODES_LIST}
         fi
-        read -a -r words <<< "$EGO_MANAGEMENT_NODES_LIST"
+        IFS=' ' read -ra words <<< "$EGO_MANAGEMENT_NODES_LIST"
         CURRENT_HOSTS=${#words[@]}
     done
 }
@@ -844,8 +844,8 @@ function set_ego_password
 
     #Update EGO password
     executecmd="'.\'"
-    EGOUSERNAME="$executecmd${EgoUserName:?}"
-    egosh ego execpasswd -u "$EGOUSERNAME" -x "${EgoPassword:?}" -noverify # pragma: allowlist secret
+    EGOUSERNAME="$executecmd${EgoUserName}"
+    egosh ego execpasswd -u "$EGOUSERNAME" -x "${EgoPassword}" -noverify # pragma: allowlist secret
     sed -i -e "s|egoadmin|.\\\egoadmin|g" "$EGO_CONFDIR"/ConsumerTrees.xml
 
     # Re-register symping app
@@ -898,7 +898,7 @@ if [ "${egoHostRole}" == "primary" ]; then
     create_sshkey
     update_hosts
     update_clusterid
-    if [[ ${worker_node_type:?} == "baremetal"  || ${storage_type:?} == "persistent" ]]; then
+    if [[ ${worker_node_type} == "baremetal" || ${storage_type} == "persistent" ]]; then
       push_bin_nfs
     fi
     create_sslkey
