@@ -1,5 +1,5 @@
 ###################################################
-# Copyright (C) IBM Corp. 2023 All Rights Reserved.
+# Copyright (C) IBM Corp. 2025 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 
@@ -20,6 +20,7 @@ variable "iops" {}
 variable "tags" {}
 variable "resource_group" {}
 variable "vpcid" {}
+variable "encryption_key_crn" {}
 
 resource "ibm_is_share" "share" {
   name                = var.name
@@ -30,6 +31,7 @@ resource "ibm_is_share" "share" {
   resource_group      = var.resource_group
   zone                = var.zone
   tags                = var.tags
+  encryption_key      = var.encryption_key_crn
 }
 
 resource "ibm_is_share_mount_target" "share_target" {

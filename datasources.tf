@@ -1,5 +1,5 @@
 ###################################################
-# Copyright (C) IBM Corp. 2023 All Rights Reserved.
+# Copyright (C) IBM Corp. 2025 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 /*
@@ -70,10 +70,6 @@ data "ibm_is_ssh_key" "ssh_key" {
 
 data "ibm_is_image" "stock_image" {
   name = local.stock_image_name
-}
-
-data "ibm_is_image" "baremetal_image" {
-  name = local.bare_metal_server_osimage_name
 }
 
 data "ibm_is_image" "image" {

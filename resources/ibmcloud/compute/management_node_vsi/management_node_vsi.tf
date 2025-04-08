@@ -10,7 +10,7 @@ terraform {
     }
   }
 }
-
+variable "encryption_key_crn" {}
 variable "vsi_name" {}
 variable "image" {}
 variable "profile" {}
@@ -37,7 +37,10 @@ resource "ibm_is_instance" "management_node" {
   keys           = var.keys
   resource_group = var.resource_group
   user_data      = var.user_data
-  tags           = var.tags
+  boot_volume {
+    encryption = var.encryption_key_crn
+  }
+  tags = var.tags
   primary_network_interface {
     name            = "eth0"
     subnet          = var.subnet_id

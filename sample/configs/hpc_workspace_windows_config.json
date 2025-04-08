@@ -138,13 +138,6 @@
             "description": "This is the API key for IBM Cloud account in which the Spectrum Symphony cluster needs to be deployed. [Learn more](https://cloud.ibm.com/docs/account?topic=account-userapikey)."
           },
           {
-            "name": "ibm_customer_number",
-            "value": "Please fill here",
-            "type": "string",
-            "secure": true,
-            "description": "Comma-separated list of the IBM Customer Number(s) (ICN) that is used for the Bring Your Own License (BYOL) entitlement check. For more information on how to find your ICN, see [What is my IBM Customer Number (ICN)?](https://www.ibm.com/support/pages/what-my-ibm-customer-number-icn)."
-          },
-          {
             "name": "hyperthreading_enabled",
             "value": "true",
             "type": "bool",
@@ -202,7 +195,7 @@
           },
           {
             "name": "windows_image_name",
-            "value": "hpcc-sym732-win2022-v1",
+            "value": "hpcc-sym732-win2022-v2",
             "type": "string",
             "description": "Name of the custom image that you want to use to create Windows® virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the solution uses a base image with additional software packages, which are mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you want to include your application-specific binary files, follow the instructions in [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images&interface=ui) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
           },
@@ -212,8 +205,28 @@
             "type": "list(object({mount_path = string,size = number,iops = number}))",
             "secure": false,
             "description": "Mount points and sizes in GB and IOPS range of file shares that can be used to customize shared file storage layout. Provide the details for up to 5 shares. Each file share size in GB supports different range of IOPS. For more information, see [file share IOPS value](https://cloud.ibm.com/docs/vpc?topic=vpc-file-storage-profiles&interface=ui)"
+          },
+          {
+            "name": "enable_customer_managed_encryption",
+            "value": "true",
+            "type": "bool",
+            "secure": false,
+            "description": "Setting this to true will enable customer managed encryption for boot volume, file Share and cos. Otherwise, encryption will be Provider managed."
+          },
+          {
+            "name": "kms_instance_id",
+            "value": "",
+            "type": "string",
+            "secure": false,
+            "description": "Unique identifier of the Key Protect instance associated with the Key Management Service. While providing an existing “kms_instance_id”, it's necessary to create the required authorization policy for encryption to be completed. To create the authorisation policy, go to [Service authorizations](https://cloud.ibm.com/docs/vpc?topic=vpc-block-s2s-auth&interface=ui). The ID can be found under the details of the KMS, see [View key-protect ID](https://cloud.ibm.com/docs/key-protect?topic=key-protect-retrieve-instance-ID&interface=ui)."
+          },
+          {
+            "name": "kms_key_name",
+            "value": "",
+            "type": "string",
+            "secure": false,
+            "description": "Provide the existing KMS encryption key name that you want to use for the IBM cloud Symphony cluster. (for example kms_key_name: my-encryption-key)."
           }
-
         ]
       }
     ]

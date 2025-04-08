@@ -1,5 +1,5 @@
 ###################################################
-# Copyright (C) IBM Corp. 2023 All Rights Reserved.
+# Copyright (C) IBM Corp. 2025 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 
@@ -13,6 +13,7 @@ terraform {
 variable "resource_group_id" {}
 variable "region_location" {}
 variable "cluster_prefix" {}
+variable "encryption_key_crn" {}
 
 resource "ibm_resource_instance" "win_fileshare_instance" {
   name              = "${var.cluster_prefix}-win-fileshare"
@@ -27,6 +28,7 @@ resource "ibm_cos_bucket" "win_fileshare_bucket" {
   resource_instance_id = ibm_resource_instance.win_fileshare_instance.id
   region_location      = var.region_location
   storage_class        = "standard"
+  kms_key_crn          = var.encryption_key_crn
 }
 
 resource "ibm_resource_key" "resourcekey" {

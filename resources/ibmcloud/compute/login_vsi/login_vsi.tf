@@ -12,6 +12,7 @@ terraform {
 }
 
 
+variable "encryption_key_crn" {}
 variable "vsi_name" {}
 variable "image" {}
 variable "profile" {}
@@ -40,6 +41,9 @@ resource "ibm_is_instance" "login" {
     name            = "eth0"
     subnet          = var.subnet_id
     security_groups = var.security_group
+  }
+  boot_volume {
+    encryption = var.encryption_key_crn
   }
 }
 

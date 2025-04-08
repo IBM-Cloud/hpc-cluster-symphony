@@ -1,5 +1,5 @@
 ###################################################
-# Copyright (C) IBM Corp. 2023 All Rights Reserved.
+# Copyright (C) IBM Corp. 2025 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 
@@ -28,16 +28,6 @@ variable "api_key" {
   validation {
     condition     = var.api_key != ""
     error_message = "API key for IBM Cloud must be set."
-  }
-}
-
-variable "ibm_customer_number" {
-  type        = string
-  sensitive   = true
-  description = "Comma-separated list of the IBM Customer Number(s) (ICN) that is used for the Bring Your Own License (BYOL) entitlement check. For more information on how to find your ICN, see [What is my IBM Customer Number (ICN)?](https://www.ibm.com/support/pages/what-my-ibm-customer-number-icn)."
-  validation {
-    condition     = trimspace(var.ibm_customer_number) != ""
-    error_message = "Specified input for \"ibm_customer_number\" cannot be empty."
   }
 }
 
@@ -104,14 +94,14 @@ variable "vpc_cluster_login_private_subnets_cidr_blocks" {
 
 variable "image_name" {
   type        = string
-  default     = "hpcc-symp732-scale5211-rhel810-v1"
+  default     = "hpcc-symp732-scale5221-rhel810-v2"
   description = "Name of the custom image that you want to use to create virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the automation uses a base image with additional software packages mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). If you would like to include your application-specific binary files, follow the instructions in [ Planning for custom images ](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
 }
 
 variable "windows_image_name" {
   type        = string
-  default     = "hpcc-sym732-win2022-v1"
-  description = "Name of the custom image that you want to use to create Windows® virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the solution uses a base image with additional software packages, which are mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). Windows 2016version custom image hpcc-sym732-win2016-v1-4 is also supported. If you want to include your application-specific binary files, follow the instructions in [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images&interface=ui) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
+  default     = "hpcc-sym732-win2022-v2"
+  description = "Name of the custom image that you want to use to create Windows® virtual server instances in your IBM Cloud account to deploy the IBM Spectrum Symphony cluster. By default, the solution uses a base image with additional software packages, which are mentioned [here](https://cloud.ibm.com/docs/hpc-spectrum-symphony#create-custom-image). Windows 2016version custom image hpcc-sym732-win2016-v1-5 is also supported. If you want to include your application-specific binary files, follow the instructions in [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images&interface=ui) to create your own custom image and use that to build the IBM Spectrum Symphony cluster through this offering."
 }
 
 variable "management_node_instance_type" {
@@ -276,7 +266,7 @@ variable "dedicated_host_placement" {
 
 variable "TF_VERSION" {
   type        = string
-  default     = "1.5"
+  default     = "1.9"
   description = "The version of the Terraform engine that's used in the Schematics workspace."
 }
 
@@ -304,7 +294,7 @@ variable "vpc_scale_storage_dns_domain" {
 
 variable "scale_storage_image_name" {
   type        = string
-  default     = "hpcc-scale5211-rhel810"
+  default     = "hpcc-scale5221-rhel810"
   description = "Name of the custom image that you would like to use to create virtual machines in your IBM Cloud account to deploy the Spectrum Scale storage cluster. By default, our automation uses a base image plus the Spectrum Scale software and any other software packages that it requires. If you'd like, you can follow the instructions for [Planning for custom images](https://cloud.ibm.com/docs/vpc?topic=vpc-planning-custom-images) to create your own custom image and use that to build the Spectrum Scale storage cluster through this offering."
 }
 
@@ -438,4 +428,52 @@ variable "custom_file_shares" {
     condition     = alltrue([for mounts in var.custom_file_shares : (10 <= mounts.size && mounts.size <= 32000)])
     error_message = "The custom_file_share size must be greater than or equal to 10 and less than or equal to 32000."
   }
+}
+
+variable "enable_customer_managed_encryption" {
+  type        = bool
+  default     = true
+  description = "Setting this to true will enable customer managed encryption. Otherwise, encryption will be provider managed."
+}
+
+variable "kms_instance_id" {
+  type        = string
+  default     = ""
+  description = "Unique identifier of the Key Protect instance associated with the Key Management Service. The ID can be found under the details of the KMS, see [View key-protect ID](https://cloud.ibm.com/docs/key-protect?topic=key-protect-retrieve-instance-ID&interface=ui)."
+}
+
+variable "kms_key_name" {
+  type        = string
+  default     = ""
+  description = "Provide the existing KMS encryption key name that you want to use for the IBM Cloud Symphony cluster. (for example kms_key_name: my-encryption-key)."
+}
+
+variable "enable_vpc_flow_logs" {
+  description = "Flag to enable VPC flow logs. If true, a flow log collector will be created."
+  type        = bool
+  default     = true
+}
+
+variable "create_authorization_policy_vpc_to_cos" {
+  description = "Set this to false only when the VPC Infrastructure service already has authorization to write to the COS instance you provided for VPC flow logs. Otherwise, keep it true at all times. For more information on how to create authorization policy manually, see [creating authorization policies for VPC flow log](https://cloud.ibm.com/docs/vpc?topic=vpc-ordering-flow-log-collector&interface=ui#fl-before-you-begin-ui)."
+  type        = bool
+  default     = true
+}
+
+variable "existing_cos_instance_guid" {
+  description = "GUID of the COS instance to create a flow log collector."
+  type        = string
+  default     = ""
+}
+
+variable "existing_storage_bucket_name" {
+  description = "Name of the COS bucket to collect VPC flow logs."
+  type        = string
+  default     = ""
+}
+
+variable "is_flow_log_collector_active" {
+  description = "Indicates whether the collector is active. If false, this collector is created in inactive mode."
+  type        = bool
+  default     = true
 }

@@ -27,6 +27,7 @@ variable "primary_ipv4_address" {}
 variable "instance_id" {}
 variable "zone_id" {}
 variable "dns_domain" {}
+variable "encryption_key_crn" {}
 
 resource "ibm_is_instance" "windows_worker" {
   name           = var.vsi_name
@@ -39,6 +40,9 @@ resource "ibm_is_instance" "windows_worker" {
   tags           = var.tags
   dedicated_host = var.dedicated_host
   user_data      = var.user_data
+  boot_volume {
+    encryption = var.encryption_key_crn
+  }
   primary_network_interface {
     name            = "eth0"
     subnet          = var.subnet_id

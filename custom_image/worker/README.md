@@ -29,18 +29,25 @@
    ```cli
    $ ls /tmp/packages/scale
    SpectrumScale_public_key.pgp
-   gpfs.adv-5.1.7-0.x86_64.rpm
-   gpfs.base-5.1.7-0.x86_64.rpm
-   gpfs.crypto-5.1.7-0.x86_64.rpm
-   gpfs.docs-5.1.7-0.noarch.rpm
-   gpfs.gpl-5.1.7-0.noarch.rpm
-   gpfs.gskit-8.0.55-19.1.x86_64.rpm
-   gpfs.gss.pmcollector-5.1.7-0.el8.x86_64.rpm
-   gpfs.gss.pmsensors-5.1.7-0.el8.x86_64.rpm
-   gpfs.gui-5.1.7-0.noarch.rpm
-   gpfs.java-5.1.7-0.x86_64.rpm
-   gpfs.license.dm-5.1.7-0.x86_64.rpm
-   gpfs.msg.en_US-5.1.7-0.noarch.rpm
+   gpfs.gskit-8.0.55-19.1.x86_64
+   gpfs.nfs-ganesha-utils-5.7-ibm028.11.el8.x86_64
+   gpfs.msg.en_US-5.2.2-1.noarch
+   gpfs.license.dm-5.2.2-1.x86_64
+   gpfs.compression-5.2.2-1.x86_64
+   gpfs.gss.pmsensors-5.2.2-1.el8.x86_64
+   gpfs.java-5.2.2-1.x86_64
+   gpfs.gss.pmcollector-5.2.2-1.el8.x86_64
+   gpfs.nfs-ganesha-gpfs-5.7-ibm028.11.el8.x86_64
+   gpfs.afm.cos-1.2.2-1.x86_64
+   gpfs.docs-5.2.2-1.noarch
+   gpfs.adv-5.2.2-1.x86_64
+   gpfs.crypto-5.2.2-1.x86_64
+   gpfs.gui-5.2.2-1.noarch
+   gpfs.pm-ganesha-10.0.0-2.el8.x86_64
+   gpfs.nfs-ganesha-5.7-ibm028.11.el8.x86_64
+   gpfs.nfs-ganesha-debuginfo-5.7-ibm028.11.el8.x86_64
+   gpfs.base-5.2.2-1.x86_64
+   gpfs.gpl-5.2.2-1.noarch
     ```
 
    **Note**: If you are using Spectrum Scale storage, ensure that you use the same Spectrum Scale packages for the storage custom image.
@@ -60,16 +67,15 @@
    ```cli
    $ ls /tmp/packages/symphony
    sym-7.3.2.0_x86_64.bin
-   egocore-4.0.0.0_x86_64_build601349.tar.gz
-   egoelastic-1.4.5.0_x86_64_build601349.tar.gz
-   egomgmt-4.0.0.0_noarch_build601349.tar.gz
-   egorest-4.0.0.0_noarch_build601349.tar.gz
-   explorer-10.1.1.0_x86_64_build601349.tar.gz
-   hfcore-1.2.0.0_x86_64_build601349.tar.gz
-   hfmgmt-1.2.0.0_noarch_build601349.tar.gz
-   soamcore-7.3.2.0_x86_64_build601349.tar.gz
-   soammgmt-7.3.2.0_noarch_build601349.tar.gz
-   soammrcore-7.3.2.0_x86_64_build601349.tar.gz# optional
+   egocore-4.0.0.0_x86_64_build601711.tar.gz
+   egomgmt-4.0.0.0_noarch_build601711.tar.gz
+   egorest-4.0.0.0_noarch_build601711.tar.gz
+   explorer-10.1.1.0_x86_64_build601711.tar.gz
+   hfcore-1.2.0.0_x86_64_build601711.tar.gz
+   hfmgmt-1.2.0.0_noarch_build601711.tar.gz
+   soamcore-7.3.2.0_x86_64_build601711.tar.gz
+   soammgmt-7.3.2.0_noarch_build601711.tar.gz
+   soammrcore-7.3.2.0_x86_64_build601711.tar.gz
     ```
 
 8. Download a pre-built [Packer binary](https://www.packer.io/downloads) for your operating system.

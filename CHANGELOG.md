@@ -1,4 +1,12 @@
 # **CHANGELOG**
+## **2.0.0**
+### ENHANCEMENTS
+- Support for Symphony Linux 7.3.2 Build602225, Build602237, Build602244, Build602259, Build602274, Build602300, Build602294, Build602288, Build602304, Build602312, Build602317, Build602316, Build602331, Build602348, Build602363, Build602346 fix patches.
+- Support for Symphony Windows 7.3.2 Build602331, Build602259, Build602312 fix patches.
+- Spectrum Scale version has been updated from 5.2.1.1 to 5.2.2.1.
+- Support for KMS encryption for all resources.
+- Support for VPC Flow Logs for log collection.
+- Support custom image for Bare metal creation.
 ## **1.7.0**
 ### ENHANCEMENTS
 - Support for Symphony Linux 7.3.2 Build601706, Build602082, Build602143, Build602148, Build602149, Build602158, Build602161, Build602162, Build602163, Build602185, Build602225 fix patches.

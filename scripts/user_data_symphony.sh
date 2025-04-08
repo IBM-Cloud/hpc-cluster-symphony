@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ###################################################
-# Copyright (C) IBM Corp. 2023 All Rights Reserved.
+# Copyright (C) IBM Corp. 2025 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 
@@ -57,7 +57,7 @@ export domainName=".${dns_domain_name}"
 export nfsHostIP=${client_mount_path}
 
 #vpn
-export CLUSTER_CIDR=$cluster_cidr
+export CLUSTER_CIDR=${cluster_cidr}
 ##################################################################
 
 #internal
@@ -206,75 +206,6 @@ function clean_shared
     rm -rf "${SHARED_TOP_CLUSTERID}"
     mkdir -p "${SHARED_TOP_SYM}" "${HOSTS_FILES}" && chown -R ${CLUSTERADMIN} "${SHARED_TOP_CLUSTERID}"
 }
-
-function push_bin_nfs
-{
-    count=-1
-    while (( count != 0 ))
-    do
-        sleep 5
-        echo "waiting for package decryption"
-        count=$(find /opt/IBM/symphony_cloud_packages/*.gpg 2>/dev/null | wc -l)
-        if [ "$count" == 0 ]; then
-            chmod 755 /opt/IBM/symphony_cloud_packages/*.sh
-            ls -ltr /opt/IBM/symphony_cloud_packages
-            mv /opt/IBM/symphony_cloud_packages "${SHARED_TOP}"
-            ls -ltr "${SHARED_TOP}"/symphony_cloud_packages
-            echo "symphony binary files moved"
-        fi
-    done
-    if [ "${spectrum_scale}" == true ]; then
-        count=-1
-        while (( count != 0 ))
-        do
-            sleep 5
-            echo "waiting for package decryption"
-            count=$(find /opt/IBM/gpfs_cloud_rpms/*.gpg 2>/dev/null | wc -l)
-            if [ "$count" == 0 ]; then
-                mv /opt/IBM/gpfs_cloud_rpms "${SHARED_TOP}"
-                echo "scale binary files moved"
-            fi
-        done
-    fi
-}
-
-function install_symp
-{
-    if rpm -q --quiet egocore ; then
-        echo "IBM Spectrum Symphony already installed" >> /tmp/logger.txt
-        return
-    fi
-
-    echo "IBM Spectrum Symphony package not found" >> /tmp/logger.txt
-    for (( i=1; i <= MAX_RETRIES; ++i ))
-    do
-        if [ -f "${SHARED_TOP}"/symphony_cloud_packages/install_symphony.sh ]; then
-            break;
-        fi
-        echo "Waiting for installation files to be copied ($i/$MAX_RETRIES)" >> /tmp/logger.txt
-        sleep ${DELAY}
-    done
-
-    if [ ! -f "${SHARED_TOP}"/symphony_cloud_packages/install_symphony.sh ]; then
-        echo "Error - installation files not found" >> /tmp/logger.txt
-        exit 1
-    fi
-
-    if ! /bin/bash "${SHARED_TOP}"/symphony_cloud_packages/install_symphony.sh; then
-        echo "Error - installation failed"  >> /tmp/logger.txt
-        exit 1
-    fi
-
-    echo "Installed IBM Spectrum Symphony" >> /tmp/logger.txt
-
-}
-
-function install_scale
-{
-      /bin/bash "${SHARED_TOP}"/gpfs_cloud_rpms/install_scale.sh
-      echo "installed scale"
-}
-
 
 function mtu9000
 {
@@ -843,8 +774,7 @@ function set_ego_password
     done
 
     #Update EGO password
-    executecmd="'.\'"
-    EGOUSERNAME="$executecmd${EgoUserName}"
+    EGOUSERNAME=".\\${EgoUserName}"
     egosh ego execpasswd -u "$EGOUSERNAME" -x "${EgoPassword}" -noverify # pragma: allowlist secret
     sed -i -e "s|egoadmin|.\\\egoadmin|g" "$EGO_CONFDIR"/ConsumerTrees.xml
 
@@ -898,9 +828,6 @@ if [ "${egoHostRole}" == "primary" ]; then
     create_sshkey
     update_hosts
     update_clusterid
-    if [[ ${worker_node_type} == "baremetal" || ${storage_type} == "persistent" ]]; then
-      push_bin_nfs
-    fi
     create_sslkey
     HF_provider_config
     disable_perf
@@ -947,10 +874,8 @@ elif [ "${egoHostRole}" == "scale_storage" ]; then
     stop_firewalld
     config_hyperthreading
     mount_nfs
+    patch_image
     wait_for_nfs
-    if [ "${storage_type}" == "persistent" ]; then
-      install_scale
-    fi
     mtu9000
     wait_for_candidate_hosts_norestart
     scale_update_worker_hostname
@@ -962,11 +887,7 @@ else
     wait_for_nfs
     copy_sshkey
     scale_update_worker_hostname
-    if [ "${worker_node_type}" == "baremetal" ]; then
-      install_scale
-    fi
     mtu9000
-    install_symp
     wait_for_candidate_hosts_norestart
     update_hosts
     copy_sslkey

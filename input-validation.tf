@@ -1,5 +1,5 @@
 ###################################################
-# Copyright (C) IBM Corp. 2023 All Rights Reserved.
+# Copyright (C) IBM Corp. 2025 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 
@@ -59,8 +59,8 @@ locals {
   : ""))
 
   // Since bare metal server creation is supported only in few specific zone, the below validation ensure to return an error message if any other zone value are provided from variable file
-  validate_zone                  = var.worker_node_type == "baremetal" || var.spectrum_scale_enabled && var.storage_type == "persistent" ? contains(["us-south-1", "us-south-2", "us-south-3", "eu-de-1", "eu-de-2", "ca-tor-2", "ca-tor-3"], var.zone) : true
-  zone_msg                       = "The solution supports bare metal server creation in only given availability zones i.e. us-south-1, us-south-3, us-south-2, eu-de-1, eu-de-2, ca-tor-2 and ca-tor-3. To deploy bare metal server provide any one of the supported availability zones."
+  validate_zone                  = var.worker_node_type == "baremetal" || var.spectrum_scale_enabled && var.storage_type == "persistent" ? contains(["us-south-1", "us-south-3", "eu-de-1", "eu-de-2", "eu-de-3", "jp-tok-2", "jp-tok-3", "ca-tor-1", "ca-tor-3"], var.zone) : true
+  zone_msg                       = "The solution supports bare metal server creation in only given availability zones i.e. us-south-1, us-south-3, eu-de-1, eu-de-2, jp-tok-2, jp-tok-3, ca-tor-1 and ca-tor-3. To deploy bare metal server provide any one of the supported availability zones."
   validate_persistent_region_chk = regex("^${local.zone_msg}$", (local.validate_zone ? local.zone_msg : ""))
 
   // Validating the dedicated host creation only if the worker type is set as vsi. This function block works during the generate plan
@@ -85,7 +85,7 @@ locals {
 
   // validate Spectrum scale storage node count
   validate_spectrum_scale_persistent_node = var.spectrum_scale_enabled && var.storage_type == "persistent" ? var.scale_storage_node_count >= 3 && var.scale_storage_node_count <= 10 : (var.spectrum_scale_enabled && var.storage_type == "scratch" ? var.scale_storage_node_count >= 3 && var.scale_storage_node_count <= 18 : true)
-  spectrum_scale_persistent_count_msg     = "Specified input \"scale_storage_node_count\" must be in between the range of 3 and 10 while storage type is persistent. Otherwise it should be in range of 3 and 18 while storage type is scratch. Please provide the appropriate range of value."
+  spectrum_scale_persistent_count_msg     = "Specified input \"scale_storage_node_count\" must be in between the range of 3 and 10 while storage type is persistent. Otherwise it should be in range of 3 and 18 while storage type is scratch. Provide the appropriate range of value."
   validate_spectrum_scale_persistent_chk  = regex("^${local.spectrum_scale_persistent_count_msg}$", (local.validate_spectrum_scale_persistent_node ? local.spectrum_scale_persistent_count_msg : ""))
 
   //validate Spectrum scale dns domain, value for vpc_storage_cluster_dns_domain should not be same as other domain name
@@ -177,4 +177,30 @@ locals {
   validate_login_subnet_cidr_chk = regex(
     "^${local.validate_login_subnet_cidr_msg}$",
   (local.validate_login_subnet_cidr ? local.validate_login_subnet_cidr_msg : ""))
+
+  // validation for the boot volume encryption toggling.
+  validate_enable_customer_managed_encryption     = anytrue([alltrue([var.kms_key_name != "", var.kms_instance_id != ""]), (var.kms_key_name == "" && var.kms_instance_id == ""), (var.enable_customer_managed_encryption == false)])
+  validate_enable_customer_managed_encryption_msg = "Make sure you are passing both kms_instance_id and kms_key_name together, or leaving both empty."
+  validate_enable_customer_managed_encryption_chk = regex(
+    "^${local.validate_enable_customer_managed_encryption_msg}$",
+  (local.validate_enable_customer_managed_encryption ? local.validate_enable_customer_managed_encryption_msg : ""))
+
+  // validation for the boot volume encryption toggling.
+  validate_null_customer_managed_encryption     = anytrue([alltrue([var.kms_instance_id == "", var.enable_customer_managed_encryption != true]), (var.enable_customer_managed_encryption == true)])
+  validate_null_customer_managed_encryption_msg = "Make sure you are setting enable_customer_managed_encryption as true if you are passing kms_instance_id, kms_key_name."
+  validate_null_customer_managed_encryption_chk = regex(
+    "^${local.validate_null_customer_managed_encryption_msg}$",
+  (local.validate_null_customer_managed_encryption ? local.validate_null_customer_managed_encryption_msg : ""))
+
+  vpc_flow_log_validation_msg = "Ensure to provide both the required values. If the values are left blank, the solution supports creating the required resources."
+
+  validate_vpc_flow_logs_inputs = anytrue([
+    var.enable_vpc_flow_logs == false,
+    alltrue([var.existing_cos_instance_guid != "", var.existing_storage_bucket_name != ""]),
+    alltrue([var.existing_cos_instance_guid == "", var.existing_storage_bucket_name == ""])
+  ])
+
+  validate_vpc_flow_logs_check = regex("^${local.vpc_flow_log_validation_msg}$",
+    (local.validate_vpc_flow_logs_inputs ? local.vpc_flow_log_validation_msg : "")
+  )
 }

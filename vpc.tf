@@ -1,5 +1,5 @@
 ###################################################
-# Copyright (C) IBM Corp. 2023 All Rights Reserved.
+# Copyright (C) IBM Corp. 2025 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 
@@ -71,6 +71,8 @@ locals {
   cluster_file_share_size = 10
   cluster_file_share_iops = 1000
   cluster_file_mount_path = "/mnt/symphony"
+
+  encryption_key_crn = module.kms.encryption_key_crn
 }
 
 data "template_file" "primary_user_data" {
@@ -399,19 +401,20 @@ module "dns_resolver" {
 
 // The module is used to create the login/bastion node to access all other nodes in the cluster
 module "login_vsi" {
-  source         = "./resources/ibmcloud/compute/login_vsi"
-  vsi_name       = "${var.cluster_prefix}-login"
-  image          = data.ibm_is_image.stock_image.id
-  profile        = data.ibm_is_instance_profile.login.name
-  vpc            = data.ibm_is_vpc.vpc.id
-  zone           = data.ibm_is_zone.zone.name
-  keys           = local.ssh_key_id_list
-  user_data      = data.template_file.login_user_data.rendered
-  resource_group = data.ibm_resource_group.rg.id
-  tags           = local.tags
-  subnet_id      = module.login_subnet.login_subnet_id
-  security_group = [module.login_sg.sec_group_id]
-  depends_on     = [module.login_ssh_key, module.login_inbound_security_rules, module.login_outbound_security_rule]
+  source             = "./resources/ibmcloud/compute/login_vsi"
+  vsi_name           = "${var.cluster_prefix}-login"
+  image              = data.ibm_is_image.stock_image.id
+  profile            = data.ibm_is_instance_profile.login.name
+  vpc                = data.ibm_is_vpc.vpc.id
+  zone               = data.ibm_is_zone.zone.name
+  keys               = local.ssh_key_id_list
+  user_data          = data.template_file.login_user_data.rendered
+  resource_group     = data.ibm_resource_group.rg.id
+  tags               = local.tags
+  subnet_id          = module.login_subnet.login_subnet_id
+  security_group     = [module.login_sg.sec_group_id]
+  depends_on         = [module.login_ssh_key, module.login_inbound_security_rules, module.login_outbound_security_rule]
+  encryption_key_crn = local.encryption_key_crn
 }
 
 #####################################################################
@@ -519,31 +522,11 @@ module "primary_vsi" {
     module.inbound_sg_ingress_all_local_rule,
     module.outbound_sg_rule
   ]
+  encryption_key_crn = local.encryption_key_crn
 }
 
 locals {
   products = var.spectrum_scale_enabled ? "symphony,scale" : "symphony"
-}
-
-resource "null_resource" "entitlement_check" {
-  count = local.image_mapping_entry_found ? 1 : 0
-  connection {
-    type                = "ssh"
-    host                = module.primary_vsi[0].primary_network_interface
-    user                = "root"
-    private_key         = module.login_ssh_key.private_key
-    bastion_host        = module.login_fip.floating_ip_address
-    bastion_user        = "root"
-    bastion_private_key = module.login_ssh_key.private_key
-    timeout             = "15m"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "python3.9 /opt/IBM/cloud_entitlement/entitlement_check.py --products ${local.products} --icns ${var.ibm_customer_number}"
-    ]
-  }
-  depends_on = [module.primary_vsi, module.login_fip, module.login_vsi]
 }
 
 module "secondary_vsi" {
@@ -569,9 +552,9 @@ module "secondary_vsi" {
     module.primary_vsi,
     module.inbound_sg_ingress_all_local_rule,
     module.inbound_sg_rule,
-    module.outbound_sg_rule,
-    null_resource.entitlement_check
+    module.outbound_sg_rule
   ]
+  encryption_key_crn = local.encryption_key_crn
 }
 
 module "management_node_vsi" {
@@ -598,9 +581,9 @@ module "management_node_vsi" {
     module.secondary_vsi,
     module.inbound_sg_ingress_all_local_rule,
     module.inbound_sg_rule,
-    module.outbound_sg_rule,
-    null_resource.entitlement_check
+    module.outbound_sg_rule
   ]
+  encryption_key_crn = local.encryption_key_crn
 }
 
 // The module is used to create the spectrum scale storage node only when spectrum scale is enabled
@@ -623,6 +606,7 @@ module "spectrum_scale_storage" {
   zone_id              = module.storage_zone[0].dns_zone_id
   dns_domain           = var.vpc_scale_storage_dns_domain
   depends_on           = [module.login_vsi, module.cluster_file_share, module.primary_vsi, module.management_node_vsi, module.inbound_sg_rule, module.inbound_sg_ingress_all_local_rule, module.outbound_sg_rule]
+  encryption_key_crn   = local.encryption_key_crn
 }
 
 // The module is used to create the compute vsi instance based on the type of node_type required for deployment
@@ -652,9 +636,9 @@ module "worker_vsi" {
     module.management_node_vsi,
     module.inbound_sg_ingress_all_local_rule,
     module.inbound_sg_rule,
-    module.outbound_sg_rule,
-    null_resource.entitlement_check
+    module.outbound_sg_rule
   ]
+  encryption_key_crn = local.encryption_key_crn
 }
 
 // The module is used to create the compute baremetal server based on the type of node_type required for deployment
@@ -663,7 +647,7 @@ module "bare_metal_server" {
   count          = (var.windows_worker_node ? 0 : (var.worker_node_type != "vsi" ? var.worker_node_min_count : 0))
   name           = "${var.cluster_prefix}-bare-metal-server-${count.index}"
   profile        = data.ibm_is_bare_metal_server_profile.worker_bare_metal_server_profile[0].name
-  image          = data.ibm_is_image.baremetal_image.id
+  image          = local.image_mapping_entry_found ? local.new_image_id : data.ibm_is_image.image[0].id
   zone           = data.ibm_is_zone.zone.name
   keys           = local.ssh_key_id_list
   vpc            = data.ibm_is_vpc.vpc.id
@@ -685,7 +669,7 @@ module "storage_bare_metal_server_cluster" {
   total_vsis     = var.scale_storage_node_count
   name           = "${var.cluster_prefix}-storage-bare-metal-server"
   profile        = data.ibm_is_bare_metal_server_profile.storage_bare_metal_server_profile[0].name
-  image          = data.ibm_is_image.baremetal_image.id
+  image          = local.image_mapping_entry_found ? local.new_image_id : data.ibm_is_image.image[0].id
   zone           = [data.ibm_is_zone.zone.name]
   keys           = local.ssh_key_id_list
   vpc            = data.ibm_is_vpc.vpc.id
@@ -825,6 +809,7 @@ module "windows_worker" {
   instance_id          = local.dns_instance_id
   zone_id              = module.worker_zone.dns_zone_id
   dns_domain           = var.vpc_worker_dns_domain
+  encryption_key_crn   = local.encryption_key_crn
   depends_on           = [module.login_ssh_key, module.primary_vsi, module.secondary_vsi, module.management_node_vsi, module.invoke_windows_security_group_rules]
 }
 
@@ -839,7 +824,6 @@ resource "null_resource" "upgrade_jinja" {
     interpreter = ["/bin/bash", "-c"]
     command     = "pip install jinja2 --upgrade"
   }
-  depends_on = [null_resource.entitlement_check]
 }
 
 locals {
@@ -860,7 +844,7 @@ locals {
   bastion_ssh_private_key     = null
 
   // scale version installed on custom images.
-  scale_version = "5.2.1.1"
+  scale_version = "5.2.2.1"
 
   // cloud platform as IBMCloud, required for ansible playbook.
   cloud_platform = "IBMCloud"
@@ -888,10 +872,6 @@ locals {
   compute_vsi_ids_0_disks = concat(module.primary_vsi.*.primary_id, module.secondary_vsi.*.secondary_id, module.management_node_vsi.*.management_id, module.worker_vsi.*.worker_id, module.bare_metal_server.*.bare_metal_server_id)
   // list of all compute vsi ips.
   compute_vsi_by_ip = concat(module.primary_vsi[*].primary_network_interface, module.secondary_vsi[*].primary_network_interface, module.management_node_vsi[*].primary_network_interface, module.worker_vsi[*].primary_network_interface, module.bare_metal_server[*].primary_network_interface)
-
-  // RHEL OS version used for the creation of Baremetal servers i.e.(Worker_node_type="baremetal" and storage_type="persistent")
-  bare_metal_server_osimage_name = "ibm-redhat-8-10-minimal-amd64-2"
-
 }
 
 // generate new temporary ssh-key that will be used by ansible playbook to setup scale.
@@ -1171,7 +1151,7 @@ module "remove_ssh_key" {
   login_ip                = module.login_fip.floating_ip_address
   storage_vsis_1A_by_ip   = var.spectrum_scale_enabled == true ? jsonencode(local.storage_vsis_1A_by_ip) : jsonencode([])
   host                    = chomp(data.http.fetch_myip.response_body)
-  depends_on              = [module.invoke_compute_playbook, module.invoke_storage_playbook, module.invoke_remote_mount, module.invoke_compute_network_playbook, module.invoke_storage_network_playbook, null_resource.entitlement_check]
+  depends_on              = [module.invoke_compute_playbook, module.invoke_storage_playbook, module.invoke_remote_mount, module.invoke_compute_network_playbook, module.invoke_storage_network_playbook]
 }
 
 data "ibm_iam_auth_token" "token" {}
@@ -1195,20 +1175,21 @@ resource "null_resource" "delete_schematics_ingress_security_rule" { # This code
           curl -X DELETE "https://$REGION.iaas.cloud.ibm.com/v1/security_groups/$SECURITY_GROUP/rules/$SECURITY_GROUP_RULE?version=2021-08-03&generation=2" -H "Authorization: $TOKEN"
         EOT
   }
-  depends_on = [module.remove_ssh_key, module.schematics_sg_tcp_rule, null_resource.entitlement_check]
+  depends_on = [module.remove_ssh_key, module.schematics_sg_tcp_rule]
 }
 
 module "cluster_file_share" {
-  source          = "./resources/ibmcloud/storage/file_share/"
-  name            = "${var.cluster_prefix}-cluster-share"
-  resource_group  = data.ibm_resource_group.rg.id
-  size            = local.cluster_file_share_size
-  iops            = local.cluster_file_share_iops
-  zone            = data.ibm_is_zone.zone.name
-  subnet_id       = module.subnet.subnet_id
-  security_groups = [module.sg.sg_id]
-  tags            = local.tags
-  vpcid           = data.ibm_is_vpc.vpc.id
+  source             = "./resources/ibmcloud/storage/file_share/"
+  name               = "${var.cluster_prefix}-cluster-share"
+  resource_group     = data.ibm_resource_group.rg.id
+  size               = local.cluster_file_share_size
+  iops               = local.cluster_file_share_iops
+  zone               = data.ibm_is_zone.zone.name
+  subnet_id          = module.subnet.subnet_id
+  security_groups    = [module.sg.sg_id]
+  tags               = local.tags
+  vpcid              = data.ibm_is_vpc.vpc.id
+  encryption_key_crn = local.encryption_key_crn
 }
 
 module "custom_file_share" {
@@ -1219,18 +1200,49 @@ module "custom_file_share" {
   size           = var.custom_file_shares[count.index]["size"]
   iops           = var.custom_file_shares[count.index]["iops"]
 
-  zone            = data.ibm_is_zone.zone.name
-  subnet_id       = module.subnet.subnet_id
-  security_groups = [module.sg.sg_id]
-  tags            = local.tags
-  vpcid           = data.ibm_is_vpc.vpc.id
+  zone               = data.ibm_is_zone.zone.name
+  subnet_id          = module.subnet.subnet_id
+  security_groups    = [module.sg.sg_id]
+  tags               = local.tags
+  vpcid              = data.ibm_is_vpc.vpc.id
+  encryption_key_crn = local.encryption_key_crn
 }
 
 ### creating COS bucket for file share
 module "windows_cos_fs" {
-  count             = var.windows_worker_node ? 1 : 0
-  source            = "./resources/ibmcloud/storage/windows_cos_fs/"
-  resource_group_id = data.ibm_resource_group.rg.id
-  region_location   = "us-south"
-  cluster_prefix    = var.cluster_prefix
+  count              = var.windows_worker_node ? 1 : 0
+  source             = "./resources/ibmcloud/storage/windows_cos_fs/"
+  resource_group_id  = data.ibm_resource_group.rg.id
+  region_location    = "us-south"
+  cluster_prefix     = var.cluster_prefix
+  encryption_key_crn = local.encryption_key_crn
+}
+
+module "kms" {
+  source                             = "./resources/ibmcloud/network/kms"
+  resource_group                     = data.ibm_resource_group.rg.id
+  enable_customer_managed_encryption = var.enable_customer_managed_encryption
+  kms_instance_id                    = var.kms_instance_id
+  kms_key_name                       = var.kms_key_name
+  resource_instance_name             = var.cluster_prefix
+  region                             = local.region_name
+  tags                               = local.tags
+}
+
+module "vpc_flow_log" {
+
+  count                         = (var.enable_vpc_flow_logs) ? 1 : 0
+  cluster_prefix                = var.cluster_prefix
+  create_iam                    = var.create_authorization_policy_vpc_to_cos
+  create_cos                    = var.existing_cos_instance_guid == "" ? true : false
+  source                        = "./resources/ibmcloud/network/vpc-flowlog"
+  vpc_flow_log_name             = "${var.cluster_prefix}-logs"
+  target_id                     = data.ibm_is_vpc.vpc.id
+  is_active                     = var.is_flow_log_collector_active
+  storage_bucket                = var.existing_storage_bucket_name
+  resource_group                = data.ibm_resource_group.rg.id
+  tags                          = local.tags
+  region_location               = local.region_name
+  encryption_key_crn            = local.encryption_key_crn
+  flowlog_storage_instance_guid = var.existing_cos_instance_guid
 }

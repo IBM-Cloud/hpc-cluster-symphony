@@ -1,47 +1,48 @@
 ###################################################
-# Copyright (C) IBM Corp. 2023 All Rights Reserved.
+# Copyright (C) IBM Corp. 2025 All Rights Reserved.
 # Licensed under the Apache License v2.0
 ###################################################
 
 # This mapping file has entries for symphony images which support both the scenarios (scale enabled or disabled)
 # These are images for computes nodes (primary, secondary, worker nodes etc)
-# The custom images are installed with Symphony 7.3.2 and scale 5.2.1.1 versions
+# The custom images are installed with Symphony 7.3.2 and scale 5.2.2.1 versions
 # These images has preconfiguration files to install the required packages on bare metal nodes, since baremetal server doesn't support custom images
 
 locals {
   image_region_map = {
-    "hpcc-symp732-scale5211-rhel810-v1" = {
-      "eu-gb"    = "r018-a8822ccc-3a1f-4247-ab85-7b14776c2c05"
-      "eu-de"    = "r010-201368de-6459-4cd7-bf86-ea4ef9a3b3bb"
-      "us-east"  = "r014-e17978cb-2e07-473c-9894-c10ed6c47c4d"
-      "us-south" = "r006-d1f00f48-2314-4217-962c-2dcacc291544"
-      "jp-tok"   = "r022-77117be4-959e-41b5-968e-7a3b36c9905e"
-      "jp-osa"   = "r034-713550a1-b964-492b-b9fc-0a98ce1e70fd"
-      "au-syd"   = "r026-ebde8111-2d61-4e54-8771-276145af2983"
-      "br-sao"   = "r042-8a6efd8c-1665-47ca-872b-47c0db6ab259"
-      "ca-tor"   = "r038-fa8d01b6-0ab6-43cf-af4f-c9fc330b6946"
+    "hpcc-symp732-scale5221-rhel810-v2" = {
+      "eu-gb"    = "r018-67c28aad-ad2a-4c12-bc38-a7c412e3c68f"
+      "eu-de"    = "r010-6e25bfed-a410-4346-973b-3f68ed456126"
+      "us-east"  = "r014-72349074-c0ad-4ec7-b699-031c5a7f3c6d"
+      "eu-es"    = "r050-a8be0502-3456-481d-b8fc-3286868a0378"
+      "us-south" = "r006-a3fad2db-4cd2-4b9b-a867-376ca5f52653"
+      "jp-tok"   = "r022-ae0d68af-893a-415d-9627-4e82ccce71c4"
+      "jp-osa"   = "r034-1efa6e86-452b-43d3-9458-8d8f10f5042f"
+      "au-syd"   = "r026-7999bfa9-267e-4b6e-8d4b-8c480d52ad0d"
+      "br-sao"   = "r042-4de43c7f-1ba6-4444-94ca-0f985706c90a"
+      "ca-tor"   = "r038-974d90c7-8343-412a-aa22-bb9f167851e6"
     },
-    "hpcc-sym732-win2016-v1-4" = {
-      "eu-gb"    = "r018-7550fe0b-2370-47d2-b708-ece40b106451"
-      "eu-de"    = "r010-b48ace46-de17-41cb-b2e9-170845629575"
-      "us-east"  = "r014-166edb58-4761-479c-aac4-32e6fcad9cfe"
-      "us-south" = "r006-b63f8b4c-3c47-4479-a137-597f93bec14b"
-      "jp-tok"   = "r022-7ac7e496-2af3-46c6-be22-fb349ead977f"
-      "jp-osa"   = "r034-ed62284f-33f0-4f1e-810a-ee9afdf8dcd9"
-      "au-syd"   = "r026-dd9a4dbd-4d5b-4521-9b52-97f17b983bfc"
-      "br-sao"   = "r042-26b1a376-d5f4-4f80-b88e-d3e89bc8c634"
-      "ca-tor"   = "r038-dbb3a295-ceb1-4f03-999c-1e5c836000d1"
+    "hpcc-sym732-win2016-v1-5" = {
+      "eu-gb"    = "r018-ef7df462-02fb-4019-85c0-56dddcbb57fc"
+      "eu-de"    = "r010-234e8178-c80e-4803-8504-11be5188f115"
+      "us-east"  = "r014-66f44c9b-563c-4ff0-bbc0-7ca7b1a511fd"
+      "us-south" = "r006-18c56e1d-557d-47fe-9f47-a7d539b50859"
+      "jp-tok"   = "r022-27111757-4463-4c44-93ce-593586fc3a66"
+      "jp-osa"   = "r034-8571b369-3439-4372-bd0a-017befc8d7ec"
+      "au-syd"   = "r026-748b6af1-bbe4-4846-8490-0006c58e9236"
+      "br-sao"   = "r042-884945d4-abfc-4bb2-be7c-43591944ba55"
+      "ca-tor"   = "r038-a04059b4-ce5d-46fc-ae23-a3e0b234c2c0"
     },
-    "hpcc-sym732-win2022-v1" = {
-      "eu-gb"    = "r018-7bdbc70d-4769-4246-ad2c-0e134ece56ba"
-      "eu-de"    = "r010-b60031a8-b1ec-434a-907e-95cdf5e25ee9"
-      "us-east"  = "r014-a50b4561-7db6-478f-96e7-138a7d0afbde"
-      "us-south" = "r006-ce5b3b47-ed9d-4c5e-9916-c43134d63710"
-      "jp-tok"   = "r022-1c52066b-472b-43d9-95f0-f4b6fd8e5a0a"
-      "jp-osa"   = "r034-a157c50c-cbbe-4118-b506-d7b43690fb9d"
-      "au-syd"   = "r026-1a143ab9-f43c-477e-bbe6-209f27b4ac1a"
-      "br-sao"   = "r042-69152a39-708c-4bea-b477-3f7e6e5213aa"
-      "ca-tor"   = "r038-1da71a3a-ee9b-45ef-bacc-e09594753c9a"
+    "hpcc-sym732-win2022-v2" = {
+      "eu-gb"    = "r018-3fc10d77-ebfa-45c3-beae-9a1428add6b2"
+      "eu-de"    = "r010-cb9872e7-8185-4a2e-b4a4-468881f4c407"
+      "us-east"  = "r014-a0e73894-c07d-4772-bd58-9099e1158517"
+      "us-south" = "r006-e7958e7e-937b-4439-ab1d-8d107fbefb10"
+      "jp-tok"   = "r022-e88214c8-e564-4974-bed9-6d44f63fb796"
+      "jp-osa"   = "r034-8a122a56-86cb-4ec2-b9f9-93f707e92c89"
+      "au-syd"   = "r026-fa8947e5-9dc4-4002-8104-c68ef5f35b3e"
+      "br-sao"   = "r042-2f6334a6-94ca-4cb3-9db2-201d2b4887dd"
+      "ca-tor"   = "r038-fbf26997-414a-4b44-84f4-0c351722259f"
     }
   }
 }
