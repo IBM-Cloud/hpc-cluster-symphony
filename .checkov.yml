@@ -1,0 +1,56 @@
+# Checkov configuration for IBM HPC Cluster Symphony
+framework:
+  - terraform
+  - secrets
+
+# Directories to scan
+directory:
+  - .
+
+# Output format
+output: json
+quiet: false
+compact: false
+
+# Skip specific checks if needed
+skip-check:
+  # Skip checks that might not be applicable to IBM Cloud
+  # - CKV_AWS_*  # Skip AWS-specific checks
+  
+# Custom policies directory (if you have custom policies)
+# external-checks-dir: ./custom-policies
+
+# Baseline file for secrets detection
+baseline: .secrets.baseline
+
+# Severity threshold
+# check: HIGH,MEDIUM
+
+# Download external modules
+download-external-modules: true
+
+# Framework-specific configurations
+terraform-plan-file: tfplan
+
+# Logging
+log-level: INFO
+
+# Suppress specific findings by file
+# suppress:
+#   - file: "variables.tf"
+#     checks:
+#       - CKV_TF_1
+
+# Include specific directories only
+# include:
+#   - "*.tf"
+#   - "*.py"
+
+# Exclude specific files or directories
+exclude:
+  - ".terraform/"
+  - "*.tfstate"
+  - "*.tfstate.backup"
+  - ".git/"
+  - "__pycache__/"
+  - "*.pyc"
