@@ -1,0 +1,301 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        type: string
+
+env:
+  PYTHON_VERSION: '3.9'
+  TERRAFORM_VERSION: '1.5.0'
+
+jobs:
+  # Validate release
+  validate-release:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          
+          # Check if this is a pre-release (contains alpha, beta, rc)
+          if [[ $VERSION =~ (alpha|beta|rc) ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if [[ ! $VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "Invalid version format: $VERSION"
+            echo "Expected format: v1.0.0 or v1.0.0-alpha1"
+            exit 1
+          fi
+
+  # Run full test suite
+  test-suite:
+    name: Full Test Suite
+    runs-on: ubuntu-latest
+    needs: validate-release
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run all quality checks
+        run: |
+          make format
+          make lint
+          make security
+
+      - name: Run unit tests
+        run: |
+          pytest tests/unit/ -v --cov=resources --cov-report=xml
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: release
+
+  # Generate release notes
+  generate-release-notes:
+    name: Generate Release Notes
+    runs-on: ubuntu-latest
+    needs: [validate-release, test-suite]
+    outputs:
+      release_notes: ${{ steps.notes.outputs.release_notes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          
+          # Get previous tag
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          echo "# Release $VERSION" > release_notes.md
+          echo "" >> release_notes.md
+          
+          if [ -n "$PREVIOUS_TAG" ]; then
+            echo "## Changes since $PREVIOUS_TAG" >> release_notes.md
+            echo "" >> release_notes.md
+            
+            # Get commits since last tag
+            git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..HEAD >> release_notes.md
+          else
+            echo "## Initial Release" >> release_notes.md
+            echo "" >> release_notes.md
+            echo "This is the first release of IBM HPC Cluster Symphony." >> release_notes.md
+          fi
+          
+          echo "" >> release_notes.md
+          echo "## What's Included" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "- Terraform modules for IBM Cloud HPC cluster deployment" >> release_notes.md
+          echo "- Support for Symphony 7.3.2 and Spectrum Scale 5.2.1.1" >> release_notes.md
+          echo "- VPC, VSI, and Bare Metal server support" >> release_notes.md
+          echo "- Windows and Linux worker node support" >> release_notes.md
+          echo "- Comprehensive test suite and CI/CD pipeline" >> release_notes.md
+          echo "- Security scanning and code quality tools" >> release_notes.md
+          
+          # Set output for GitHub release
+          {
+            echo 'release_notes<<EOF'
+            cat release_notes.md
+            echo EOF
+          } >> $GITHUB_OUTPUT
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-notes
+          path: release_notes.md
+
+  # Create GitHub release
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate-release, test-suite, generate-release-notes]
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.validate-release.outputs.version }}
+          release_name: ${{ needs.validate-release.outputs.version }}
+          body: ${{ needs.generate-release-notes.outputs.release_notes }}
+          draft: false
+          prerelease: ${{ needs.validate-release.outputs.is_prerelease }}
+
+  # Package and upload artifacts
+  package-artifacts:
+    name: Package Release Artifacts
+    runs-on: ubuntu-latest
+    needs: [validate-release, test-suite]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create release package
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          PACKAGE_NAME="hpc-cluster-symphony-${VERSION}"
+          
+          # Create package directory
+          mkdir -p "${PACKAGE_NAME}"
+          
+          # Copy main files
+          cp -r *.tf "${PACKAGE_NAME}/"
+          cp -r resources/ "${PACKAGE_NAME}/"
+          cp -r scripts/ "${PACKAGE_NAME}/"
+          cp -r sample/ "${PACKAGE_NAME}/"
+          cp README.md LICENSE CHANGELOG.md "${PACKAGE_NAME}/"
+          
+          # Create checksums
+          find "${PACKAGE_NAME}" -type f -exec sha256sum {} \; > "${PACKAGE_NAME}.sha256"
+          
+          # Create tar.gz
+          tar -czf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}"
+          
+          # Create zip
+          zip -r "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}"
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-packages
+          path: |
+            *.tar.gz
+            *.zip
+            *.sha256
+
+  # Update documentation
+  update-docs:
+    name: Update Documentation
+    runs-on: ubuntu-latest
+    needs: [validate-release, create-release]
+    if: needs.validate-release.outputs.is_prerelease == 'false'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update version in README
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          # Update version badges or references in README
+          sed -i "s/version-[^-]*-/version-${VERSION#v}-/" README.md || true
+
+      - name: Commit documentation updates
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          if git diff --quiet; then
+            echo "No documentation changes to commit"
+          else
+            git add README.md
+            git commit -m "docs: update version to ${{ needs.validate-release.outputs.version }}"
+            git push
+          fi
+
+  # Notify on completion
+  notify-completion:
+    name: Notify Release Completion
+    runs-on: ubuntu-latest
+    needs: [validate-release, create-release, package-artifacts, update-docs]
+    if: always()
+    steps:
+      - name: Notify success
+        if: needs.create-release.result == 'success'
+        run: |
+          echo "✅ Release ${{ needs.validate-release.outputs.version }} completed successfully!"
+          echo "🎉 GitHub release created"
+          echo "📦 Artifacts packaged and uploaded"
+          echo "📚 Documentation updated"
+
+      - name: Notify failure
+        if: needs.create-release.result == 'failure'
+        run: |
+          echo "❌ Release ${{ needs.validate-release.outputs.version }} failed!"
+          echo "Please check the workflow logs for details."
+          exit 1
+
+  # Security scan for release
+  security-scan-release:
+    name: Security Scan for Release
+    runs-on: ubuntu-latest
+    needs: validate-release
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run comprehensive security scan
+        run: |
+          # Install security tools
+          pip install bandit safety
+          
+          # Python security scan
+          bandit -r resources/ -f json -o bandit-release-report.json
+          safety check --json --output safety-release-report.json
+          
+          # Terraform security scan
+          docker run --rm -v $(pwd):/src bridgecrew/checkov -d /src --framework terraform --output json --output-file /src/checkov-release-report.json
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports-release
+          path: |
+            *-release-report.json
